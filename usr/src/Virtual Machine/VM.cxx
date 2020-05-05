@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <math.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,19 +50,15 @@ typedef struct
 
 #define streq(a, b) (strcmp (a, b) == 0)
 
-typedef void * addr;
-
-typedef enum
-{
-    false,
-    true
-} bool;
+typedef void * HostMemoryAddress;
 
 typedef unsigned char byte;
 
 typedef unsigned short hwrd;
 
 typedef unsigned int word;
+
+typedef union objRef objRef;
 
 /*
 Some kinds of objects are small enough and used often enough that it can
@@ -73,6 +70,10 @@ typedef struct
 {
     bool flg : 1; /* true */
     int dat : 31;
+
+#ifdef __cplusplus
+    operator objRef () const;
+#endif
 } encVal;
 
 __INLINE__ encVal encValueOf (int x)
@@ -105,6 +106,10 @@ typedef struct
 {
     bool flg : 1; /* false */
     word dat : 31;
+
+#ifdef __cplusplus
+    operator objRef () const;
+#endif
 } encPtr;
 
 __INLINE__ encPtr encIndexOf (word x)
@@ -132,7 +137,7 @@ entries that are or aren't available.
 */
 typedef struct
 {
-    addr vnspc;
+    HostMemoryAddress vnspc;
     word shift : 3;
     bool orefs : 1;
     bool mrked : 1;
@@ -150,7 +155,7 @@ class of which a given object is an instance.
 typedef struct
 {
     word spcct;
-    encPtr class;
+    encPtr klass;
 } ot2Ent;
 
 #define otbLob 0
@@ -170,10 +175,27 @@ both.  N.B.:  This kind of overlay definition would be safer and easier
 both to specify and to use if compilers would pack a 1-bit flag and a
 <wordSize-1>-bit union (resp. field) into a <wordSize>-bit struct.
 */
-typedef union {
+union objRef
+{
     encVal val;
     encPtr ptr;
-} objRef;
+};
+
+#ifdef __cplusplus
+encVal::operator objRef () const
+{
+    objRef o;
+    o.val = *this;
+    return o;
+}
+
+encPtr::operator objRef () const
+{
+    objRef o;
+    o.ptr = *this;
+    return o;
+}
+#endif
 
 __INLINE__ bool isValue (objRef x)
 {
@@ -195,12 +217,12 @@ __INLINE__ bool ptrNe (objRef x, objRef y)
     return (x.ptr.flg != y.ptr.flg || x.ptr.dat != y.ptr.dat);
 }
 
-__INLINE__ addr addressOf (encPtr x)
+__INLINE__ HostMemoryAddress hostMemoryAddressOf (encPtr x)
 {
     return (objTbl[oteIndexOf (x)].vnspc);
 }
 
-__INLINE__ void addressOfPut (encPtr x, addr v)
+__INLINE__ void hostMemoryAddressOfPut (encPtr x, HostMemoryAddress v)
 {
     objTbl[oteIndexOf (x)].vnspc = v;
 }
@@ -267,7 +289,7 @@ __INLINE__ void spaceOfPut (encPtr x, word v)
 
 __INLINE__ encPtr classOf (encPtr x)
 {
-    return (ob2Tbl[oteIndexOf (x)].class);
+    return (ob2Tbl[oteIndexOf (x)].klass);
 }
 
 __INLINE__ void classOfPut (encPtr x, encPtr v)
@@ -276,7 +298,7 @@ __INLINE__ void classOfPut (encPtr x, encPtr v)
   assert(isIndex(v));
 #endif
     isVolatilePut (v, false);
-    ob2Tbl[oteIndexOf (x)].class = v;
+    ob2Tbl[oteIndexOf (x)].klass = v;
 }
 
 __INLINE__ word countOf (encPtr x)
@@ -354,7 +376,7 @@ void freePointer (encPtr x)
     classOfPut (pointerList, x);
 }
 
-void freeStorage (addr x)
+void freeStorage (HostMemoryAddress x)
 {
 #if 0
   assert(false);
@@ -374,8 +396,8 @@ void visit (objRef x)
             visit ((objRef)classOf (x.ptr));
             if (isObjRefs (x.ptr))
             {
-                objRef * f = addressOf (x.ptr);
-                objRef * p = (void *)f + spaceOf (x.ptr);
+                objRef * f = (objRef *)hostMemoryAddressOf (x.ptr);
+                objRef * p = (objRef *)((char *)f + spaceOf (x.ptr));
                 while (p != f)
                     visit (*--p);
             }
@@ -424,8 +446,8 @@ void reclaim (bool all)
         }
         if (spaceOf (ptr))
         {
-            freeStorage (addressOf (ptr));
-            addressOfPut (ptr, 0);
+            freeStorage (hostMemoryAddressOf (ptr));
+            hostMemoryAddressOfPut (ptr, 0);
             spaceOfPut (ptr, 0);
         }
         freePointer (ptr);
@@ -450,9 +472,9 @@ encPtr newPointer (void)
     return (ans);
 }
 
-addr newStorage (word bytes)
+HostMemoryAddress newStorage (word bytes)
 {
-    addr ans;
+    HostMemoryAddress ans;
     if (bytes)
     {
         ans = calloc (bytes, sizeof (byte));
@@ -466,9 +488,9 @@ addr newStorage (word bytes)
 void coldObjectTable (void)
 {
     word i;
-    objTbl = calloc (otbDom, sizeof (otbEnt));
+    objTbl = (otbEnt *)calloc (otbDom, sizeof (otbEnt));
     assert (objTbl != NULL);
-    ob2Tbl = calloc (otbDom, sizeof (ot2Ent));
+    ob2Tbl = (ot2Ent *)calloc (otbDom, sizeof (ot2Ent));
     assert (ob2Tbl != NULL);
     for (i = otbLob; i != otbHib; i++)
     {
@@ -480,9 +502,9 @@ void coldObjectTable (void)
 void warmObjectTableOne (void)
 {
     word i;
-    objTbl = calloc (otbDom, sizeof (otbEnt));
+    objTbl = (otbEnt *)calloc (otbDom, sizeof (otbEnt));
     assert (objTbl != NULL);
-    ob2Tbl = calloc (otbDom, sizeof (ot2Ent));
+    ob2Tbl = (ot2Ent *)calloc (otbDom, sizeof (ot2Ent));
     assert (ob2Tbl != NULL);
     for (i = otbLob; i != otbHib; i++)
         isAvailPut (encIndexOf (i + 1), true);
@@ -503,8 +525,8 @@ encPtr allocOrefObj (word n)
 {
     encPtr ptr = newPointer ();
     word num = n << 2; /*fix*/
-    addr mem = newStorage (num);
-    addressOfPut (ptr, mem);
+    HostMemoryAddress mem = newStorage (num);
+    hostMemoryAddressOfPut (ptr, mem);
     scaleOfPut (ptr, 2); /*fix*/
     isObjRefsPut (ptr, true);
     spaceOfPut (ptr, num);
@@ -514,7 +536,7 @@ encPtr allocOrefObj (word n)
         /* Fix from Zak - modern compilers don't like assign-to-cast. */
         encPtr * tmpmem = (encPtr *)mem;
         *tmpmem++ = nilObj;
-        mem = (addr)tmpmem;
+        mem = (HostMemoryAddress)tmpmem;
     }
     return (ptr);
 }
@@ -523,8 +545,8 @@ encPtr allocByteObj (word n)
 {
     encPtr ptr = newPointer ();
     word num = n << 0; /*fix*/
-    addr mem = newStorage (num);
-    addressOfPut (ptr, mem);
+    HostMemoryAddress mem = newStorage (num);
+    hostMemoryAddressOfPut (ptr, mem);
     scaleOfPut (ptr, 0); /*fix*/
     isObjRefsPut (ptr, false);
     spaceOfPut (ptr, num);
@@ -536,8 +558,8 @@ encPtr allocHWrdObj (word n)
 {
     encPtr ptr = newPointer ();
     word num = n << 1; /*fix*/
-    addr mem = newStorage (num);
-    addressOfPut (ptr, mem);
+    HostMemoryAddress mem = newStorage (num);
+    hostMemoryAddressOfPut (ptr, mem);
     scaleOfPut (ptr, 1); /*fix*/
     isObjRefsPut (ptr, false);
     spaceOfPut (ptr, num);
@@ -549,8 +571,8 @@ encPtr allocWordObj (word n)
 {
     encPtr ptr = newPointer ();
     word num = n << 2; /*fix*/
-    addr mem = newStorage (num);
-    addressOfPut (ptr, mem);
+    HostMemoryAddress mem = newStorage (num);
+    hostMemoryAddressOfPut (ptr, mem);
     scaleOfPut (ptr, 2); /*fix*/
     isObjRefsPut (ptr, false);
     spaceOfPut (ptr, num);
@@ -558,17 +580,17 @@ encPtr allocWordObj (word n)
     return (ptr);
 }
 
-encPtr allocZStrObj (char * zstr)
+encPtr allocZStrObj (const char * zstr)
 {
     encPtr ptr = newPointer ();
     word num = strlen (zstr) + 1;
-    addr mem = newStorage (num);
-    addressOfPut (ptr, mem);
+    HostMemoryAddress mem = newStorage (num);
+    hostMemoryAddressOfPut (ptr, mem);
     scaleOfPut (ptr, 0); /*fix*/
     isObjRefsPut (ptr, false);
     spaceOfPut (ptr, num);
     classOfPut (ptr, nilObj);
-    (void)strcpy (addressOf (ptr), zstr);
+    (void)strcpy ((char *)hostMemoryAddressOf (ptr), zstr);
     return (ptr);
 }
 
@@ -625,7 +647,7 @@ encPtr binSyms[32] = {};
 
 #define globalValue(s) nameTableLookup (symbols, s)
 
-void sysError (char *, char *);
+void sysError (const char *, const char *);
 
 encPtr newLink (encPtr key, encPtr value);
 
@@ -693,14 +715,14 @@ encPtr hashEachElement (encPtr dict, word hash, int (*fun) (encPtr))
     {
         hash = 1 + (3 * (hash % (tablesize / 3)));
         assert (hash <= tablesize - 2);
-        hp = (encPtr *)addressOf (table) + (hash - 1);
+        hp = (encPtr *)hostMemoryAddressOf (table) + (hash - 1);
         key = *hp++;   /* table at: hash */
         value = *hp++; /* table at: hash + 1 */
         if (ptrNe ((objRef)key, (objRef)nilObj) && (*fun) (key))
             return value;
         for (link = *hp; ptrNe ((objRef)link, (objRef)nilObj); link = *hp)
         {
-            hp = addressOf (link);
+            hp = (encPtr *)hostMemoryAddressOf (link);
             key = *hp++;   /* link at: 1 */
             value = *hp++; /* link at: 2 */
             if (ptrNe ((objRef)key, (objRef)nilObj) && (*fun) (key))
@@ -710,10 +732,10 @@ encPtr hashEachElement (encPtr dict, word hash, int (*fun) (encPtr))
     return nilObj;
 }
 
-int strHash (char * str)
+int strHash (const char * str)
 {
     int hash;
-    char * p;
+    const char * p;
 
     hash = 0;
     for (p = str; *p; p++)
@@ -731,12 +753,13 @@ word symHash (encPtr sym)
     return (oteIndexOf (sym));
 }
 
-char * charBuffer = 0;
+const char * charBuffer = 0;
 encPtr objBuffer = {true, 0};
 
 int strTest (encPtr key)
 {
-    if (addressOf (key) && streq (addressOf (key), charBuffer))
+    if (hostMemoryAddressOf (key) &&
+        streq ((char *)hostMemoryAddressOf (key), charBuffer))
     {
         objBuffer = key;
         return 1;
@@ -744,7 +767,7 @@ int strTest (encPtr key)
     return 0;
 }
 
-encPtr globalKey (char * str)
+encPtr globalKey (const char * str)
 {
     charBuffer = str;
     objBuffer = nilObj;
@@ -752,54 +775,54 @@ encPtr globalKey (char * str)
     return objBuffer;
 }
 
-encPtr nameTableLookup (encPtr dict, char * str)
+encPtr nameTableLookup (encPtr dict, const char * str)
 {
     charBuffer = str;
     return hashEachElement (dict, strHash (str), strTest);
 }
 
-char * unStrs[] = {"isNil",
-                   "notNil",
-                   "value",
-                   "new",
-                   "class",
-                   "size",
-                   "basicSize",
-                   "print",
-                   "printString",
-                   0};
+const char * unStrs[] = {"isNil",
+                         "notNil",
+                         "value",
+                         "new",
+                         "class",
+                         "size",
+                         "basicSize",
+                         "print",
+                         "printString",
+                         0};
 
-char * binStrs[] = {"+",
-                    "-",
-                    "<",
-                    ">",
-                    "<=",
-                    ">=",
-                    "=",
-                    "~=",
-                    "*",
-                    "quo:",
-                    "rem:",
-                    "bitAnd:",
-                    "bitXor:",
-                    "==",
-                    ",",
-                    "at:",
-                    "basicAt:",
-                    "do:",
-                    "coerce:",
-                    "error:",
-                    "includesKey:",
-                    "isMemberOf:",
-                    "new:",
-                    "to:",
-                    "value:",
-                    "whileTrue:",
-                    "addFirst:",
-                    "addLast:",
-                    0};
+const char * binStrs[] = {"+",
+                          "-",
+                          "<",
+                          ">",
+                          "<=",
+                          ">=",
+                          "=",
+                          "~=",
+                          "*",
+                          "quo:",
+                          "rem:",
+                          "bitAnd:",
+                          "bitXor:",
+                          "==",
+                          ",",
+                          "at:",
+                          "basicAt:",
+                          "do:",
+                          "coerce:",
+                          "error:",
+                          "includesKey:",
+                          "isMemberOf:",
+                          "new:",
+                          "to:",
+                          "value:",
+                          "whileTrue:",
+                          "addFirst:",
+                          "addLast:",
+                          0};
 
-encPtr newSymbol (char * str);
+encPtr newSymbol (const char * str);
 
 void initCommonSymbols (void)
 {
@@ -835,7 +858,7 @@ double floatValue (encPtr o)
 {
     double d;
 
-    (void)memcpy (&d, addressOf (o), sizeof (double));
+    (void)memcpy (&d, hostMemoryAddressOf (o), sizeof (double));
     return d;
 }
 
@@ -892,7 +915,7 @@ encPtr newClass (char * name)
     newInst = allocOrefObj (classSize);
     classOfPut (newInst, newMeta);
 
-    metaName = newStorage (strlen (name) + 4 + 1);
+    metaName = (char *)newStorage (strlen (name) + 4 + 1);
     (void)strcpy (metaName, name);
     (void)strcat (metaName, "Meta");
 
@@ -944,7 +967,7 @@ encPtr newFloat (double d)
     encPtr newObj;
 
     newObj = allocByteObj (sizeof (double));
-    (void)memcpy (addressOf (newObj), &d, sizeof (double));
+    (void)memcpy (hostMemoryAddressOf (newObj), &d, sizeof (double));
     classOfPut (newObj, globalValue ("Float"));
     return newObj;
 }
@@ -980,7 +1003,7 @@ encPtr newString (char * value)
     return (newObj);
 }
 
-encPtr newSymbol (char * str)
+encPtr newSymbol (const char * str)
 {
     encPtr newObj;
 
@@ -1315,9 +1338,9 @@ void lexinit (char * str)
 #define OrBranch 10
 #define SendToSuper 11
 
-void sysWarn (char * s1, char * s2);
-void compilWarn (char * selector, char * str1, char * str2);
-void compilError (char * selector, char * str1, char * str2);
+void sysWarn (const char * s1, const char * s2);
+void compilWarn (const char * selector, const char * str1, const char * str2);
+void compilError (const char * selector, const char * str1, const char * str2);
 
 #define codeLimit 256
 #define literalLimit 256
@@ -1367,7 +1390,8 @@ void setInstanceVariables (encPtr aClass)
         {
             limit = countOf (vars);
             for (i = 1; i <= limit; i++)
-                instanceName[++instanceTop] = addressOf (orefOf (vars, i).ptr);
+                instanceName[++instanceTop] =
+                    (char *)hostMemoryAddressOf (orefOf (vars, i).ptr);
         }
     }
 }
@@ -1419,7 +1443,7 @@ void genInteger (int val)
         genInstruction (PushLiteral, genLiteral ((objRef)encValueOf (val)));
 }
 
-char * glbsyms[] = {"currentInterpreter", "nil", "true", "false", 0};
+const char * glbsyms[] = {"currentInterpreter", "nil", "true", "false", 0};
 
 bool nameTerm (char * name)
 {
@@ -1556,12 +1580,15 @@ int parseArray (void)
     }
 
     if (parseOk)
+    { /* FIXME: dangling else */
         if (!streq (tokenString, ")"))
             compilError (selector,
                          "array not terminated by right parenthesis",
                          tokenString);
         else
             (void)nextToken ();
+    }
+
     size = literalTop - base;
     newLit = newArray (size);
     for (i = size; i >= 1; i--)
@@ -1635,10 +1662,12 @@ bool term (void)
         (void)nextToken ();
         expression ();
         if (parseOk)
+        { /* FIXME: dangling else */
             if ((token != closing) || !streq (tokenString, ")"))
                 compilError (selector, "Missing Right Parenthesis", "");
             else
                 (void)nextToken ();
+        }
     }
     else if ((token == binary) && streq (tokenString, "<"))
         parsePrimitive ();
@@ -2010,7 +2039,8 @@ void block (void)
             else
             {
                 tempsym = newSymbol (tokenString);
-                temporaryName[temporaryTop] = addressOf (tempsym);
+                temporaryName[temporaryTop] =
+                    (char *)hostMemoryAddressOf (tempsym);
             }
             (void)nextToken ();
         }
@@ -2064,7 +2094,8 @@ void temporaries (void)
             else
             {
                 tempsym = newSymbol (tokenString);
-                temporaryName[temporaryTop] = addressOf (tempsym);
+                temporaryName[temporaryTop] =
+                    (char *)hostMemoryAddressOf (tempsym);
             }
             (void)nextToken ();
         }
@@ -2091,7 +2122,7 @@ void messagePattern (void)
                          "binary message pattern not followed by name",
                          selector);
         argsym = newSymbol (tokenString);
-        argumentName[++argumentTop] = addressOf (argsym);
+        argumentName[++argumentTop] = (char *)hostMemoryAddressOf (argsym);
         (void)nextToken ();
     }
     else if (token == namecolon)
@@ -2108,7 +2139,7 @@ void messagePattern (void)
             if (++argumentTop > argumentLimit)
                 compilError (selector, "too many arguments in method", "");
             argsym = newSymbol (tokenString);
-            argumentName[argumentTop] = addressOf (argsym);
+            argumentName[argumentTop] = (char *)hostMemoryAddressOf (argsym);
             (void)nextToken ();
         }
     }
@@ -2146,7 +2177,7 @@ bool parse (encPtr method, char * text, bool saveText)
     else
     {
         bytecodes = newByteArray (codeTop);
-        bp = addressOf (bytecodes);
+        bp = (byte *)hostMemoryAddressOf (bytecodes);
         for (i = 0; i < codeTop; i++)
         {
             bp[i] = codeArray[i];
@@ -2395,12 +2426,12 @@ Called from
 */
 objRef primStringCat (objRef arg[])
 {
-    addr src1 = addressOf (arg[0].ptr);
-    word len1 = strlen (src1);
-    addr src2 = addressOf (arg[1].ptr);
-    word len2 = strlen (src2);
+    HostMemoryAddress src1 = hostMemoryAddressOf (arg[0].ptr);
+    word len1 = strlen ((char *)src1);
+    HostMemoryAddress src2 = hostMemoryAddressOf (arg[1].ptr);
+    word len2 = strlen ((char *)src2);
     encPtr ans = allocByteObj (len1 + len2 + 1);
-    addr tgt = addressOf (ans);
+    HostMemoryAddress tgt = hostMemoryAddressOf (ans);
     (void)memcpy (tgt, src1, len1);
     (void)memcpy (((byte *)tgt) + len1, src2, len2);
     if (ptrEq ((objRef)stringClass, (objRef)nilObj)) /*fix*/
@@ -2451,8 +2482,10 @@ Called from Symbol>>assign:
 */
 objRef primSymbolAssign (objRef arg[]) /*fix*/
 {
-    nameTableInsert (
-        symbols, strHash (addressOf (arg[0].ptr)), arg[0].ptr, arg[1].ptr);
+    nameTableInsert (symbols,
+                     strHash ((char *)hostMemoryAddressOf (arg[0].ptr)),
+                     arg[0].ptr,
+                     arg[1].ptr);
     return (arg[0]);
 }
 
@@ -2558,20 +2591,20 @@ objRef primCopyFromTo (objRef arg[]) /*fix*/
     if ((isIndex (arg[1])) || (isIndex (arg[2])))
         sysError ("non integer index", "copyFromTo");
     {
-        addr src = addressOf (arg[0].ptr);
-        word len = strlen (src);
+        HostMemoryAddress src = hostMemoryAddressOf (arg[0].ptr);
+        word len = strlen ((char *)src);
         int pos1 = intValueOf (arg[1].val);
         int pos2 = intValueOf (arg[2].val);
         int req = pos2 + 1 - pos1;
         word act;
         encPtr ans;
-        addr tgt;
+        HostMemoryAddress tgt;
         if (pos1 >= 1 && pos1 <= len && req >= 1)
-            act = min (req, strlen (((byte *)src) + (pos1 - 1)));
+            act = min (req, strlen (((char *)src) + (pos1 - 1)));
         else
             act = 0;
         ans = allocByteObj (act + 1);
-        tgt = addressOf (ans);
+        tgt = hostMemoryAddressOf (ans);
         (void)memcpy (tgt, ((byte *)src) + (pos1 - 1), act);
         if (ptrEq ((objRef)stringClass, (objRef)nilObj)) /*fix*/
             stringClass = globalValue ("String");
@@ -2580,7 +2613,7 @@ objRef primCopyFromTo (objRef arg[]) /*fix*/
     }
 }
 
-void flushCache (encPtr messageToSend, encPtr class);
+void flushCache (encPtr messageToSend, encPtr klass);
 
 /*
 Kills the cache slot denoted by the receiver and argument.  The receiver
@@ -2599,7 +2632,7 @@ objRef primFlushCache (objRef arg[])
 objRef primParse (objRef arg[]) /*del*/
 {
     setInstanceVariables (arg[0].ptr);
-    if (parse (arg[2].ptr, addressOf (arg[1].ptr), false))
+    if (parse (arg[2].ptr, (char *)hostMemoryAddressOf (arg[1].ptr), false))
     {
         flushCache (orefOf (arg[2].ptr, messageInMethod).ptr, arg[0].ptr);
         return ((objRef)trueObj);
@@ -2927,7 +2960,8 @@ Called from String>>size
 */
 objRef primStringSize (objRef arg[])
 {
-    return ((objRef)encValueOf (strlen (addressOf (arg[0].ptr))));
+    return (
+        (objRef)encValueOf (strlen ((char *)hostMemoryAddressOf (arg[0].ptr))));
 }
 
 /*
@@ -2939,7 +2973,8 @@ Called from
 */
 objRef primStringHash (objRef arg[])
 {
-    return ((objRef)encValueOf (strHash (addressOf (arg[0].ptr))));
+    return ((objRef)encValueOf (
+        strHash ((char *)hostMemoryAddressOf (arg[0].ptr))));
 }
 
 /*
@@ -2951,7 +2986,7 @@ Called from String>>asSymbol
 */
 objRef primAsSymbol (objRef arg[])
 {
-    return ((objRef)newSymbol (addressOf (arg[0].ptr)));
+    return ((objRef)newSymbol ((char *)hostMemoryAddressOf (arg[0].ptr)));
 }
 
 /*
@@ -2961,7 +2996,7 @@ Called from Symbol>>value
 */
 objRef primGlobalValue (objRef arg[])
 {
-    return ((objRef)globalValue (addressOf (arg[0].ptr)));
+    return ((objRef)globalValue ((char *)hostMemoryAddressOf (arg[0].ptr)));
 }
 
 /*
@@ -2971,7 +3006,8 @@ Called from String>>unixCommand
 */
 objRef primHostCommand (objRef arg[])
 {
-    return ((objRef)encValueOf (system (addressOf (arg[0].ptr))));
+    return (
+        (objRef)encValueOf (system ((char *)hostMemoryAddressOf (arg[0].ptr))));
 }
 
 /*
@@ -3192,7 +3228,7 @@ Called from File>>open
 objRef primFileOpen (objRef arg[])
 {
     int i = intValueOf (arg[0].val);
-    char * p = addressOf (arg[1].ptr);
+    char * p = (char *)hostMemoryAddressOf (arg[1].ptr);
     if (streq (p, "stdin"))
         fp[i] = stdin;
     else if (streq (p, "stdout"))
@@ -3201,14 +3237,14 @@ objRef primFileOpen (objRef arg[])
         fp[i] = stderr;
     else
     {
-        char * q = addressOf (arg[2].ptr);
+        char * q = (char *)hostMemoryAddressOf (arg[2].ptr);
         char * r = strchr (q, 'b');
         encPtr s = {false, 1};
         if (r == NULL)
         {
             int t = strlen (q);
             s = allocByteObj (t + 2);
-            r = addressOf (s);
+            r = (char *)hostMemoryAddressOf (s);
             memcpy (r, q, t);
             *(r + t) = 'b';
             q = r;
@@ -3300,7 +3336,7 @@ objRef primGetString (objRef arg[])
     return ((objRef)newString (buffer));
 }
 
-__INLINE__ bool irf (FILE * tag, addr dat, word len)
+__INLINE__ bool irf (FILE * tag, HostMemoryAddress dat, word len)
 {
     return ((fread (dat, len, 1, tag) == 1) ? true : false);
 }
@@ -3323,12 +3359,12 @@ encPtr imageRead (FILE * tag)
         ord = intValueOf (val);
         otp = &objTbl[ord];
 #if 0
-    if(irf(tag, (void*)otp, sizeof(addr)) != true)
+    if(irf(tag, (void*)otp, sizeof(HostMemoryAddress)) != true)
       goto fail;
 #endif
         if (irf (tag,
-                 ((void *)otp) + sizeof (addr),
-                 sizeof (otbEnt) - sizeof (addr)) != true)
+                 ((char *)otp) + sizeof (HostMemoryAddress),
+                 sizeof (otbEnt) - sizeof (HostMemoryAddress)) != true)
             goto fail;
         o2p = &ob2Tbl[ord];
         if (irf (tag, o2p, sizeof (ot2Ent)) != true)
@@ -3336,8 +3372,8 @@ encPtr imageRead (FILE * tag)
         ptr = encIndexOf (ord);
         if ((len = spaceOf (ptr)))
         {
-            addressOfPut (ptr, newStorage (len));
-            if (irf (tag, addressOf (ptr), len) != true)
+            hostMemoryAddressOfPut (ptr, newStorage (len));
+            if (irf (tag, hostMemoryAddressOf (ptr), len) != true)
                 goto fail;
         }
     }
@@ -3346,7 +3382,7 @@ fail:
     return (falseObj);
 }
 
-__INLINE__ bool iwf (FILE * tag, addr dat, word len)
+__INLINE__ bool iwf (FILE * tag, HostMemoryAddress dat, word len)
 {
     return ((fwrite (dat, len, 1, tag) == 1) ? true : false);
 }
@@ -3371,18 +3407,18 @@ encPtr imageWrite (FILE * tag)
             goto fail;
         otp = &objTbl[ord];
 #if 0
-    if(iwf(tag, (void*)otp, sizeof(addr)) != true)
+    if(iwf(tag, (void*)otp, sizeof(HostMemoryAddress)) != true)
       goto fail;
 #endif
         if (iwf (tag,
-                 ((void *)otp) + sizeof (addr),
-                 sizeof (otbEnt) - sizeof (addr)) != true)
+                 ((char *)otp) + sizeof (HostMemoryAddress),
+                 sizeof (otbEnt) - sizeof (HostMemoryAddress)) != true)
             goto fail;
         o2p = &ob2Tbl[ord];
         if (iwf (tag, o2p, sizeof (ot2Ent)) != true)
             goto fail;
         if ((len = spaceOf (ptr)))
-            if (iwf (tag, addressOf (ptr), len) != true)
+            if (iwf (tag, hostMemoryAddressOf (ptr), len) != true)
                 goto fail;
     }
     return (trueObj);
@@ -3416,7 +3452,7 @@ objRef primPrintWithoutNL (objRef arg[])
     int i = intValueOf (arg[0].val);
     if (!fp[i])
         return ((objRef)nilObj);
-    (void)fputs (addressOf (arg[1].ptr), fp[i]);
+    (void)fputs ((char *)hostMemoryAddressOf (arg[1].ptr), fp[i]);
     (void)fflush (fp[i]);
     return ((objRef)nilObj);
 }
@@ -3432,7 +3468,7 @@ objRef primPrintWithNL (objRef arg[])
     int i = intValueOf (arg[0].val);
     if (!fp[i])
         return ((objRef)nilObj);
-    (void)fputs (addressOf (arg[1].ptr), fp[i]);
+    (void)fputs ((char *)hostMemoryAddressOf (arg[1].ptr), fp[i]);
     (void)fputc ('\n', fp[i]);
     return ((objRef)nilObj);
 }
@@ -3456,7 +3492,8 @@ Not usually called from the image.
 */
 objRef primError (objRef arg[])
 {
-    (void)fprintf (stderr, "error: '%s'\n", (char *)addressOf (arg[0].ptr));
+    (void)fprintf (
+        stderr, "error: '%s'\n", (char *)hostMemoryAddressOf (arg[0].ptr));
     assert (false);
     return (arg[0]);
 }
@@ -3481,7 +3518,7 @@ objRef primReclaim (objRef arg[])
 
 FILE * logTag = NULL;
 encPtr logBuf = {false, 1};
-addr logPtr = 0;
+HostMemoryAddress logPtr = 0;
 word logSiz = 0;
 word logPos = 0;
 
@@ -3495,7 +3532,7 @@ void logByte (byte val)
     if (logPos == logSiz)
     {
         encPtr newBuf = allocByteObj (logSiz + 128);
-        addr newPtr = addressOf (newBuf);
+        HostMemoryAddress newPtr = hostMemoryAddressOf (newBuf);
         (void)memcpy (newPtr, logPtr, logSiz);
         isVolatilePut (logBuf, false);
         logBuf = newBuf;
@@ -3530,7 +3567,7 @@ objRef primLogChunk (objRef arg[])
     logInit ();
     {
         encPtr txtBuf = arg[0].ptr;
-        addr txtPtr = addressOf (txtBuf);
+        HostMemoryAddress txtPtr = hostMemoryAddressOf (txtBuf);
         word txtSiz = countOf (txtBuf);
         word txtPos = 0;
         while (txtSiz && *(((byte *)txtPtr) + (txtSiz - 1)) == '\0')
@@ -3551,7 +3588,7 @@ objRef primLogChunk (objRef arg[])
 }
 
 encPtr bwsBuf = {false, 1};
-addr bwsPtr = 0;
+HostMemoryAddress bwsPtr = 0;
 word bwsSiz = 0;
 word bwsPos = 0;
 
@@ -3565,7 +3602,7 @@ void bwsNextPut (byte val)
     if (bwsPos == bwsSiz)
     {
         encPtr newBuf = allocByteObj (bwsSiz + 128);
-        addr newPtr = addressOf (newBuf);
+        HostMemoryAddress newPtr = hostMemoryAddressOf (newBuf);
         (void)memcpy (newPtr, bwsPtr, bwsSiz);
         isVolatilePut (bwsBuf, false);
         bwsBuf = newBuf;
@@ -3578,7 +3615,7 @@ void bwsNextPut (byte val)
 encPtr bwsFiniGet (void)
 {
     encPtr ans = allocByteObj (bwsPos + 1);
-    addr tgt = addressOf (ans);
+    HostMemoryAddress tgt = hostMemoryAddressOf (ans);
     (void)memcpy (tgt, bwsPtr, bwsPos);
     if (ptrEq ((objRef)stringClass, (objRef)nilObj)) /*fix*/
         stringClass = globalValue ("String");
@@ -3654,7 +3691,7 @@ objRef primPutChunk (objRef arg[])
     bwsInit ();
     {
         encPtr txtBuf = arg[1].ptr;
-        addr txtPtr = addressOf (txtBuf);
+        HostMemoryAddress txtPtr = hostMemoryAddressOf (txtBuf);
         word txtSiz = countOf (txtBuf);
         word txtPos = 0;
         while (txtSiz && *(((byte *)txtPtr) + (txtSiz - 1)) == '\0')
@@ -3685,7 +3722,7 @@ done:
 objRef L2_SMALLTALK_SPECIAL (objRef arguments[]);
 #define primSpecial L2_SMALLTALK_SPECIAL
 #else
-objRef primSpecial (objRef arguments)
+objRef primSpecial (objRef arguments[])
 {
     return (objRef)nilObj;
 }
@@ -3889,17 +3926,17 @@ void coldClassDef (encPtr strRef)
     encPtr superStr;
     encPtr classObj;
     int size;
-    lexinit (addressOf (strRef));
+    lexinit ((char *)hostMemoryAddressOf (strRef));
     superStr = newString (tokenString);
     (void)nextToken ();
     (void)nextToken ();
     classObj = findClass (tokenString);
-    if (streq (addressOf (superStr), "nil"))
+    if (streq ((char *)hostMemoryAddressOf (superStr), "nil"))
         size = 0;
     else
     {
         encPtr superObj;
-        superObj = findClass (addressOf (superStr));
+        superObj = findClass ((char *)hostMemoryAddressOf (superStr));
         size = intValueOf (orefOf (superObj, sizeInClass).val);
         orefOfPut (classObj, superClassInClass, (objRef)superObj);
         {
@@ -3918,7 +3955,7 @@ void coldClassDef (encPtr strRef)
         encPtr varVec;
         int i;
         instStr = newString (tokenString);
-        lexinit (addressOf (instStr));
+        lexinit ((char *)hostMemoryAddressOf (instStr));
         instTop = 0;
         while (*tokenString)
         {
@@ -3949,9 +3986,9 @@ void coldMethods (encVal tagRef)
     if (ptrEq ((objRef) (strRef = primGetChunk ((objRef *)&tagRef).ptr),
                (objRef)nilObj))
         return;
-    if (streq (addressOf (strRef), "}"))
+    if (streq ((char *)hostMemoryAddressOf (strRef), "}"))
         return;
-    lexinit (addressOf (strRef));
+    lexinit ((char *)hostMemoryAddressOf (strRef));
     classObj = findClass (tokenString);
     setInstanceVariables (classObj);
     /* now find or create a method table */
@@ -3969,11 +4006,11 @@ void coldMethods (encVal tagRef)
     {
         encPtr theMethod;
         encPtr selector;
-        if (streq (addressOf (strRef), "}"))
+        if (streq ((char *)hostMemoryAddressOf (strRef), "}"))
             return;
         /* now we have a method */
         theMethod = newMethod ();
-        if (parse (theMethod, addressOf (strRef), true))
+        if (parse (theMethod, (char *)hostMemoryAddressOf (strRef), true))
         {
             orefOfPut (theMethod, methodClassInMethod, (objRef)classObj);
             selector = orefOf (theMethod, messageInMethod).ptr;
@@ -3997,7 +4034,7 @@ void coldFileIn (encVal tagRef)
     while (ptrNe ((objRef) (strRef = primGetChunk ((objRef *)&tagRef).ptr),
                   (objRef)nilObj))
     {
-        if (streq (addressOf (strRef), "{"))
+        if (streq ((char *)hostMemoryAddressOf (strRef), "{"))
             coldMethods (tagRef);
         else
             coldClassDef (strRef);
@@ -4198,12 +4235,12 @@ void fetchLinkageState (execState * es)
     }
     else
     { /* read from context object */
-        es->cxtb = addressOf (es->contextObject);
+        es->cxtb = (objRef *)hostMemoryAddressOf (es->contextObject);
         method = orefOf (es->contextObject, methodInContext).ptr;
-        es->argb =
-            addressOf (orefOf (es->contextObject, argumentsInContext).ptr);
-        es->tmpb =
-            addressOf (orefOf (es->contextObject, temporariesInContext).ptr);
+        es->argb = (objRef *)hostMemoryAddressOf (
+            orefOf (es->contextObject, argumentsInContext).ptr);
+        es->tmpb = (objRef *)hostMemoryAddressOf (
+            orefOf (es->contextObject, temporariesInContext).ptr);
     }
 }
 
@@ -4213,7 +4250,7 @@ __INLINE__ void fetchReceiverState (execState * es)
     if (isIndex (es->receiverObject))
     {
         assert (ptrNe (es->receiverObject, (objRef)pointerList));
-        es->rcvb = addressOf (es->receiverObject.ptr);
+        es->rcvb = (objRef *)hostMemoryAddressOf (es->receiverObject.ptr);
     }
     else
         es->rcvb = (objRef *)0;
@@ -4221,8 +4258,11 @@ __INLINE__ void fetchReceiverState (execState * es)
 
 __INLINE__ void fetchMethodState (execState * es)
 {
-    es->litb = addressOf (orefOf (method, literalsInMethod).ptr);
-    es->bytb = addressOf (orefOf (method, bytecodesInMethod).ptr) - 1;
+    es->litb =
+        (objRef *)hostMemoryAddressOf (orefOf (method, literalsInMethod).ptr);
+    es->bytb =
+        (byte *)hostMemoryAddressOf (orefOf (method, bytecodesInMethod).ptr) -
+        1;
 }
 
 /*
@@ -4377,7 +4417,7 @@ struct
     encPtr cacheMethod;  /* the method itself */
 } methodCache[cacheSize] = {};
 
-void flushCache (encPtr messageToSend, encPtr class)
+void flushCache (encPtr messageToSend, encPtr klass)
 {
     int i;
     for (i = 0; i != cacheSize; i++)
@@ -4392,8 +4432,10 @@ bool lookupGivenSelector (execState * es, encPtr methodClass)
     encPtr argarray;
     objRef returnedObject;
     if (mselTrace)
-        fprintf (
-            stderr, "%d: %s\n", mselTrace--, (char *)addressOf (messageToSend));
+        fprintf (stderr,
+                 "%d: %s\n",
+                 mselTrace--,
+                 (char *)hostMemoryAddressOf (messageToSend));
     /* look up method in cache */
     hash = (oteIndexOf (messageToSend) + oteIndexOf (methodClass)) % cacheSize;
     assert (hash >= 0 && hash < cacheSize);
@@ -4500,7 +4542,7 @@ void pushStateAndEnter (execState * es)
     if ((j + i) > countOf (processStack))
     {
         processStack = growProcessStack (j, i);
-        es->psb = addressOf (processStack);
+        es->psb = (objRef *)hostMemoryAddressOf (processStack);
         es->pst = (es->psb + j);
         orefOfPut (es->processObject, stackInProcess, (objRef)processStack);
     }
@@ -4803,7 +4845,7 @@ void fetchProcessState (execState * es)
 {
     int j;
     processStack = orefOf (es->processObject, stackInProcess).ptr;
-    es->psb = addressOf (processStack);
+    es->psb = (objRef *)hostMemoryAddressOf (processStack);
     j = intValueOf (orefOf (es->processObject, stackTopInProcess).val);
     es->pst = es->psb + (j - 1);
     linkPointer = intValueOf (orefOf (es->processObject, linkPtrInProcess).val);
@@ -5100,52 +5142,28 @@ int main_2 (int argc, char * argv[])
     return 0;
 }
 
-void compilError (char * selector, char * str1, char * str2)
+void compilError (const char * selector, const char * str1, const char * str2)
 {
-#ifdef L2_SMALLTALK_EMBEDDED
-    fputs ("Compiler error:\n\tMethod:\t", stderr);
-    fputs (selector, stderr);
-    fputs ("\n\tStr1:\t", stderr);
-    fputs (str1, stderr);
-    fputs ("\n\tStr2:\t", stderr);
-    fputs (str2, stderr);
-    fputs ("\n", stderr);
-#else
     (void)fprintf (
         stderr, "compiler error: Method %s : %s %s\n", selector, str1, str2);
-#endif
     parseOk = false;
 }
 
-void compilWarn (char * selector, char * str1, char * str2)
+void compilWarn (const char * selector, const char * str1, const char * str2)
 {
     (void)fprintf (
         stderr, "compiler warning: Method %s : %s %s\n", selector, str1, str2);
 }
 
-void sysError (char * s1, char * s2)
+void sysError (const char * s1, const char * s2)
 {
-#ifdef L2_SMALLTALK_EMBEDDED
-    fputs (s1, stderr);
-    fputs ("\n", stderr);
-    fputs (s2, stderr);
-    fputs ("\n", stderr);
-#else
     (void)fprintf (stderr, "%s\n%s\n", s1, s2);
-#endif
     (void)abort ();
 }
 
-void sysWarn (char * s1, char * s2)
+void sysWarn (const char * s1, const char * s2)
 {
-#ifdef L2_SMALLTALK_EMBEDDED
-    fputs (s1, stderr);
-    fputs ("\n", stderr);
-    fputs (s2, stderr);
-    fputs ("\n", stderr);
-#else
     (void)fprintf (stderr, "%s\n%s\n", s1, s2);
-#endif
 }
 
 #ifdef L2_SMALLTALK_EMBEDDED
@@ -5174,7 +5192,7 @@ int main (int argc, char * argv[])
     }
 #if 0
   fprintf(stderr,"%s?\n",
-    (char*)addressOf(orefOf(encIndexOf(100),nameInClass).ptr));
+    (char*)hostMemoryAddressOf(orefOf(encIndexOf(100),nameInClass).ptr));
 #endif
     if (ans == 0)
     {
