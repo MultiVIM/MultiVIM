@@ -19,6 +19,7 @@
 #define trueConst 6    /* the constant true */
 #define falseConst 7   /* the constant false */
 
+/* DoSpecial codes */
 #define SelfReturn 1
 #define StackReturn 2
 #define Duplicate 4

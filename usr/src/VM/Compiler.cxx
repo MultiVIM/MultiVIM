@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
@@ -10,7 +11,9 @@
 typedef enum tokensyms
 {
     nothing,
+    /* identifier */
     nameconst,
+    /* keyword */
     namecolon,
     intconst,
     floatconst,
@@ -346,6 +349,7 @@ void genCode (int value)
 
 void genInstruction (int high, int low)
 {
+    printf ("GENINSTRUCTION: %d %d\n", high, low);
     if (low >= 16)
     {
         genInstruction (Extended, high);
@@ -368,6 +372,7 @@ int genLiteral (objRef aLiteral)
 
 void genInteger (int val)
 {
+    printf ("GEN INTEGER\n");
     if (val == -1)
         genInstruction (PushConstant, minusOne);
     else if ((val >= 0) && (val <= 2))
@@ -423,6 +428,7 @@ bool nameTerm (char * name)
         for (i = 0; (!done) && glbsyms[i]; i++)
             if (streq (name, glbsyms[i]))
             {
+                printf ("generateglobal constant because %s\n", name);
                 genInstruction (PushConstant, i + 4);
                 done = true;
             }
@@ -1086,12 +1092,16 @@ bool parse (encPtr method, char * text, bool saveText)
     encPtr bytecodes, theLiterals;
     byte * bp;
 
+    printf ("PARSE %s\n\n");
+
     lexinit (text);
     parseOk = true;
     blockstat = NotInBlock;
     codeTop = 0;
     literalTop = temporaryTop = argumentTop = 0;
     maxTemporary = 0;
+
+    printf ("BEGIN ACTUAL\n");
 
     selectorDeclPattern ();
     if (parseOk)
@@ -1138,8 +1148,12 @@ bool parse (encPtr method, char * text, bool saveText)
         {
             orefOfPut (method, textInMethod, (objRef)newString (text));
         }
+
+        printf ("END ACTUAL1.\n\n");
         return (true);
     }
+    printf ("END ACTUAL2.\n\n");
+
     return (false);
 }
 

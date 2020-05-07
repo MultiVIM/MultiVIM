@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -83,17 +84,22 @@ class GlobalVarNode;
 
 struct CompiledMethod
 {
-    std::vector<objRef> literals;
     std::vector<byte> code;
 };
 
 class GenerationContext
 {
     std::vector<NameScope *> scopes;
+    /* On beginning array generation, the size of the literals vector is pushed
+     * here. After completing array generation the new literals added are
+     * converted into an array. */
+    std::stack<std::vector<objRef>> literalArrayStack;
+    int inBlock;
     int highestLocal;
+    CompiledMethod meth;
 
   public:
-    GenerationContext () : highestLocal (0)
+    GenerationContext () : highestLocal (0), inBlock (0)
     {
     }
 
@@ -102,8 +108,12 @@ class GenerationContext
     void addArg (int index, std::string name);
     void addLocal (int index, std::string name);
     void pushScope (NameScope * scope);
+    void popScope ();
     GlobalVarNode * lookupClass (std::string name);
     VarNode * lookup (std::string name);
+
+    void beginMethod ();
+    void endMethod ();
 
     int localTop ()
     {
@@ -116,6 +126,24 @@ class GenerationContext
 
     encPtr defClass (GlobalVarNode * classVar, std::string name,
                      std::list<std::string> iVars, size_t size);
+
+    /* returns fixLocation */
+    int pushBlock (int argCount, int tempLoc);
+    void popBlock (int fixLocation, int tempLoc);
+
+    void beginLiteralArray ();
+    void endLiteralArray ();
+
+    bool block ()
+    {
+        return inBlock;
+    }
+
+    void genCode (int value);
+    void genInstruction (int high, int low);
+    int genLiteral (objRef aLiteral);
+    void genInteger (int val);
+    void genMessage (bool isSuper, int argumentCount, std::string selector);
 };
 
 class ProgramNode;

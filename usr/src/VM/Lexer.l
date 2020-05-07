@@ -50,12 +50,20 @@ COMMENT \"(\\.|[^"])*\"
 
 "subclass:"                         { p(SUBCLASSCOLON); }
 
+["][^"]*["]                            { /* ignore comment */ }
+
+$[^ \t\n.()\[]                      { ps(CHAR); }
 #[^ \t\n.()\[]+                     { ps(SYMBOL); }
-[0-9]+                              { pi(INTEGER); }
-:(:?{LTR})(:?{LTR}|{DIGIT}|::)*     { ps(KEYWORD); }
+[0-9]+r-?[0-9A-Z]+(\.[0-9A-Z]+)?(e[-+]?[0-9]+)?     { /* pf(FLOAT) */ }
+[0-9]+                                              { pi(INTEGER); }
+[0-9]+(\.[0-9]+)?(e[-+]?[0-9]+)?                    { /* pf(FLOAT) */ }
+:(:?{LTR})(:?{LTR}|{DIGIT}|::)*     { ps(COLONVAR); }
 (:?{LTR})(:?{LTR}|{DIGIT}|::)*:     { ps(KEYWORD); }
 {IDENT}"."{IDENT}                   { ps(NAMESPACENAME); }
 (:?{LTR})(:?{LTR}|{DIGIT}|::)*      { ps(IDENTIFIER); }
+['][^']*[']                         { ps(STRING); }
+
+"<"[0-9]+                       { yyextra->parse(TOK_PRIMNUM, atoi(yytext + 1)); }
 
 "^"                             { p(UP); }
 "."                             { p(DOT); }
@@ -65,8 +73,11 @@ COMMENT \"(\\.|[^"])*\"
 ")"                             { p(RBRACKET); }
 "["                             { p(SQB_OPEN); }
 "]"                             { p(SQB_CLOSE); }
+"<"                             { p(LCARET); }
+">"                             { p(RCARET); }
+"#"                             { p(HASH); }
 
-[^ {LTR}]                       { ps(BINARY); }
+[^ \t{LTR}]                     { printf("GIVE BINARY %s\n", yytext); ps(BINARY); }
 
 
  /* ":="                            {//return(ASSIGN);}

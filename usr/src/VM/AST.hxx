@@ -41,6 +41,11 @@ struct VarNode : Node
 
     std::string name;
 
+    virtual int getIndex ()
+    {
+        throw;
+    }
+
     VarNode (Kind kind, std::string name) : kind (kind), name (name)
     {
     }
@@ -53,29 +58,44 @@ struct SpecialVarNode : VarNode
     }
 };
 
-struct LocalVarNode : VarNode
+struct IndexedVarNode : VarNode
+{
+    int index;
+
+    virtual int getIndex ()
+    {
+        return index;
+    }
+
+    IndexedVarNode (int index, Kind kind, std::string name)
+        : index (index), VarNode (kind, name)
+    {
+    }
+};
+
+struct LocalVarNode : IndexedVarNode
 {
     int index;
     LocalVarNode (int index, std::string name)
-        : index (index), VarNode (kLocal, name)
+        : IndexedVarNode (index, kLocal, name)
     {
     }
 };
 
-struct ArgumentVarNode : VarNode
+struct ArgumentVarNode : IndexedVarNode
 {
     int index;
     ArgumentVarNode (int index, std::string name)
-        : index (index), VarNode (kLocal, name)
+        : IndexedVarNode (index, kLocal, name)
     {
     }
 };
 
-struct InstanceVarNode : VarNode
+struct InstanceVarNode : IndexedVarNode
 {
     int index;
     InstanceVarNode (int idx, std::string name)
-        : VarNode (kInstance, name), index (idx)
+        : IndexedVarNode (idx, kInstance, name)
     {
     }
 };
@@ -126,15 +146,37 @@ struct BlockScope : NameScope
 
 struct ExprNode : Node
 {
+    virtual bool isSuper ()
+    {
+        return false;
+    }
+};
+
+struct PrimitiveExprNode : Node
+{
+    int num;
+    std::list<ExprNode *> args;
+
+    PrimitiveExprNode (int num, std::list<ExprNode *> args)
+        : num (num), args (args)
+    {
+    }
 };
 
 struct IdentExprNode : ExprNode
 {
     std::string id;
 
+    virtual bool isSuper ()
+    {
+        return id == "super";
+    }
+
     IdentExprNode (std::string id) : id (id)
     {
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
 
     void print (int in)
     {
@@ -185,6 +227,12 @@ struct MessageExprNode : ExprNode
         }
     }
 
+    virtual void generateInContext (GenerationContext * aContext)
+    {
+        generateInContext (aContext, false);
+    }
+    virtual void generateInContext (GenerationContext * aContext, bool cascade);
+
     void print (int in)
     {
         std::cout << blanks (in) << "<message>\n";
@@ -220,6 +268,8 @@ struct CascadeExprNode : ExprNode
             messages.push_back (m);
         }
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
 
     void print (int in)
     {
@@ -282,6 +332,11 @@ struct ExprStmtNode : StmtNode
 
     ExprStmtNode (ExprNode * e) : expr (e)
     {
+    }
+
+    virtual void generateInContext (GenerationContext * aContext)
+    {
+        expr->generateInContext (aContext);
     }
 
     virtual void print (int in)

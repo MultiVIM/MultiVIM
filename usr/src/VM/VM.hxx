@@ -524,4 +524,6 @@ extern bool parseOk;
 
 objRef primGetChunk (objRef arg[]);
 
+extern const char * glbsyms[];
+
 #endif

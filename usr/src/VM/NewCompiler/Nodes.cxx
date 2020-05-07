@@ -2,19 +2,103 @@
 #include <iostream>
 
 #include "../AST.hxx"
+#include "../Bytecode.hxx"
 #include "../VM.hxx"
+
+void IdentExprNode::generateInContext (GenerationContext * aContext)
+{
+    VarNode * var = aContext->lookup (id);
+
+    if ((var->name == "self") || (var->name == "super"))
+    {
+        aContext->genInstruction (PushArgument, 0);
+        return;
+    }
+
+    switch (var->kind)
+    {
+    case VarNode::kLocal:
+        aContext->genInstruction (PushTemporary, var->getIndex ());
+        return;
+
+    case VarNode::kArgument:
+        aContext->genInstruction (PushArgument, var->getIndex ());
+        return;
+
+    default:
+        for (int i = 0; glbsyms[i]; i++)
+            if (var->name == glbsyms[i])
+            {
+                printf ("generateglobal constant because %s\n", glbsyms[i]);
+                aContext->genInstruction (PushConstant, i + 4);
+                return;
+            }
+
+        /* not anything else, it must be a global */
+        /* must look it up at run time */
+        aContext->genInstruction (
+            PushLiteral,
+            aContext->genLiteral ((objRef)newSymbol (var->name.c_str ())));
+        aContext->genMessage (false, 0, "value");
+    }
+}
+
+void MessageExprNode::generateInContext (GenerationContext * aContext,
+                                         bool cascade)
+{
+    if (!cascade)
+        receiver->generateInContext (aContext);
+
+    for (auto a : args)
+        a->generateInContext (aContext);
+
+    aContext->genMessage (receiver->isSuper (), args.size (), selector);
+}
+
+void CascadeExprNode::generateInContext (GenerationContext * aContext)
+{
+    receiver->generateInContext (aContext);
+
+    messages.front ()->generateInContext (aContext, true);
+    printf ("First Message %s\n", (messages.front ())->selector.c_str ());
+
+    aContext->genInstruction (DoSpecial, Duplicate);
+
+    for (auto it = ++std::begin (messages); it != std::end (messages); it++)
+    {
+        printf ("Generate Message %s\n", (*it)->selector.c_str ());
+        (*it)->generateInContext (aContext, true);
+        aContext->genInstruction (DoSpecial, PopTop);
+        if (*it != messages.back ())
+            aContext->genInstruction (DoSpecial, Duplicate);
+    }
+}
 
 void BlockExprNode::generateInContext (GenerationContext * aContext)
 {
     int oldTop = aContext->localTop ();
     int i = oldTop;
+    int fixLoc;
+
+    printf ("BLOCK\n\n\n");
+    print (9);
 
     for (auto l : args)
     {
-        aContext->addLocal (i + 1, l);
+        printf ("add arg %d\n", i);
+        aContext->addLocal (i++, l);
     }
 
-    aContext->restoreOldTop (oldTop);
+    fixLoc = aContext->pushBlock (args.size (), oldTop);
+
+    for (auto & s : stmts)
+    {
+        s->generateInContext (aContext);
+        if (&s != &stmts.back ())
+            aContext->genInstruction (DoSpecial, PopTop);
+    }
+
+    aContext->popBlock (fixLoc, oldTop);
 }
 
 void MethodNode::print (int in)
@@ -48,6 +132,9 @@ void MethodNode::generateInContext (bool isClassMethod,
 {
     int index = 1;
     aContext->pushScope (new MethodScope);
+    aContext->beginMethod ();
+
+    printf ("METHOD GENERATING IN CONTEXT...\n\n");
 
     for (auto i : args)
         aContext->addArg (index++, i);
@@ -55,6 +142,19 @@ void MethodNode::generateInContext (bool isClassMethod,
     index = 1;
     for (auto i : locals)
         aContext->addLocal (index++, i);
+
+    for (auto & s : stmts)
+    {
+        s->generateInContext (aContext);
+        if (&s != &stmts.back ())
+            aContext->genInstruction (DoSpecial, PopTop);
+    }
+
+    aContext->genInstruction (DoSpecial, PopTop);
+    aContext->genInstruction (DoSpecial, SelfReturn);
+
+    aContext->endMethod ();
+    aContext->popScope ();
 }
 
 void ClassNode::print (int in)

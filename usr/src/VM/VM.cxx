@@ -2716,6 +2716,7 @@ void goDoIt (char * text)
     orefOfPut (stack, 6, (objRef)encValueOf (1)); /* byte offset */
 
     /* now go execute it */
+    printf ("BEGIN ACTUAL EXECUTION\n");
     while (execute (process, 1 << 14))
         fprintf (stderr, ".");
 
@@ -2746,12 +2747,15 @@ int main_1 (int argc, char * argv[])
         //(void) sprintf(methbuf,
         //	   "goDoIt <120 1 '%s' 'r'>. <123 1>. <121 1>",
         //	   argv[i]);
+        ProgramNode * aNode = MVST_Parser::parseFile (argv[i]);
+        if (aNode)
+            aNode->generateInContext (&ctx);
+        printf ("\n\nDONE MINE\n\n");
         /*methbuf[0] = 0;
         strcat (methbuf, "goDoIt <120 1 '");
         strcat (methbuf, argv[i]);
         strcat (methbuf, "' 'r'>. <123 1>. <121 1>");
         goDoIt (methbuf);*/
-        MVST_Parser::parseFile (argv[i])->generateInContext (&ctx);
     }
 
     /* when we are all done looking at the arguments, do initialization */

@@ -11,6 +11,7 @@
 
     #include "VM/NewCompiler.h"
 	#include "VM/AST.hxx"
+	#include "Compiler/AST/LiteralExpr.hxx"
 	#include "Parser.tab.h"
 	#include "Lexer.l.h"
 
@@ -143,8 +144,8 @@ decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
 %type oIvarDefs { std::list<std::string> }
 %type lIvar { std::list<std::string> }
 
-oIvarDefs(L) ::= BAR lIvar(l) BAR. { L = l; }
 oIvarDefs ::= .
+oIvarDefs(L) ::= BAR lIvar(l) BAR. { L = l; }
 
 lIvar(L) ::= IDENTIFIER(i). { L = {i}; }
 lIvar(L) ::= lIvar(l) IDENTIFIER(i).
@@ -270,9 +271,61 @@ unary(U) ::= primary(p) identifier(i). { U  = new MessageExprNode(p, i); }
 primary(S) ::= identifier(i). { S = new IdentExprNode (i); }
 primary(S) ::= LBRACKET sExpression(s) RBRACKET. { S = s; }
 primary ::= block.
-primary ::= SYMBOL.
-primary ::= INTEGER.
-block ::= SQB_OPEN oBlockVarList statementList SQB_CLOSE.
+primary ::= literal.
+primary ::= PRIMNUM(n) lPrimary(l) RCARET.
+
+%type lprimary { std::list<ExprNode *> }
+
+lPrimary ::= primary.
+lPrimary ::= lPrimary primary.
+
+%type literal { ExprNode * }
+%type aLiteral { ExprNode * }
+%type iLiteral { ExprNode * }
+
+literal ::= HASH LBRACKET oLALiteral RBRACKET.
+literal ::= iLiteral.
+
+%type lALiteral { std::list<ExprNode *> }
+%type oLALiteral { std::list<ExprNode *> }
+
+oLALiteral ::= .
+oLALiteral ::= lALiteral.
+
+lALiteral ::= aLiteral.
+lALiteral ::= lALiteral aLiteral.
+
+aLiteral ::= iLiteral.
+aLiteral ::= identifier.
+aLiteral ::= keyword.
+aLiteral(A) ::= ias oLALiteral(a) RBRACKET. { A = new ArrayExprNode(a); }
+
+ias ::= HASH LBRACKET.
+ias ::= LBRACKET.
+
+iLiteral(S) ::= STRING(s).
+	{
+		S = new StringExprNode(s);
+	}
+iLiteral(S) ::= SYMBOL(s).
+	{
+		S = new SymbolExprNode(s);
+	}
+iLiteral(S) ::= INTEGER(i).
+	{
+		S = new IntExprNode(i.intValue);
+	}
+iLiteral(S) ::= CHAR(c).
+	{
+		S = new CharExprNode(c);
+	}
+
+%type block { BlockExprNode * }
+
+block(B) ::= SQB_OPEN oBlockVarList(v) statementList(s) SQB_CLOSE.
+	{
+		B = new BlockExprNode(v, s);
+	}
 
 %type oBlockVarList { std::list<std::string> }
 %type colonVarList { std::list<std::string> }
@@ -280,11 +333,25 @@ block ::= SQB_OPEN oBlockVarList statementList SQB_CLOSE.
 oBlockVarList(L) ::= colonVarList(l) BAR. { L = l; }
 oBlockVarList ::= .
 
-colonVarList(L) ::= COLONVAR(v). { L = {v}; } 
+colonVarList(L) ::= COLONVAR(v). 
+	{
+		std::string s = v;
+		s.erase(s.begin());
+std::cout << "add var " << s << "aka" << v << std::endl;
+std::cout << "add var " << s << "aka" << v << std::endl;
+
+std::cout << "add var " << s << "aka" << v << std::endl;
+
+std::cout << "add var "<< s << "aka" << v << std::endl;
+
+		L = {s};
+	} 
 colonVarList(L) ::= colonVarList(l) COLONVAR(v).
 	{
 		L = l;
-		L.push_back(v);
+		std::string s = v;
+		s.erase(s.begin());
+		L.push_back(s);
 	}
 
 %type sel_decl { std::pair<std::string, std::list<std::string>> }
@@ -326,4 +393,12 @@ binary_decl(B) ::= binOp(b) identifier(s). {
 identifier(I) ::= IDENTIFIER(i). { I = i; }
 identifier(I) ::= NAMESPACENAME(i). { I = i; }
 keyword(K) ::= KEYWORD(k). { K = k ;}
-binOp(B) ::= BINARY(b). { B = b; }
+
+%type binOp { std::string }
+%type binChar { std::string }
+
+binOp(B) ::= binChar(c). { B = c; }
+binOp(B) ::= binOp(b) binChar(c). { B = b; b += c; }
+
+binChar(B) ::= BINARY(b). { B = b.stringValue; }
+binChar(B) ::= LCARET. { B = std::string("<"); }
