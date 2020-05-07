@@ -15,6 +15,9 @@ typedef unsigned int word;
 
 typedef union objRef objRef;
 
+void sysWarn (const char * s1, const char * s2);
+void compilWarn (const char * selector, const char * str1, const char * str2);
+void compilError (const char * selector, const char * str1, const char * str2);
 void sysError (const char *, const char *);
 
 /*
@@ -132,8 +135,7 @@ both.  N.B.:  This kind of overlay definition would be safer and easier
 both to specify and to use if compilers would pack a 1-bit flag and a
 <wordSize-1>-bit union (resp. field) into a <wordSize>-bit struct.
 */
-union objRef
-{
+union objRef {
     encVal val;
     encPtr ptr;
 };
@@ -498,5 +500,28 @@ __INLINE__ encPtr getClass (objRef obj)
     }
     return (classOf (obj.ptr));
 }
+
+/**
+ * Finds the class associated with the name. If no such class exists, creates
+ * it.
+ */
+encPtr findClass (const char * name);
+
+/**
+ * Sets up the instanceName[] array with each instance variable name of /a
+ * aClass and its superclasses, starting with its highest superclass.
+ */
+void setInstanceVariables (encPtr aClass);
+
+/**
+ * Parses the method quoted in /p text and stores the output into the Method
+ * object /p method. If /p saveText is true, also stores the source text into
+ * the compiled Method object.
+ */
+bool parse (encPtr method, char * text, bool saveText);
+
+extern bool parseOk;
+
+objRef primGetChunk (objRef arg[]);
 
 #endif

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "VMMemory.hxx"
+#include "VM.hxx"
 
 #define streq(a, b) (strcmp (a, b) == 0)
 
@@ -632,4 +632,18 @@ encPtr newSymbol (const char * str)
     classOfPut (newObj, symbolClass);
     nameTableInsert (symbols, strHash (str), newObj, nilObj);
     return newObj;
+}
+
+encPtr findClass (const char * name)
+{
+    encPtr newobj;
+
+    newobj = globalValue (name);
+    if (ptrEq ((objRef)newobj, (objRef)nilObj))
+        newobj = newClass (name);
+    if (ptrEq (orefOf (newobj, sizeInClass), (objRef)nilObj))
+    {
+        orefOfPut (newobj, sizeInClass, (objRef)encValueOf (0));
+    }
+    return newobj;
 }
