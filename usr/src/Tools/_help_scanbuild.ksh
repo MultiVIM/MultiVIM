@@ -1,0 +1,1 @@
+env OBJC=$CC OBJCXX=$CXX $@

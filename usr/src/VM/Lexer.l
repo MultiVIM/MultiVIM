@@ -31,6 +31,7 @@
 #define p(x) yyextra->parse(TOK_##x)
 #define ps(x) yyextra->parse(TOK_##x, yytext)
 #define pi(x) yyextra->parse(TOK_##x, atoi(yytext))
+#define pf(x) yyextra->parse(TOK_##x, atof(yytext))
 
 %}
 
@@ -47,16 +48,19 @@ COMMENT \"(\\.|[^"])*\"
 
 ":="                                { p(ASSIGN); }
 "<-"                                { p(ASSIGN); }
+"@include"                          { p(ATinclude); }
 
+"class>>"                           { p(CLASSRR); }
 "subclass:"                         { p(SUBCLASSCOLON); }
 
 ["][^"]*["]                            { /* ignore comment */ }
 
 $[^ \t\n.()\[]                      { ps(CHAR); }
 #[^ \t\n.()\[]+                     { ps(SYMBOL); }
-[0-9]+r-?[0-9A-Z]+(\.[0-9A-Z]+)?(e[-+]?[0-9]+)?     { /* pf(FLOAT) */ }
+[0-9]+r-?[0-9A-Z]+(\.[0-9A-Z]+)?(e[-+]?[0-9]+)?     {  pf(FLOAT); }
+-[0-9]+                                             { pi(INTEGER); }
 [0-9]+                                              { pi(INTEGER); }
-[0-9]+(\.[0-9]+)?(e[-+]?[0-9]+)?                    { /* pf(FLOAT) */ }
+[0-9]+(\.[0-9]+)?(e[-+]?[0-9]+)?                    {  pf(FLOAT);  }
 :(:?{LTR})(:?{LTR}|{DIGIT}|::)*     { ps(COLONVAR); }
 (:?{LTR})(:?{LTR}|{DIGIT}|::)*:     { ps(KEYWORD); }
 {IDENT}"."{IDENT}                   { ps(NAMESPACENAME); }
@@ -77,8 +81,8 @@ $[^ \t\n.()\[]                      { ps(CHAR); }
 ">"                             { p(RCARET); }
 "#"                             { p(HASH); }
 
-[^ \t{LTR}]                     { printf("GIVE BINARY %s\n", yytext); ps(BINARY); }
-
+[^ \t{LTR}]                     { ps(BINARY); }
+[ \t\n]
 
  /* ":="                            {//return(ASSIGN);}
 "<-"                            {//return(ASSIGN);}

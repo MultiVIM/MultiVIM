@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -605,7 +606,7 @@ encPtr newMethod (void)
     return newObj;
 }
 
-encPtr newString (char * value)
+encPtr newString (const char * value)
 {
     encPtr newObj;
 
@@ -640,7 +641,10 @@ encPtr findClass (const char * name)
 
     newobj = globalValue (name);
     if (ptrEq ((objRef)newobj, (objRef)nilObj))
+    {
+        printf ("Failed to find class %s - creating new\n", name);
         newobj = newClass (name);
+    }
     if (ptrEq (orefOf (newobj, sizeInClass), (objRef)nilObj))
     {
         orefOfPut (newobj, sizeInClass, (objRef)encValueOf (0));

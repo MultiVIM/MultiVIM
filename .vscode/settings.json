@@ -1,0 +1,9 @@
+{
+    "cmake.configureOnOpen": true,
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+    "files.associations": {
+        "*.y": "lemon"
+    },
+    "restructuredtext.confPath": "${workspaceFolder}/doc/Manual",
+    "cmake.sourceDirectory": "${workspaceFolder}/usr/src/"
+}

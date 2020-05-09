@@ -1,25 +1,42 @@
 Object subclass: Boolean [
 
-	and: aBlock [
-		^ self ifTrue: aBlock ifFalse: [ false ]
-	]
+and: aBlock [
+  ^ self
+    ifTrue: [ aBlock value ]
+    ifFalse: [ false ]
+]
 
-	ifFalse: falseBlock [
-		^ self ifTrue: [] ifFalse: falseBlock
-	]
+or: aBlock [
+  ^ self ifTrue: [ true ] ifFalse: [ aBlock value ]
+]
 
-	ifFalse: falseBlock ifTrue: trueBlock [
-		^ self ifTrue: trueBlock
-			ifFalse: falseBlock
-	]
+| aBool [
+  ^ self ifTrue: [ true ] ifFalse: [ aBool ]
+]
 
-	ifTrue: trueBlock [
-		^ self ifTrue: trueBlock ifFalse: []
-	]
+& aBool [
+  ^ self ifTrue: [ aBool ] ifFalse: [ false ]
+]
 
-	or: aBlock [
-		^ self ifTrue: [ true ] ifFalse: aBlock
-	]
+not [
+  ^ self ifTrue: [ false ] ifFalse: [ true ]
+]
+
+ifFalse: falseBlock ifTrue: trueBlock [
+  ^ self ifTrue: [ trueBlock  value ] ifFalse: [ falseBlock value ]
+]
+
+ifTrue: trueBlock ifFalse: falseBlock [
+  ^ self ifTrue: [ trueBlock  value ] ifFalse: [ falseBlock value ]
+]
+
+ifTrue: aBlock [
+  ^ self ifTrue: [ aBlock value ] ifFalse: [ false ]
+]
+
+ifFalse: aBlock [
+  ^ self ifTrue: [ true ] ifFalse: [ aBlock value ]
+]
 
 
 ]

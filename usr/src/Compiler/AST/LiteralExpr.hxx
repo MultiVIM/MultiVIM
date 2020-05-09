@@ -12,6 +12,8 @@ struct CharExprNode : ExprNode
     CharExprNode (std::string aChar) : khar (aChar)
     {
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
 };
 
 /* Symbol literal */
@@ -22,6 +24,8 @@ struct SymbolExprNode : ExprNode
     SymbolExprNode (std::string aSymbol) : sym (aSymbol)
     {
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
 };
 
 /* Integer literal */
@@ -32,6 +36,8 @@ struct IntExprNode : ExprNode
     IntExprNode (int aNum) : num (aNum)
     {
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
 };
 
 /* String literal */
@@ -42,6 +48,20 @@ struct StringExprNode : LiteralExprNode
     StringExprNode (std::string aString) : str (aString)
     {
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
+};
+
+/* Integer literal */
+struct FloatExprNode : ExprNode
+{
+    double num;
+
+    FloatExprNode (double aNum) : num (aNum)
+    {
+    }
+
+    virtual void generateInContext (GenerationContext * aContext);
 };
 
 struct ArrayExprNode : LiteralExprNode
@@ -51,4 +71,6 @@ struct ArrayExprNode : LiteralExprNode
     ArrayExprNode (std::list<ExprNode *> exprs) : elements (exprs)
     {
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
 };

@@ -51,6 +51,9 @@ struct Token
     Token (const Token &) = default;
     Token (Token &&) = default;
 
+    Token (double f) : floatValue (f)
+    {
+    }
     Token (int i) : intValue (i)
     {
     }
@@ -72,7 +75,12 @@ struct Token
     {
         return stringValue.c_str ();
     }
+    operator double () const
+    {
+        return floatValue;
+    }
 
+    double floatValue = 0.0;
     int intValue = 0;
     std::string stringValue;
 };
@@ -94,12 +102,12 @@ class GenerationContext
      * here. After completing array generation the new literals added are
      * converted into an array. */
     std::stack<std::vector<objRef>> literalArrayStack;
-    int inBlock;
+    int blockDepth;
     int highestLocal;
     CompiledMethod meth;
 
   public:
-    GenerationContext () : highestLocal (0), inBlock (0)
+    GenerationContext () : highestLocal (0), blockDepth (0)
     {
     }
 
@@ -113,31 +121,50 @@ class GenerationContext
     VarNode * lookup (std::string name);
 
     void beginMethod ();
-    void endMethod ();
+    /* code, literals */
+    std::pair<std::vector<byte>, std::vector<objRef>> endMethod ();
 
     int localTop ()
     {
         return highestLocal;
     }
 
+    int codeTop()
+    {
+        return meth.code.size();
+    }
+
+    void setCodeTo(int index, int val)
+    {
+        meth.code[index] = val;
+    }
+
     void restoreOldTop (int oldTop);
 
     void generateClasses ();
 
+    /* What are we doing here? Do we want to keep this state in this big class
+     * or make new ClassBuilders and whatever else we need instead? */
     encPtr defClass (GlobalVarNode * classVar, std::string name,
                      std::list<std::string> iVars, size_t size);
 
+    void addMethodToClass (encPtr aClass, encPtr aMethod);
+    void addMethodToMetaclassOf (encPtr aClass, encPtr aMethod);
+
     /* returns fixLocation */
     int pushBlock (int argCount, int tempLoc);
+    bool inBlock ()
+    {
+        return blockDepth;
+    }
     void popBlock (int fixLocation, int tempLoc);
 
     void beginLiteralArray ();
-    void endLiteralArray ();
-
-    bool block ()
+    bool inLiteralArray ()
     {
-        return inBlock;
+        return literalArrayStack.size () > 1;
     }
+    int endLiteralArray ();
 
     void genCode (int value);
     void genInstruction (int high, int low);
@@ -152,6 +179,7 @@ class MVST_Parser : public lemon_base<Token>
 {
   protected:
     std::string fName;
+    std::string path;
     std::string & fText;
     ProgramNode * program;
     int m_line = 0, m_col = 0, m_pos = 0;

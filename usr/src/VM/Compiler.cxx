@@ -763,41 +763,41 @@ bool keyContinuation (bool superReceiver)
     superReceiver = binaryContinuation (superReceiver);
     if (token == namecolon)
     {
-        if (streq (tokenString, "ifTrue:"))
-        {
-            i = optimizeBlock (BranchIfFalse, false);
-            if (streq (tokenString, "ifFalse:"))
-            {
-                codeArray[i] = codeTop + 3;
-                (void)optimizeBlock (Branch, true);
-            }
-        }
-        else if (streq (tokenString, "ifFalse:"))
-        {
-            i = optimizeBlock (BranchIfTrue, false);
-            if (streq (tokenString, "ifTrue:"))
-            {
-                codeArray[i] = codeTop + 3;
-                (void)optimizeBlock (Branch, true);
-            }
-        }
-        else if (streq (tokenString, "whileTrue:"))
-        {
-            j = codeTop;
-            genInstruction (DoSpecial, Duplicate);
-            genMessage (false, 0, newSymbol ("value"));
-            i = optimizeBlock (BranchIfFalse, false);
-            genInstruction (DoSpecial, PopTop);
-            genInstruction (DoSpecial, Branch);
-            genCode (j + 1);
-            codeArray[i] = codeTop + 1;
-            genInstruction (DoSpecial, PopTop);
-        }
-        else if (streq (tokenString, "and:"))
-            (void)optimizeBlock (AndBranch, false);
-        else if (streq (tokenString, "or:"))
-            (void)optimizeBlock (OrBranch, false);
-        else
+        /*       if (streq (tokenString, "ifTrue:"))
+               {
+                   i = optimizeBlock (BranchIfFalse, false);
+                   if (streq (tokenString, "ifFalse:"))
+                   {
+                       codeArray[i] = codeTop + 3;
+                       (void)optimizeBlock (Branch, true);
+                   }
+               }
+               else if (streq (tokenString, "ifFalse:"))
+               {
+                   i = optimizeBlock (BranchIfTrue, false);
+                   if (streq (tokenString, "ifTrue:"))
+                   {
+                       codeArray[i] = codeTop + 3;
+                       (void)optimizeBlock (Branch, true);
+                   }
+               }
+               else if (streq (tokenString, "whileTrue:"))
+               {
+                   j = codeTop;
+                   genInstruction (DoSpecial, Duplicate);
+                   genMessage (false, 0, newSymbol ("value"));
+                   i = optimizeBlock (BranchIfFalse, false);
+                   genInstruction (DoSpecial, PopTop);
+                   genInstruction (DoSpecial, Branch);
+                   genCode (j + 1);
+                   codeArray[i] = codeTop + 1;
+                   genInstruction (DoSpecial, PopTop);
+               }
+               else if (streq (tokenString, "and:"))
+                   (void)optimizeBlock (AndBranch, false);
+               else if (streq (tokenString, "or:"))
+                   (void)optimizeBlock (OrBranch, false);
+               else*/
         {
             pattern[0] = '\0';
             argumentCount = 0;
@@ -1246,10 +1246,14 @@ void coldMethods (encVal tagRef)
         theMethod = newMethod ();
         if (parse (theMethod, (char *)vonNeumannSpaceOf (strRef), true))
         {
+
             orefOfPut (theMethod, methodClassInMethod, (objRef)classObj);
             selector = orefOf (theMethod, messageInMethod).ptr;
             nameTableInsert (
                 methTable, oteIndexOf (selector), selector, theMethod);
+            printf ("Added method %s to class %s\n",
+                    vonNeumannSpaceOf (orefOf (classObj, nameInClass).ptr),
+                    vonNeumannSpaceOf (selector));
         }
         else
         {

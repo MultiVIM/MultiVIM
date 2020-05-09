@@ -6,13 +6,12 @@
 GlobalVarNode * NameScope::addClass (ClassNode * aClass)
 {
     auto cls = new GlobalVarNode (aClass);
-    vars[aClass->name] = cls;
+    vars.insert ({aClass->name, cls});
     return cls;
 }
 
 void NameScope::addLocal (int idx, std::string name)
 {
-    printf ("Add local %s\n", name.c_str ());
     vars[name] = new LocalVarNode (idx, name);
 }
 void NameScope::addArg (int idx, std::string name)
@@ -22,21 +21,32 @@ void NameScope::addArg (int idx, std::string name)
 
 void NameScope::addIvar (int idx, std::string name)
 {
+    printf ("Namescope add ivar %d id %s\n", idx, name.c_str ());
     vars[name] = new InstanceVarNode (idx, name);
 }
 
 VarNode * NameScope::lookup (std::string aName)
 {
-    return vars[aName];
+    if (vars.find (aName) != vars.end ())
+        return vars[aName];
+    else
+        return nullptr;
 }
 
 void NameScope::removeLocalsAbove (int i)
 {
+    std::list<std::map<std::string, VarNode *>::const_iterator> itrs;
+
     for (auto it = std::begin (vars); it != std::end (vars); it++)
     {
         LocalVarNode * local = dynamic_cast<LocalVarNode *> (it->second);
         if (local && local->getIndex () > i)
-            vars.erase (it);
+            itrs.push_back (it);
+    }
+
+    for (auto it : itrs)
+    {
+        vars.erase (it);
     }
 }
 
@@ -94,9 +104,19 @@ void GenerationContext::beginMethod ()
 {
     literalArrayStack.emplace ();
 }
-void GenerationContext::endMethod ()
+
+std::pair<std::vector<byte>, std::vector<objRef>>
+GenerationContext::endMethod ()
 {
+    std::vector<byte> oldCode = meth.code;
+    std::vector<objRef> lits = literalArrayStack.top ();
+
+    printf ("OldCode: %d\n", oldCode.size ());
+    meth.code.clear ();
+    printf ("NowCode: %d\n", oldCode.size ());
+
     literalArrayStack.pop ();
+    return {oldCode, lits};
 }
 
 void GenerationContext::restoreOldTop (int oldTop)
@@ -151,7 +171,35 @@ encPtr GenerationContext::defClass (GlobalVarNode * classVar, std::string name,
     }
     orefOfPut (classObj, sizeInClass, (objRef)encValueOf (size));
 
+    classVar->classObj = classObj;
+
     return classObj;
+}
+
+void GenerationContext::addMethodToClass (encPtr aClass, encPtr aMethod)
+{
+    /* now find or create a method table */
+    encPtr methTable = orefOf (aClass, methodsInClass).ptr;
+    encPtr selector;
+    if (ptrEq ((objRef)methTable, (objRef)nilObj))
+    { /* must make */
+        methTable = newDictionary (MethodTableSize);
+        orefOfPut (aClass, methodsInClass, (objRef)methTable);
+    }
+
+    orefOfPut (aMethod, methodClassInMethod, (objRef)aClass);
+    selector = orefOf (aMethod, messageInMethod).ptr;
+    nameTableInsert (methTable, oteIndexOf (selector), selector, aMethod);
+
+    /*  printf ("Added method %s to class %s\n",
+              vonNeumannSpaceOf (orefOf (aClass, nameInClass).ptr),
+              vonNeumannSpaceOf (selector));*/
+}
+
+void GenerationContext::addMethodToMetaclassOf (encPtr aClass, encPtr aMethod)
+{
+    printf ("Add Method to Metaclass...\n");
+    addMethodToClass (classOf (aClass), aMethod);
 }
 
 int GenerationContext::pushBlock (int argCount, int tempLoc)
@@ -161,7 +209,7 @@ int GenerationContext::pushBlock (int argCount, int tempLoc)
     orefOfPut (newBlk, argumentCountInBlock, (objRef)encValueOf (argCount));
     orefOfPut (newBlk,
                argumentLocationInBlock,
-               (objRef)encValueOf (tempLoc /* FIXME: + 1 */));
+               (objRef)encValueOf (tempLoc + 1 /* FIXME: + 1 */));
     genInstruction (PushLiteral, genLiteral ((objRef)newBlk));
     genInstruction (PushConstant, contextConst);
     genInstruction (DoPrimitive, 2);
@@ -172,9 +220,9 @@ int GenerationContext::pushBlock (int argCount, int tempLoc)
     /*genInstruction(DoSpecial, PopTop); */
     orefOfPut (newBlk,
                bytecountPositionInBlock,
-               (objRef)encValueOf (meth.code.size () /* FIXME: + 1*/));
+               (objRef)encValueOf (meth.code.size () + 1 /* FIXME: + 1*/));
 
-    inBlock++;
+    blockDepth++;
     return fixLoc;
 }
 
@@ -183,7 +231,7 @@ void GenerationContext::popBlock (int fixLocation, int tempLoc)
     genInstruction (DoSpecial, StackReturn);
     meth.code[fixLocation] = meth.code.size ();
     restoreOldTop (tempLoc);
-    inBlock--;
+    blockDepth--;
 }
 
 void GenerationContext::beginLiteralArray ()
@@ -191,7 +239,7 @@ void GenerationContext::beginLiteralArray ()
     literalArrayStack.emplace ();
 }
 
-void GenerationContext::endLiteralArray ()
+int GenerationContext::endLiteralArray ()
 {
     int numLit, size;
     std::vector<objRef> literalArray = literalArrayStack.top ();
@@ -208,8 +256,7 @@ void GenerationContext::endLiteralArray ()
 
     numLit = genLiteral ((objRef)newLit);
 
-    if (literalArrayStack.size () > 1)
-        genInstruction (PushLiteral, numLit);
+    return numLit;
 }
 
 void GenerationContext::genCode (int value)
@@ -236,6 +283,9 @@ void GenerationContext::genInstruction (int high, int low)
 
 int GenerationContext::genLiteral (objRef aLiteral)
 {
+    /*printf ("(gen-literal newnum: %d objRef: %p\n",
+            literalArrayStack.top ().size (),
+            aLiteral);*/
     //   if (literalTop >= literalLimit)
     //   compilError (selector, "too many literals in method", "");
     // else
@@ -269,6 +319,8 @@ void GenerationContext::genMessage (bool toSuper, int argumentCount,
         for (i = 0; (!sent) && ptrNe ((objRef)unSyms[i], (objRef)nilObj); i++)
             if (ptrEq ((objRef)messagesym, (objRef)unSyms[i]))
             {
+                printf ("Generate unary send for message %s\n",
+                        selector.c_str ());
                 genInstruction (SendUnary, i);
                 sent = true;
             }

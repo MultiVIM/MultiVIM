@@ -1,19 +1,44 @@
 Boolean subclass: False [
 
-	ifTrue: trueBlock ifFalse: falseBlock [
-		^ falseBlock value
+	class>>new [
+	"there is only one false value"
+	^ false
 	]
 
 	not [
-		^ true
+	^ true
+	]
+
+	asString [
+	^ 'false'
 	]
 
 	printString [
-		^ 'false'
+	^ 'false'
 	]
 
-	xor: aBoolean [
-		^ aBoolean
+	ifTrue: trueBlock ifFalse: falseBlock [
+	^ falseBlock value
+	]
+
+	ifFalse: falseBlock ifTrue: trueBlock [
+	^ falseBlock value
+	]
+
+	or: aBlock [
+	^ aBlock value
+	]
+
+	and: aBlock [
+	^ false
+	]
+
+	| aBool [
+	^ aBool
+	]
+
+	& aBool [
+	^ false
 	]
 
 ]

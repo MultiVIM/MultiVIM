@@ -298,6 +298,7 @@ __INLINE__ encPtr classOf (encPtr x)
 
 __INLINE__ void classOfPut (encPtr x, encPtr v)
 {
+//    printf ("Requested CLASSOFPUT %d to %d\n", x.dat, v.dat);
 #if 0
   assert(isIndex(v));
 #endif
@@ -322,13 +323,14 @@ __INLINE__ objRef orefOf (encPtr x, word n)
 }
 
 /**
- * Set the value of this object's nth object reference slot. 1-based indexing.
+ * Set the value of the \p nth object reference slot of \p x to \p v.
+ * 1-based indexing.
  */
-__INLINE__ void orefOfPut (encPtr x, word i, objRef v)
+__INLINE__ void orefOfPut (encPtr x, word n, objRef v)
 {
     if (isIndex (v))
         isVolatilePut (v.ptr, false);
-    ((objRef *)objTbl[oteIndexOf (x)].vnspc)[i - 1] = v;
+    ((objRef *)objTbl[oteIndexOf (x)].vnspc)[n - 1] = v;
 }
 
 /**
@@ -475,7 +477,7 @@ encPtr newDictionary (int size);
 encPtr newFloat (double d);
 encPtr newLink (encPtr key, encPtr value);
 encPtr newMethod (void);
-encPtr newString (char * value);
+encPtr newString (const char * value);
 encPtr newSymbol (const char * str);
 
 encPtr nameTableLookup (encPtr dict, const char * str);

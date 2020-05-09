@@ -18,12 +18,13 @@ struct Node
 {
     virtual void generateInContext (GenerationContext * aContext)
     {
-        std::cout << "CAN'T GENERATE\n";
+        std::cout << "CAN'T GENERATE " << typeid (*this).name () << "\n";
     }
 
     virtual void print (int in)
     {
-        std::cout << blanks (in) << "<undefinednode />";
+        std::cout << blanks (in) << "<undefinednode" << typeid (*this).name ()
+                  << "/>";
     }
 };
 
@@ -86,7 +87,7 @@ struct ArgumentVarNode : IndexedVarNode
 {
     int index;
     ArgumentVarNode (int index, std::string name)
-        : IndexedVarNode (index, kLocal, name)
+        : IndexedVarNode (index, kArgument, name)
     {
     }
 };
@@ -146,21 +147,39 @@ struct BlockScope : NameScope
 
 struct ExprNode : Node
 {
+
+    virtual int generateOptimized (GenerationContext * aContext,
+                                   int instruction, bool doPop);
+
     virtual bool isSuper ()
     {
         return false;
     }
 };
 
-struct PrimitiveExprNode : Node
+struct PrimitiveExprNode : ExprNode
 {
     int num;
-    std::list<ExprNode *> args;
+    std::vector<ExprNode *> args;
 
-    PrimitiveExprNode (int num, std::list<ExprNode *> args)
+    PrimitiveExprNode (int num, std::vector<ExprNode *> args)
         : num (num), args (args)
     {
     }
+
+    void print (int in)
+    {
+        std::cout << blanks (in) << "<prim:" << num << ">\n";
+        for (auto a : args)
+        {
+            std::cout << blanks (in + 1) << "<arg>\n";
+            a->print (in + 2);
+            std::cout << blanks (in + 1) << "</arg>\n";
+        }
+        std::cout << blanks (in) << "</prim>\n";
+    }
+
+    virtual void generateInContext (GenerationContext * aContext);
 };
 
 struct IdentExprNode : ExprNode
@@ -177,6 +196,8 @@ struct IdentExprNode : ExprNode
     }
 
     virtual void generateInContext (GenerationContext * aContext);
+    virtual void generateAssignInContext (GenerationContext * aContext,
+                                          ExprNode * rValue);
 
     void print (int in)
     {
@@ -186,17 +207,19 @@ struct IdentExprNode : ExprNode
 
 struct AssignExprNode : ExprNode
 {
-    std::string left;
+    IdentExprNode * left;
     ExprNode * right;
 
-    AssignExprNode (std::string l, ExprNode * r) : left (l), right (r)
+    AssignExprNode (IdentExprNode * l, ExprNode * r) : left (l), right (r)
     {
     }
+
+    virtual void generateInContext (GenerationContext * aContext);
 
     void print (int in)
     {
         std::cout << blanks (in) << "<assign>\n";
-        std::cout << blanks (in + 1) << "<left: " << left << ">\n";
+        std::cout << blanks (in + 1) << "<left: " << left->id << ">\n";
         std::cout << blanks (in + 1) << "<right>\n";
         right->print (in + 2);
         std::cout << blanks (in + 1) << "</right>\n";
@@ -208,10 +231,10 @@ struct MessageExprNode : ExprNode
 {
     ExprNode * receiver;
     std::string selector;
-    std::list<ExprNode *> args;
+    std::vector<ExprNode *> args;
 
     MessageExprNode (ExprNode * receiver, std::string selector,
-                     std::list<ExprNode *> args = {})
+                     std::vector<ExprNode *> args = {})
         : receiver (receiver), selector (selector), args (args)
     {
     }
@@ -355,6 +378,8 @@ struct ReturnStmtNode : StmtNode
     {
     }
 
+    virtual void generateInContext (GenerationContext * aContext);
+
     virtual void print (int in)
     {
         std::cout << blanks (in) << "<returnstmt> ";
@@ -369,19 +394,22 @@ struct DeclNode : Node
 
 struct MethodNode : DeclNode
 {
+    bool isClassMethod;
     std::string sel;
     std::list<std::string> args;
     std::list<std::string> locals;
     std::list<StmtNode *> stmts;
 
-    MethodNode (std::string sel, std::list<std::string> args,
-                std::list<std::string> locals, std::list<StmtNode *> stmts)
-        : sel (sel), args (args), locals (locals), stmts (stmts)
+    MethodNode (bool isClassMethod, std::string sel,
+                std::list<std::string> args, std::list<std::string> locals,
+                std::list<StmtNode *> stmts)
+        : isClassMethod (isClassMethod), sel (sel), args (args),
+          locals (locals), stmts (stmts)
     {
     }
 
-    virtual void generateInContext (bool isClassMethod,
-                                    GenerationContext * aContext);
+    virtual encPtr generateInContext (bool isClassMethod,
+                                      GenerationContext * aContext);
 
     void print (int in);
 };
@@ -413,7 +441,7 @@ struct ProgramNode : DeclNode
     std::list<ClassNode *> classes;
 
     void addClass (ClassNode * aClass);
-
+    void mergeProgram (ProgramNode * aNode);
     virtual void generateInContext (GenerationContext * aContext);
 
     void print (int in);

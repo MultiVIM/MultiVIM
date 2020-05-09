@@ -1,0 +1,3 @@
+[submodule "usr/closed/fltk"]
+	path = usr/closed/fltk
+	url = https://github.com/fltk/fltk.git

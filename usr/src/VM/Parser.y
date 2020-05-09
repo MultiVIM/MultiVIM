@@ -8,6 +8,7 @@
 	#include <iostream>
 	#include <fstream>
 	#include <list>
+	#include <filesystem>
 
     #include "VM/NewCompiler.h"
 	#include "VM/AST.hxx"
@@ -16,19 +17,28 @@
 	#include "Lexer.l.h"
 
     #define LEMON_SUPER MVST_Parser
+
+	static std::string removeFirstChar (std::string aString)
+	{
+		return aString.substr(1, aString.size() - 1);
+	}
+
+	static std::string removeFirstAndLastChar(std::string aString)
+	{
+		return aString.substr(1, aString.size() - 2);
+	}
 }
 
 %token_type    {Token}
 %token_prefix  TOK_
 
 %code {
-
 ProgramNode * MVST_Parser::parseFile (std::string fName)
 {
     MVST_Parser *parser;
     std::string src;
     std::ifstream f;
-
+	std::filesystem::path fPath(fName);
     yyscan_t scanner;
     YY_BUFFER_STATE yyb;
 
@@ -53,14 +63,15 @@ ProgramNode * MVST_Parser::parseFile (std::string fName)
     }
 
     parser = MVST_Parser::create(fName, src);
-    if (1)
-        parser->trace(stdout, "<parser>: ");
+    if (1)//0)
+       // parser->trace(stdout, "<parser>: ");
+
+	parser->program = new ProgramNode();
+    parser->path =  fPath.parent_path();
 
     mvstlex_init_extra(parser, &scanner);
     /* Now we need to scan our string into the buffer. */
     yyb = mvst_scan_string(src.c_str(), scanner);
-
-    // parser->parse(isCls ? TOK_CLASS : TOK_BAS);
 
     while (mvstlex(scanner))
         ;
@@ -127,6 +138,13 @@ lDecl(L) ::= lDecl(l) decl(d).
 		L.push_back(d);
 	}
 
+decl ::= ATinclude STRING(name).
+	{
+		ProgramNode *aNode = parseFile(path + "/" + removeFirstAndLastChar(name));
+		if (aNode)
+			program->mergeProgram(aNode);
+	}
+
 decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
 	SQB_OPEN 
 		oIvarDefs(iVars)
@@ -136,8 +154,6 @@ decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
 		ClassNode * cls = new ClassNode(name, super, {}, iVars);
 		cls->iMethods = iMeths;
 		D = cls;
-		cls->print(0);
-		if (!program) program = new ProgramNode();
 		program->addClass(cls);
 	}
 
@@ -168,14 +184,22 @@ lMethDecl(L) ::= lMethDecl(l) methDecl(d).
 		L.push_back(d); 
 	}
 
-methDecl(D) ::= sel_decl(s)
+methDecl(D) ::= oCLASSRR(isClass) sel_decl(s)
 	SQB_OPEN 
 		oIvarDefs(locals)
 		statementList(stmts)
+		oFinalDot
 	SQB_CLOSE.
 	{
-		D = new MethodNode(s.first, s.second, locals, stmts);
+		//for (auto s: stmts)
+		//s->print(2);
+		D = new MethodNode(isClass, s.first, s.second, locals, stmts);
 	}
+
+%type oCLASSRR { bool }
+
+oCLASSRR(C) ::= . { C = false; }
+oCLASSRR(C) ::= CLASSRR. { C = true; }
 
 %type statementList { std::list<StmtNode *> }
 %type statement { StmtNode * }
@@ -187,7 +211,7 @@ statementList(L) ::= statementList(l) DOT statement(s).
 		L.push_back(s); 
 	}
 
-statement(S) ::= UP sExpression(e). { S = new ReturnStmtNode(e); }
+statement(S) ::= UP sExpression(e). { S = new ReturnStmtNode(e);  }
 statement(S) ::= sExpression(e). { S = new ExprStmtNode(e); }
 
 %type sExpression { ExprNode * }
@@ -199,7 +223,7 @@ statement(S) ::= sExpression(e). { S = new ExprStmtNode(e); }
 
 sExpression(E) ::= identifier(i) ASSIGN expression(e).
 	{
-		E = new AssignExprNode(i, e);
+		E = new AssignExprNode(new IdentExprNode (i), e);
 	}
 sExpression(E) ::= cExpression(e). { E = e;}
 
@@ -252,7 +276,8 @@ keywordList(L) ::= keyword(k) binary(e).
 	}
 keywordList(L) ::= keywordList(l) keyword(k) binary(e).
 	{
-		(L = l).push_back( { k, e });
+		L = l;
+		L.push_back( { k, e });
 	}
 
 %type binary { ExprNode * }
@@ -266,38 +291,53 @@ binary(E) ::= binary(r) binOp(s) unary(a).
 	}
 
 unary(E) ::= primary(e). { E = e; }
-unary(U) ::= primary(p) identifier(i). { U  = new MessageExprNode(p, i); }
+unary(U) ::= unary(p) identifier(i). { U  = new MessageExprNode(p, i); }
 
 primary(S) ::= identifier(i). { S = new IdentExprNode (i); }
 primary(S) ::= LBRACKET sExpression(s) RBRACKET. { S = s; }
 primary ::= block.
 primary ::= literal.
-primary ::= PRIMNUM(n) lPrimary(l) RCARET.
+primary(S) ::= PRIMNUM(n) oLPrimary(l) RCARET.
+	{
+		S = new PrimitiveExprNode(n.intValue, l);
+	}
 
-%type lprimary { std::list<ExprNode *> }
+%type oLPrimary { std::vector<ExprNode *> }
+%type lPrimary { std::vector<ExprNode *> }
 
-lPrimary ::= primary.
-lPrimary ::= lPrimary primary.
+oLPrimary ::= .
+oLPrimary(L) ::= lPrimary(l). { L = l; }
+
+lPrimary(L) ::= primary(p). { L = {p}; }
+lPrimary(L) ::= lPrimary(l) primary(p).
+	{
+		L = l;
+		L.push_back(p);
+	}
 
 %type literal { ExprNode * }
 %type aLiteral { ExprNode * }
 %type iLiteral { ExprNode * }
 
-literal ::= HASH LBRACKET oLALiteral RBRACKET.
+literal(L) ::= HASH LBRACKET oLALiteral(a) RBRACKET.  { L = new ArrayExprNode(a); }
 literal ::= iLiteral.
 
 %type lALiteral { std::list<ExprNode *> }
 %type oLALiteral { std::list<ExprNode *> }
 
 oLALiteral ::= .
-oLALiteral ::= lALiteral.
+oLALiteral(A) ::= lALiteral(l). {A = l;}
 
-lALiteral ::= aLiteral.
-lALiteral ::= lALiteral aLiteral.
+lALiteral(L) ::= aLiteral(l). { L = {l}; }
+lALiteral(L) ::= lALiteral(l) aLiteral(lit).
+	{
+		L = l;
+		L.push_back(lit);
+	}
 
-aLiteral ::= iLiteral.
-aLiteral ::= identifier.
-aLiteral ::= keyword.
+aLiteral(A) ::= iLiteral(i). { A = i; }
+aLiteral(A) ::= identifier(i). { A = new SymbolExprNode(i); }
+aLiteral(A) ::= keyword(k). { A = new SymbolExprNode(k); }
 aLiteral(A) ::= ias oLALiteral(a) RBRACKET. { A = new ArrayExprNode(a); }
 
 ias ::= HASH LBRACKET.
@@ -305,27 +345,39 @@ ias ::= LBRACKET.
 
 iLiteral(S) ::= STRING(s).
 	{
-		S = new StringExprNode(s);
+		S = new StringExprNode(removeFirstAndLastChar(s));
 	}
 iLiteral(S) ::= SYMBOL(s).
 	{
-		S = new SymbolExprNode(s);
+		S = new SymbolExprNode(removeFirstChar(s));
 	}
 iLiteral(S) ::= INTEGER(i).
 	{
 		S = new IntExprNode(i.intValue);
 	}
+iLiteral(S) ::= FLOAT(f).
+	{
+		S = new FloatExprNode(f);
+	}
 iLiteral(S) ::= CHAR(c).
 	{
-		S = new CharExprNode(c);
+		S = new CharExprNode(removeFirstChar(c));
 	}
 
 %type block { BlockExprNode * }
 
-block(B) ::= SQB_OPEN oBlockVarList(v) statementList(s) SQB_CLOSE.
+block(B) ::= SQB_OPEN oBlockVarList(v) oStatementList(s) SQB_CLOSE.
 	{
 		B = new BlockExprNode(v, s);
 	}
+
+oFinalDot ::= .
+oFinalDot ::= DOT.
+
+%type oStatementList { std::list<StmtNode *> }
+
+oStatementList ::= .
+oStatementList(L) ::= statementList(l). { L = l; }
 
 %type oBlockVarList { std::list<std::string> }
 %type colonVarList { std::list<std::string> }
@@ -337,13 +389,6 @@ colonVarList(L) ::= COLONVAR(v).
 	{
 		std::string s = v;
 		s.erase(s.begin());
-std::cout << "add var " << s << "aka" << v << std::endl;
-std::cout << "add var " << s << "aka" << v << std::endl;
-
-std::cout << "add var " << s << "aka" << v << std::endl;
-
-std::cout << "add var "<< s << "aka" << v << std::endl;
-
 		L = {s};
 	} 
 colonVarList(L) ::= colonVarList(l) COLONVAR(v).
@@ -392,7 +437,11 @@ binary_decl(B) ::= binOp(b) identifier(s). {
 
 identifier(I) ::= IDENTIFIER(i). { I = i; }
 identifier(I) ::= NAMESPACENAME(i). { I = i; }
-keyword(K) ::= KEYWORD(k). { K = k ;}
+
+%type keyword { std::string }
+
+keyword(K) ::= KEYWORD(k). { K = k.stringValue; }
+keyword(K) ::= SUBCLASSCOLON. { K = "subclass:"; }
 
 %type binOp { std::string }
 %type binChar { std::string }
@@ -402,3 +451,4 @@ binOp(B) ::= binOp(b) binChar(c). { B = b; b += c; }
 
 binChar(B) ::= BINARY(b). { B = b.stringValue; }
 binChar(B) ::= LCARET. { B = std::string("<"); }
+binChar(B) ::= RCARET. { B = std::string(">"); }

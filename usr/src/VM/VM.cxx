@@ -15,6 +15,8 @@
 #include "NewCompiler.h"
 #include "VM.hxx"
 
+#define Trace(fmt, ...) printf (fmt, #__VA_ARGS__);
+
 #define streq(a, b) (strcmp (a, b) == 0)
 
 extern word traceVect[];
@@ -803,6 +805,7 @@ Called from Symbol>>value
 */
 objRef primGlobalValue (objRef arg[])
 {
+    printf ("Requested global value of %s\n", vonNeumannSpaceOf (arg[0].ptr));
     return ((objRef)globalValue ((char *)vonNeumannSpaceOf (arg[0].ptr)));
 }
 
@@ -2038,6 +2041,7 @@ __INLINE__ encPtr firstLookupClass (execState * es)
 {
     es->argb = es->psb + (es->returnPoint - 1);
     fetchReceiverState (es);
+    printf ("ClassOf Receiver: = %d\n", getClass (es->receiverObject).dat);
     return (getClass (es->receiverObject));
 }
 
@@ -2097,17 +2101,27 @@ void flushCache (encPtr messageToSend, encPtr klass)
             methodCache[i].cacheMessage = nilObj;
 }
 
+extern "C"
+{
+    int usleep (int);
+}
+
 bool lookupGivenSelector (execState * es, encPtr methodClass)
 {
     int hash;
     int j;
     encPtr argarray;
     objRef returnedObject;
-    if (mselTrace)
-        fprintf (stderr,
-                 "%d: %s\n",
-                 mselTrace--,
-                 (char *)vonNeumannSpaceOf (messageToSend));
+
+    usleep (25000);
+    if (1) // mselTrace)
+        fprintf (
+            stderr,
+            "%s <%s> %d: %s\n",
+            std::string (mselTrace, ' ').c_str (),
+            (char *)vonNeumannSpaceOf (orefOf (methodClass, nameInClass).ptr),
+            mselTrace,
+            (char *)vonNeumannSpaceOf (messageToSend));
     /* look up method in cache */
     hash = (oteIndexOf (messageToSend) + oteIndexOf (methodClass)) % cacheSize;
     assert (hash >= 0 && hash < cacheSize);
@@ -2134,6 +2148,7 @@ bool lookupGivenSelector (execState * es, encPtr methodClass)
             }
             ipush (es, orefOf (argarray, 1)); /* push receiver back */
             ipush (es, (objRef)messageToSend);
+            printf ("failed to find <%s>\n", vonNeumannSpaceOf (messageToSend));
             messageToSend = newSymbol ("message:notRecognizedWithArguments:");
             ipush (es, (objRef)argarray);
             /* try again - if fail really give up */
@@ -2143,6 +2158,7 @@ bool lookupGivenSelector (execState * es, encPtr methodClass)
                 /* just quit */
                 return false;
             }
+            printf ("NOT FOUDN - so send message:notrecognized....\n");
         }
         methodCache[hash].cacheMessage = messageToSend;
         methodCache[hash].cacheMethod = method;
@@ -2204,6 +2220,7 @@ void pushStateAndEnter (execState * es)
 {
     int i;
     int j;
+    mselTrace++;
     /* save the current byte pointer */
     orefOfPut (
         processStack, linkPointer + 4, (objRef)encValueOf (es->byteOffset));
@@ -2408,9 +2425,11 @@ bool byteDoSpecial (execState * es, int low)
     switch (low)
     {
     case SelfReturn:
+        mselTrace--;
         returnedObject = argumentAt (es, 0);
         return (leaveAndAnswer (es, returnedObject));
     case StackReturn:
+        mselTrace--;
         returnedObject = ipop (es);
         return (leaveAndAnswer (es, returnedObject));
     case Duplicate:
@@ -2634,6 +2653,7 @@ void makeInitialImage (void)
     /* set their global values */
 
     classOfPut (nilObj, newClass ("UndefinedObject"));
+    printf ("ClassOf nilObj = %d\n", classOf (nilObj).dat);
     nameTableInsert (symbols, strHash ("nil"), newSymbol ("nil"), nilObj);
     classOfPut (trueObj, newClass ("True"));
     nameTableInsert (symbols, strHash ("true"), newSymbol ("true"), trueObj);
@@ -2747,15 +2767,19 @@ int main_1 (int argc, char * argv[])
         //(void) sprintf(methbuf,
         //	   "goDoIt <120 1 '%s' 'r'>. <123 1>. <121 1>",
         //	   argv[i]);
+
+#ifndef NUDISAS
         ProgramNode * aNode = MVST_Parser::parseFile (argv[i]);
         if (aNode)
             aNode->generateInContext (&ctx);
         printf ("\n\nDONE MINE\n\n");
-        /*methbuf[0] = 0;
+#else
+        methbuf[0] = 0;
         strcat (methbuf, "goDoIt <120 1 '");
         strcat (methbuf, argv[i]);
         strcat (methbuf, "' 'r'>. <123 1>. <121 1>");
-        goDoIt (methbuf);*/
+        goDoIt (methbuf);
+#endif
     }
 
     /* when we are all done looking at the arguments, do initialization */
