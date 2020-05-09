@@ -1,0 +1,5 @@
+@include 'Collection.st'
+@include 'IndexedCollection.st'
+@include 'Array.st'
+@include 'ByteArray.st'
+@include 'String.st'
