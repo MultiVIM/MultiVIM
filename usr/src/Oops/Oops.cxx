@@ -11,8 +11,9 @@ void SmiOop::print (int in)
 LinkOop LinkOop::newWith (Oop a, Oop b)
 {
     LinkOop newLink = memMgr.allocateOopObj (3).asLinkOop ();
-    newLink.atOnePut (a);
-    newLink.atTwoPut (b);
+    newLink.setOne (a);
+    newLink.setTwo (b);
+    return newLink;
 }
 
 #pragma mark DictionaryOop
@@ -35,7 +36,10 @@ void DictionaryOop::insert (int hash, Oop key, Oop value)
         assert (hash <= table.size () - 3);
         tablentry = table.basicAt (hash + 1);
 
-        /* note: is this just for symbols since it does ptrEq?! */
+        /* FIXME: I adapted this from the PDST C sources, and this doesn't
+         * appear to handle anything other than symbols (because of
+         * tablentry == key). Make it a template in the future or make it accept
+         * a comparison callback like findPairByFun() in the future, maybe? */
         if (tablentry.isNil () || (tablentry == key))
         {
             table.basicatPut (hash + 1, key);
@@ -51,12 +55,12 @@ void DictionaryOop::insert (int hash, Oop key, Oop value)
             }
             else
                 while (1)
-                    if (link.atOne () ==
-                        key) // ptrEq (orefOf (link, 1), (objRef)key))
+                    /* ptrEq (orefOf (link, 1), (objRef)key)) */
+                    if (link.one () == key)
                     {
                         /* get rid of unwanted Link */
                         // isVolatilePut (nwLink, false);
-                        link.atTwo () = value;
+                        link.setTwo (value);
                         break;
                     }
                     else if ((nextLink = link.nextLink ()).isNil ())

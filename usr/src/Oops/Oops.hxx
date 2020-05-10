@@ -6,13 +6,9 @@
 class LinkOop : public OopOop
 {
   public:
-    Oop & atOne ();
-    Oop & atTwo ();
-    LinkOop & nextLink ();
-
-    inline Oop atOnePut (Oop aVal);
-    inline Oop atTwoPut (Oop aVal);
-    inline LinkOop nextLinkPut (LinkOop aVal);
+    DeclareAccessorPair (Oop, one, setOne);
+    DeclareAccessorPair (Oop, two, setTwo);
+    DeclareAccessorPair (LinkOop, nextLink, setNextLink);
 
     static LinkOop newWith (Oop a, Oop b);
 };
@@ -42,13 +38,8 @@ class DictionaryOop : public OopOop
     void print (int in);
 };
 
-/* The class method named new: is used to allocate a new byte array with a given
-size. new: size " < 20 ByteArray size > The remaining two functions are the
-methods at:ifAbsent: and at:put:, which do the actual access to byte values.
-Note that these dier from the methods in class Array only in the primitive
-operations they employ.
-*/
-
+/* Only at:ifAbsent: and at:put: need be implemented to do ByteArrays. The other
+ * logic can remain identical. */
 class ByteArrayOop : public ByteOop
 {
   public:
@@ -59,8 +50,6 @@ class StringOop : public ByteArrayOop
 {
   public:
     static StringOop fromString (std::string aString);
-
-    void setString (std::string aString);
 
     bool strEquals (std::string aString);
 };
@@ -88,6 +77,28 @@ class ClassPair
      */
     static ClassPair allocateRaw ();
 };
+
+class MethodOop : public OopOop
+{
+  public:
+    DeclareAccessorPair (StringOop, sourceText, setSourceText);
+    DeclareAccessorPair (SymbolOop, selector, setSelector);
+    DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
+    DeclareAccessorPair (ArrayOop, literals, setLiterals);
+    DeclareAccessorPair (SmiOop, stackSize, setStackSize);
+    DeclareAccessorPair (SmiOop, temporarySize, setTemporarySize);
+    DeclareAccessorPair (ClassOop, methodClass, setMethodClass);
+    DeclareAccessorPair (SmiOop, watch, setWatch);
+};
+
+#define textInMethod 1
+#define messageInMethod 2
+#define bytecodesInMethod 3
+#define literalsInMethod 4
+#define stackSizeInMethod 5
+#define temporarySizeInMethod 6
+#define methodClassInMethod 7
+#define watchInMethod 8
 
 #include "Oops.inl.hxx"
 

@@ -15,6 +15,9 @@ class DictionaryOop;
 class LinkOop;
 class SymbolOop;
 class SmiOop;
+class MethodOop;
+class ContextOop;
+class ProcessOop;
 
 #include "Lowlevel/MVBeginPackStruct.h"
 class Oop
@@ -65,6 +68,13 @@ class Oop
     StringOop & asStringOop ();
     SymbolOop & asSymbolOop ();
     SmiOop & asSmiOop ();
+    ContextOop & asContextOop ();
+    MethodOop & asMethodOop ();
+    ProcessOop & asProcessOop ();
+    Oop & asOop ()
+    {
+        return *this;
+    }
 };
 #include "Lowlevel/MVEndPackStruct.h"
 
@@ -116,6 +126,10 @@ class ByteOop : public Oop
     uint8_t & basicatPut (size_t index, uint8_t value);
 };
 
+#define DeclareAccessorPair(Type, GetName, SetName)                            \
+    inline Type & GetName ();                                                  \
+    inline Type SetName (Type toValue)
+
 class ClassOop : public OopOop
 {
   public:
@@ -125,11 +139,11 @@ class ClassOop : public OopOop
      */
     static const int clsInstLength = 5;
 
-    inline SymbolOop & name ();
-    inline ClassOop & superClass ();
-    inline DictionaryOop & methods ();
-    inline SmiOop & nstSize ();
-    inline ArrayOop & nstVars ();
+    DeclareAccessorPair (SymbolOop, name, setName);
+    DeclareAccessorPair (ClassOop, superClass, setSuperClass);
+    DeclareAccessorPair (DictionaryOop, methods, setMethods);
+    DeclareAccessorPair (SmiOop, nstSize, setNstSize);
+    DeclareAccessorPair (ArrayOop, nstVars, setNstVars);
 
     /**
      * Allocates a raw class. Does NOT set up its name, superclass, methods
