@@ -4,8 +4,8 @@
 #include <list>
 #include <map>
 
-#include "NewCompiler.h"
-#include "VM.hxx"
+#include "../Compiler.hxx"
+#include "OldVM/VM.hxx"
 
 class CompilationContext;
 

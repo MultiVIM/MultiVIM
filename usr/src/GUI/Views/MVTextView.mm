@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#import "Presenters/MVGridPresenter.hh"
+#import "../Presenters/MVGridPresenter.hh"
 
 #include "MVTextView.hh"
 

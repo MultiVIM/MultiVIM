@@ -9,14 +9,14 @@
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl_Menu_Item.H>
 
-#include "Controls/MVMDIWindow.hh"
-#include "Controls/MVMDIWorkspace.hh"
-#include "Controls/MVStatusBar.h"
-#include "Controls/MVTabContainer.h"
-#include "Controls/MVToolbar.h"
+#include "../Controls/MVMDIWindow.hh"
+#include "../Controls/MVMDIWorkspace.hh"
+#include "../Controls/MVStatusBar.h"
+#include "../Controls/MVTabContainer.h"
+#include "../Controls/MVToolbar.h"
 #include "LGPL/Controls/Fl_Drag_Tabs.H"
 #include "LGPL/Controls/Flw_Split.H"
-#include "Views/MVTextView.hh"
+#include "MVTextView.hh"
 
 class MVMainWindowView : public Fl_Cairo_Window
 {

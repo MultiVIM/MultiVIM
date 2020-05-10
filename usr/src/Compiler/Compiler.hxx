@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "VM.hxx"
+#include "OldVM/VM.hxx"
 #include "lemon/lemon_base.h"
 
 /* Details of the position of some source code. */
@@ -129,12 +129,12 @@ class GenerationContext
         return highestLocal;
     }
 
-    int codeTop()
+    int codeTop ()
     {
-        return meth.code.size();
+        return meth.code.size ();
     }
 
-    void setCodeTo(int index, int val)
+    void setCodeTo (int index, int val)
     {
         meth.code[index] = val;
     }

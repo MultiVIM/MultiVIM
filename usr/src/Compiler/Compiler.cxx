@@ -1,7 +1,7 @@
-#include "../NewCompiler.h"
-#include "../AST.hxx"
-#include "../Bytecode.hxx"
-#include "../VM.hxx"
+#include "Compiler.hxx"
+#include "AST/AST.hxx"
+#include "OldVM/Bytecode.hxx"
+#include "OldVM/VM.hxx"
 
 GlobalVarNode * NameScope::addClass (ClassNode * aClass)
 {

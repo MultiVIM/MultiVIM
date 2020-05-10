@@ -1,5 +1,5 @@
 #include "MVMDIWorkspace.hh"
-#include "Controls/MVMDIWindow.hh"
+#include "MVMDIWindow.hh"
 
 void MVMDIWorkspace::activate (MVMDIWindow & win)
 {

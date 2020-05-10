@@ -8,8 +8,8 @@
 
 #import <ObjFW/ObjFW.h>
 
+#import "GUI/Presenters/MVAppPresenter.hh"
 #import "NeoVIMClientThread.h"
-#import "Presenters/MVAppPresenter.hh"
 
 int guiMain ();
 

@@ -1,6 +1,6 @@
 #import <ObjFW/ObjFW.h>
 
-#include "Views/MVTextView.hh"
+#include "../Views/MVTextView.hh"
 
 /*@class MVGridModel;
 @class MVAppPresenter;

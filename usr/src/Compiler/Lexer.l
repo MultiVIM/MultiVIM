@@ -1,5 +1,5 @@
 %{
-#include "VM/NewCompiler.h"
+#include "Compiler/Compiler.hxx"
 #include "Parser.tab.h"
 
 #define YY_NO_UNISTD_H

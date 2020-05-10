@@ -10,9 +10,9 @@
 #include <string.h>
 #include <time.h>
 
-#include "AST.hxx"
 #include "Bytecode.hxx"
-#include "NewCompiler.h"
+#include "Compiler/AST/AST.hxx"
+#include "Compiler/Compiler.hxx"
 #include "VM.hxx"
 
 #define Trace(fmt, ...) printf (fmt, #__VA_ARGS__);
@@ -2871,7 +2871,7 @@ void sysWarn (const char * s1, const char * s2)
 #ifdef L2_SMALLTALK_EMBEDDED
 int L2_SMALLTALK_MAIN (int argc, char * argv[])
 #else
-int main (int argc, char * argv[])
+int oldMain (int argc, char * argv[])
 #endif
 {
     // printf("sizeof(otbEnt) = %d, sizeof(ot2Ent) = %d\n", sizeof(otbEnt),

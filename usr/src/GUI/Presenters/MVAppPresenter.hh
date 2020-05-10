@@ -2,9 +2,9 @@
 
 #include <map>
 
+#include "../Views/MVMainWindowView.hh"
+#include "MVGridPresenter.hh"
 #import "NeoVIMClientThread.h"
-#include "Presenters/MVGridPresenter.hh"
-#include "Views/MVMainWindowView.hh"
 
 /*@class MVAppModel;
 @class MVGridPresenter;

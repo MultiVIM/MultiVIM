@@ -1,4 +1,4 @@
-#include "VM/AST.hxx"
+#include "AST.hxx"
 
 struct LiteralExprNode : ExprNode
 {

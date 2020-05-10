@@ -59,25 +59,34 @@ set(CMAKE_OBJC_LINK_FLAGS "${CMAKE_OBJC_LINK_FLAGS} -L/usr/local/lib -lobjfw \
     -lobjfwrt  -lm -ldl -lpthread -fexceptions -fobjc-arc -fobjc-arc-exceptions")
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${CMAKE_OBJC_LINK_FLAGS}")
 
-FlexCXXComp(VM/Lexer.l)
-LemonCXXComp(VM/Parser.y)
+FlexCXXComp(Compiler/Lexer.l)
+LemonCXXComp(Compiler/Parser.y)
 
 add_executable(MultiVIM
-    "Compiler/ASTBytecodeGeneration.cxx"
-    Controls/MVMDIWorkspace.cxx Controls/MVMDIWindow.mm
+    GUI/Controls/MVMDIWorkspace.cxx GUI/Controls/MVMDIWindow.mm
+    GUI/Presenters/MVAppPresenter.mm GUI/Presenters/MVGridPresenter.mm
+    GUI/Views/MVMainWindowView.mm GUI/Views/MVTextView.mm
+
     LGPL/EFLTK.cxx
     LGPL/Controls/Flw_Split.cxx LGPL/Controls/Fl_Scroll_Tabs.cxx
-	LGPL/Controls/Fl_Drag_Tabs.cxx
+    LGPL/Controls/Fl_Drag_Tabs.cxx
+
     Lowlevel/MVLog.m
     "ObjFW Categories/OFMutableData+MV.m"
-    Presenters/MVAppPresenter.mm Presenters/MVGridPresenter.mm
-    Views/MVMainWindowView.mm Views/MVTextView.mm
-    "VM/VM.cxx" "VM/Memory.cxx"
-    "VM/Compiler.cxx" "VM/NewCompiler/Nodes.cxx"
-    "VM/NewCompiler/NewCompiler.cxx"
-    ${PROJECT_BINARY_DIR}/Lexer.l.cxx
-    ${PROJECT_BINARY_DIR}/Parser.tab.cxx
-    MultiVIM.mm NeoVIMClient.mm)
+
+    "Compiler/ASTBytecodeGeneration.cxx" "Compiler/Compiler.cxx"
+    "Compiler/AST/AST.cxx"
+
+    "ObjectMemory/ObjectMemory.cxx"
+
+    "Oops/Oops.cxx"
+
+    "OldVM/VM.cxx" "OldVM/Memory.cxx" "OldVM/Compiler.cxx"
+    ${CMAKE_CURRENT_BINARY_DIR}/Lexer.l.cxx
+    ${CMAKE_CURRENT_BINARY_DIR}/Parser.tab.cxx
+
+
+    MultiVIM.cxx OldMultiVIM.mm NeoVIMClient.mm)
 
 target_include_directories(MultiVIM PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/../closed)
 target_include_directories(MultiVIM SYSTEM BEFORE PRIVATE

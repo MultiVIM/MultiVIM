@@ -6,7 +6,6 @@
 #include "LGPL/EFLTK.hh"
 #include "MVMDIWindow.hh"
 #include "MVMDIWorkspace.hh"
-#include "Views/MVTextView.hh"
 
 struct Point
 {

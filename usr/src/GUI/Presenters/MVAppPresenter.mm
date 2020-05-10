@@ -1,11 +1,11 @@
 #include <assert.h>
 
+#import "../Views/MVMainWindowView.hh"
+#include "../Views/MVTextView.hh"
 #import "Lowlevel/MVLog.h"
 #import "MVAppPresenter.hh"
+#import "MVGridPresenter.hh"
 #import "NeoVIMClientThread.h"
-#import "Presenters/MVGridPresenter.hh"
-#import "Views/MVMainWindowView.hh"
-#include "Views/MVTextView.hh"
 
 MVAppPresenter::MVAppPresenter (NeoVIMClientThread * thread)
     : client (thread), view (800, 600, nil)

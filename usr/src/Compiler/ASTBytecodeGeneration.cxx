@@ -1,7 +1,7 @@
 #include <cassert>
 
 #include "AST/LiteralExpr.hxx"
-#include "VM/Bytecode.hxx"
+#include "OldVM/Bytecode.hxx"
 
 int ExprNode::generateOptimized (GenerationContext * aContext, int instruction,
                                  bool doPop)

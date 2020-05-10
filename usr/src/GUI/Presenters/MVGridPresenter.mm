@@ -1,10 +1,10 @@
 #include <assert.h>
 
+#include "../Views/MVMainWindowView.hh"
+#include "../Views/MVTextView.hh"
 #include "Lowlevel/MVLog.h"
+#include "MVAppPresenter.hh"
 #import "MVGridPresenter.hh"
-#include "Presenters/MVAppPresenter.hh"
-#include "Views/MVMainWindowView.hh"
-#include "Views/MVTextView.hh"
 
 MVGridPresenter::MVGridPresenter (MVAppPresenter & appPresenter, int gridNumber,
                                   TextView * view, int rows, int cols)

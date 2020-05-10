@@ -283,8 +283,7 @@ static size_t parseObject (const unsigned char * buffer, size_t length,
         return 9;
     /* Floating point */
     case 0xCA:; /* float 32 */
-        union
-        {
+        union {
             unsigned char u8[4];
             float f;
         } f;
@@ -297,8 +296,7 @@ static size_t parseObject (const unsigned char * buffer, size_t length,
         *object = [OFNumber numberWithFloat:OF_BSWAP_FLOAT_IF_LE (f.f)];
         return 5;
     case 0xCB:; /* float 64 */
-        union
-        {
+        union {
             unsigned char u8[8];
             double d;
         } d;

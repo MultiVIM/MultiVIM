@@ -10,9 +10,9 @@
 	#include <list>
 	#include <filesystem>
 
-    #include "VM/NewCompiler.h"
-	#include "VM/AST.hxx"
+	#include "Compiler/AST/AST.hxx"
 	#include "Compiler/AST/LiteralExpr.hxx"
+    #include "Compiler/Compiler.hxx"
 	#include "Parser.tab.h"
 	#include "Lexer.l.h"
 

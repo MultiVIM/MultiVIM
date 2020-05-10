@@ -1,9 +1,9 @@
 #include <cassert>
 #include <iostream>
 
-#include "../AST.hxx"
-#include "../Bytecode.hxx"
-#include "../VM.hxx"
+#include "AST.hxx"
+#include "OldVM/Bytecode.hxx"
+#include "OldVM/VM.hxx"
 
 void MethodNode::print (int in)
 {
