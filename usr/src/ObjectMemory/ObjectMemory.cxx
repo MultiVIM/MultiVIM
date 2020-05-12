@@ -1,7 +1,10 @@
 #include <iostream>
 
+#include "Compiler/AST/AST.hxx"
+#include "Compiler/Compiler.hxx"
 #include "ObjectMemory.hxx"
 #include "Oops/Oops.hxx"
+#include "VM/Bytecode.hxx"
 
 MemoryManager memMgr;
 
@@ -27,6 +30,7 @@ static enum {
     kClassPairEntry (False, 26),
     kClassPairEntry (Link, 28),
     kClassPairEntry (Dictionary, 30),
+    kClassPairEntry (Block, 32),
     kMax,
 } coreObjects;
 
@@ -44,6 +48,7 @@ static const char * classNames[] = {
     "False",
     "Link",
     "Dictionary",
+    "Block",
 };
 
 OopOop MemoryManager::allocateOopObj (size_t len)
@@ -71,8 +76,9 @@ ByteOop MemoryManager::allocateByteObj (size_t len)
 void MemoryManager::coldBoot ()
 {
     std::cout << "MultiVIM Smalltalk: Cold boot in progress..\n";
+    MethodNode * bootMeth;
 
-    _table.resize (65535);
+    _table.resize (2048);
     lowestFreeSlot = 0;
 
     /* First, the basic objects and classes must be created. Using the usual
@@ -105,6 +111,7 @@ void MemoryManager::coldBoot ()
     CreateClassPair (False);
     CreateClassPair (Link);
     CreateClassPair (Dictionary);
+    CreateClassPair (Block);
 
     objSymbolTable ().basicatPut (1, allocateOopObj (3 * 53));
     objGlobals ().basicatPut (1, allocateOopObj (3 * 53));
@@ -119,8 +126,15 @@ void MemoryManager::coldBoot ()
         metaCls.name () =
             SymbolOop::fromString (std::string (classNames[index]) + "Meta");
         cls.name () = SymbolOop::fromString (classNames[index]);
+        cls.setIsa (metaCls);
+        objGlobals ().symbolInsert (cls.name (), cls);
     }
 
+    bootMeth = MVST_Parser::parseText (" | test | [ [ test + 2 ] ]");
+    bootMeth->synthInClassScope (NULL);
+
+    bootMeth->generate ().print (0);
+    // printBytecode (bootMeth->generate ().bytecode ());
     objSymbolTable ().print (0);
 }
 
@@ -153,6 +167,7 @@ DictionaryOop MemoryManager::objGlobals ()
         return Oop (false, kCls##Name).asClassOop ();                          \
     }
 
+GetClassFun (ObjectMeta);
 GetClassFun (Object);
 GetClassFun (Smi);
 GetClassFun (Symbol);
@@ -163,3 +178,22 @@ GetClassFun (Method);
 GetClassFun (Process);
 GetClassFun (UndefinedObject);
 GetClassFun (Dictionary);
+GetClassFun (Block);
+
+ClassOop MemoryManager::findOrCreateClass (ClassOop superClass,
+                                           std::string name)
+{
+    ClassOop result = lookupClass (name);
+
+    if (result.isNil ())
+        result = ClassOop::allocate (superClass, name);
+    else
+        result.setupClass (superClass, name);
+
+    return result;
+}
+
+ClassOop MemoryManager::lookupClass (std::string name)
+{
+    return objGlobals ().symbolLookup (name).asClassOop ();
+}

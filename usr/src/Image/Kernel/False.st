@@ -1,5 +1,4 @@
 Boolean subclass: False [
-
 	class>>new [
 	"there is only one false value"
 	^ false
@@ -33,7 +32,7 @@ Boolean subclass: False [
 	^ false
 	]
 
-	| aBool [
+	"|" orBool: aBool [
 	^ aBool
 	]
 

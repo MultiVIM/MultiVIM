@@ -10,7 +10,7 @@ or: aBlock [
   ^ self ifTrue: [ true ] ifFalse: [ aBlock value ]
 ]
 
-| aBool [
+"|" orBool: aBool [
   ^ self ifTrue: [ true ] ifFalse: [ aBool ]
 ]
 

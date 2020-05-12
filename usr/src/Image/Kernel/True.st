@@ -33,7 +33,7 @@ and: aBlock [
   ^ aBlock value
 ]
 
-| aBool [
+"|" orBool: aBool [
   ^ true
 ]
 

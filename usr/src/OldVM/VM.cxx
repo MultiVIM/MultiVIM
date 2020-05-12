@@ -2770,8 +2770,8 @@ int main_1 (int argc, char * argv[])
 
 #ifndef NUDISAS
         ProgramNode * aNode = MVST_Parser::parseFile (argv[i]);
-        if (aNode)
-            aNode->generateInContext (&ctx);
+        // if (aNode)
+        //    aNode->generateInContext (&ctx);
         printf ("\n\nDONE MINE\n\n");
 #else
         methbuf[0] = 0;

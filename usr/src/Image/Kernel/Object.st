@@ -1,5 +1,4 @@
 nil subclass: Object [
-
 	= aValue [
 		^ self == aValue
 	]

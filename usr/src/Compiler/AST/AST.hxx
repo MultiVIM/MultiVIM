@@ -7,7 +7,14 @@
 #include "../Compiler.hxx"
 #include "OldVM/VM.hxx"
 
+class CodeGen;
 class CompilationContext;
+class ExprNode;
+struct VarNode;
+struct AbstractScope;
+struct BlockScope;
+struct MethodScope;
+struct ClassScope;
 
 static inline std::string blanks (size_t n)
 {
@@ -16,337 +23,18 @@ static inline std::string blanks (size_t n)
 
 struct Node
 {
-    virtual void generateInContext (GenerationContext * aContext)
-    {
-        std::cout << "CAN'T GENERATE " << typeid (*this).name () << "\n";
-    }
 
     virtual void print (int in)
     {
-        std::cout << blanks (in) << "<undefinednode" << typeid (*this).name ()
-                  << "/>";
-    }
-};
-
-struct VarNode : Node
-{
-    enum Kind
-    {
-        kSpecial,
-        kLocal,
-        kArgument,
-        kInstance,
-        kGlobalConstant,
-        kGlobal,
-    } kind;
-
-    std::string name;
-
-    virtual int getIndex ()
-    {
-        throw;
-    }
-
-    VarNode (Kind kind, std::string name) : kind (kind), name (name)
-    {
-    }
-};
-
-struct SpecialVarNode : VarNode
-{
-    SpecialVarNode (std::string name) : VarNode (kSpecial, name)
-    {
-    }
-};
-
-struct IndexedVarNode : VarNode
-{
-    int index;
-
-    virtual int getIndex ()
-    {
-        return index;
-    }
-
-    IndexedVarNode (int index, Kind kind, std::string name)
-        : index (index), VarNode (kind, name)
-    {
-    }
-};
-
-struct LocalVarNode : IndexedVarNode
-{
-    int index;
-    LocalVarNode (int index, std::string name)
-        : IndexedVarNode (index, kLocal, name)
-    {
-    }
-};
-
-struct ArgumentVarNode : IndexedVarNode
-{
-    int index;
-    ArgumentVarNode (int index, std::string name)
-        : IndexedVarNode (index, kArgument, name)
-    {
-    }
-};
-
-struct InstanceVarNode : IndexedVarNode
-{
-    int index;
-    InstanceVarNode (int idx, std::string name)
-        : IndexedVarNode (idx, kInstance, name)
-    {
-    }
-};
-
-struct GlobalVarNode : VarNode
-{
-    ClassNode * _class;
-    encPtr classObj, metaClassObj;
-
-    GlobalVarNode (ClassNode * _class);
-
-    ClassNode * getClass ();
-};
-
-struct NameScope
-{
-    NameScope * parent;
-    std::map<std::string, VarNode *> vars;
-
-    GlobalVarNode * addClass (ClassNode * aClass);
-    void addIvar (int idx, std::string name);
-    void addLocal (int idx, std::string name);
-    void addArg (int idx, std::string name);
-    virtual VarNode * lookup (std::string aName);
-
-    void removeLocalsAbove (int i);
-};
-
-struct ClassScope : NameScope
-{
-    GlobalVarNode * classVar;
-
-    ClassScope (GlobalVarNode * klass) : classVar (klass)
-    {
-    }
-};
-
-struct MethodScope : NameScope
-{
-    MethodScope () : NameScope ()
-    {
-    }
-};
-
-struct BlockScope : NameScope
-{
-};
-
-struct ExprNode : Node
-{
-
-    virtual int generateOptimized (GenerationContext * aContext,
-                                   int instruction, bool doPop);
-
-    virtual bool isSuper ()
-    {
-        return false;
-    }
-};
-
-struct PrimitiveExprNode : ExprNode
-{
-    int num;
-    std::vector<ExprNode *> args;
-
-    PrimitiveExprNode (int num, std::vector<ExprNode *> args)
-        : num (num), args (args)
-    {
-    }
-
-    void print (int in)
-    {
-        std::cout << blanks (in) << "<prim:" << num << ">\n";
-        for (auto a : args)
-        {
-            std::cout << blanks (in + 1) << "<arg>\n";
-            a->print (in + 2);
-            std::cout << blanks (in + 1) << "</arg>\n";
-        }
-        std::cout << blanks (in) << "</prim>\n";
-    }
-
-    virtual void generateInContext (GenerationContext * aContext);
-};
-
-struct IdentExprNode : ExprNode
-{
-    std::string id;
-
-    virtual bool isSuper ()
-    {
-        return id == "super";
-    }
-
-    IdentExprNode (std::string id) : id (id)
-    {
-    }
-
-    virtual void generateInContext (GenerationContext * aContext);
-    virtual void generateAssignInContext (GenerationContext * aContext,
-                                          ExprNode * rValue);
-
-    void print (int in)
-    {
-        std::cout << blanks (in) << "<id:" << id << " />\n";
-    }
-};
-
-struct AssignExprNode : ExprNode
-{
-    IdentExprNode * left;
-    ExprNode * right;
-
-    AssignExprNode (IdentExprNode * l, ExprNode * r) : left (l), right (r)
-    {
-    }
-
-    virtual void generateInContext (GenerationContext * aContext);
-
-    void print (int in)
-    {
-        std::cout << blanks (in) << "<assign>\n";
-        std::cout << blanks (in + 1) << "<left: " << left->id << ">\n";
-        std::cout << blanks (in + 1) << "<right>\n";
-        right->print (in + 2);
-        std::cout << blanks (in + 1) << "</right>\n";
-        std::cout << "</assign>";
-    }
-};
-
-struct MessageExprNode : ExprNode
-{
-    ExprNode * receiver;
-    std::string selector;
-    std::vector<ExprNode *> args;
-
-    MessageExprNode (ExprNode * receiver, std::string selector,
-                     std::vector<ExprNode *> args = {})
-        : receiver (receiver), selector (selector), args (args)
-    {
-    }
-
-    MessageExprNode (ExprNode * receiver,
-                     std::list<std::pair<std::string, ExprNode *>> list)
-        : receiver (receiver)
-    {
-        for (auto & p : list)
-        {
-            selector += p.first;
-            args.push_back (p.second);
-        }
-    }
-
-    virtual void generateInContext (GenerationContext * aContext)
-    {
-        generateInContext (aContext, false);
-    }
-    virtual void generateInContext (GenerationContext * aContext, bool cascade);
-
-    void print (int in)
-    {
-        std::cout << blanks (in) << "<message>\n";
-
-        std::cout << blanks (in + 1) << "<receiver>\n";
-        receiver->print (in + 2);
-        std::cout << blanks (in + 1) << "</receiver>\n";
-
-        std::cout << blanks (in + 1) << "<selector:#" << selector << "\n";
-
-        for (auto e : args)
-        {
-            std::cout << blanks (in + 1) << "<arg>\n";
-            e->print (in + 2);
-            std::cout << blanks (in + 1) << "</arg>\n";
-        }
-
-        std::cout << blanks (in) << "</message>\n";
-    }
-};
-
-struct CascadeExprNode : ExprNode
-{
-    ExprNode * receiver;
-    std::list<MessageExprNode *> messages;
-
-    CascadeExprNode (ExprNode * r) : receiver (r)
-    {
-        MessageExprNode * m = dynamic_cast<MessageExprNode *> (r);
-        if (m)
-        {
-            receiver = m->receiver;
-            messages.push_back (m);
-        }
-    }
-
-    virtual void generateInContext (GenerationContext * aContext);
-
-    void print (int in)
-    {
-        std::cout << blanks (in) << "<cascade>\n";
-
-        std::cout << blanks (in + 1) << "<receiver>\n";
-        receiver->print (in + 2);
-        std::cout << blanks (in + 1) << "</receiver>\n";
-
-        for (auto e : messages)
-        {
-            e->print (in + 1);
-        }
-
-        std::cout << blanks (in) << "</cascade>\n";
+        std::cout << blanks (in) << "<node: " << typeid (*this).name ()
+                  << "/>\n";
     }
 };
 
 struct StmtNode : Node
 {
-};
-
-struct BlockExprNode : ExprNode
-{
-    std::list<std::string> args;
-    std::list<StmtNode *> stmts;
-
-    BlockExprNode (std::list<std::string> a, std::list<StmtNode *> s)
-        : args (a), stmts (s)
-    {
-    }
-
-    virtual void generateInContext (GenerationContext * aContext);
-
-    virtual void print (int in)
-    {
-        std::cout << "<block>\n";
-
-        std::cout << blanks (in + 1) << "<params>\n";
-        for (auto e : args)
-            std::cout << blanks (in + 2) << "<param:" << e << " />\n";
-        std::cout << blanks (in + 1) << "</params>\n";
-
-        std::cout << blanks (in + 1) << "<statements>\n";
-        for (auto e : stmts)
-        {
-            std::cout << blanks (in + 1) << "<statement>\n";
-            e->print (in + 2);
-            std::cout << blanks (in + 1) << "</statement>\n";
-        }
-        std::cout << blanks (in + 1) << "</statements>\n";
-
-        std::cout << "</block>\n";
-    }
+    virtual void synthInScope (AbstractScope * scope) = 0;
+    virtual void generateOn (CodeGen & gen) = 0;
 };
 
 struct ExprStmtNode : StmtNode
@@ -357,17 +45,10 @@ struct ExprStmtNode : StmtNode
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext)
-    {
-        expr->generateInContext (aContext);
-    }
+    virtual void synthInScope (AbstractScope * scope);
+    virtual void generateOn (CodeGen & gen);
 
-    virtual void print (int in)
-    {
-        std::cout << blanks (in) << "<exprstmt>\n";
-        expr->print (in + 1);
-        std::cout << blanks (in) << "</exprstmt>\n";
-    }
+    virtual void print (int in);
 };
 
 struct ReturnStmtNode : StmtNode
@@ -378,14 +59,10 @@ struct ReturnStmtNode : StmtNode
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext);
+    virtual void synthInScope (AbstractScope * scope);
+    virtual void generateOn (CodeGen & gen);
 
-    virtual void print (int in)
-    {
-        std::cout << blanks (in) << "<returnstmt> ";
-        expr->print (in + 1);
-        std::cout << blanks (in) << "</returnstmt>";
-    }
+    virtual void print (int in);
 };
 
 struct DeclNode : Node
@@ -394,55 +71,58 @@ struct DeclNode : Node
 
 struct MethodNode : DeclNode
 {
+    MethodScope * scope;
+
     bool isClassMethod;
     std::string sel;
-    std::list<std::string> args;
-    std::list<std::string> locals;
-    std::list<StmtNode *> stmts;
+    std::vector<std::string> args;
+    std::vector<std::string> locals;
+    std::vector<StmtNode *> stmts;
 
     MethodNode (bool isClassMethod, std::string sel,
-                std::list<std::string> args, std::list<std::string> locals,
-                std::list<StmtNode *> stmts)
+                std::vector<std::string> args, std::vector<std::string> locals,
+                std::vector<StmtNode *> stmts)
         : isClassMethod (isClassMethod), sel (sel), args (args),
           locals (locals), stmts (stmts)
     {
     }
 
-    virtual encPtr generateInContext (bool isClassMethod,
-                                      GenerationContext * aContext);
+    void synthInClassScope (ClassScope * clsScope);
+    MethodOop generate ();
 
     void print (int in);
 };
 
 struct ClassNode : DeclNode
 {
+    ClassScope * scope;
+
     std::string name;
     std::string superName;
-    std::list<std::string> cVars;
-    std::list<std::string> iVars;
-    std::list<MethodNode *> cMethods;
-    std::list<MethodNode *> iMethods;
+    std::vector<std::string> cVars;
+    std::vector<std::string> iVars;
+    std::vector<MethodNode *> cMethods;
+    std::vector<MethodNode *> iMethods;
 
     /* Resolved later */
-    GlobalVarNode * superClass;
+    // GlobalVarNode * superClass;
 
     ClassNode (std::string name, std::string superName,
-               std::list<std::string> cVars, std::list<std::string> iVars);
+               std::vector<std::string> cVars, std::vector<std::string> iVars);
 
+    void synth ();
     int addIVarsToContextStartingFrom (GenerationContext * aContext, int index);
-    virtual void generateInContext (GlobalVarNode * myClassVar,
-                                    GenerationContext * aContext);
 
     void print (int in);
 };
 
 struct ProgramNode : DeclNode
 {
-    std::list<ClassNode *> classes;
+    std::vector<ClassNode *> classes;
 
     void addClass (ClassNode * aClass);
     void mergeProgram (ProgramNode * aNode);
-    virtual void generateInContext (GenerationContext * aContext);
+    void synth ();
 
     void print (int in);
 };

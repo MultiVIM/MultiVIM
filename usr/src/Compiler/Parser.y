@@ -80,6 +80,32 @@ ProgramNode * MVST_Parser::parseFile (std::string fName)
 	return parser->program;
 }
 
+MethodNode * MVST_Parser::parseText (std::string src)
+{
+    MVST_Parser *parser;
+    yyscan_t scanner;
+    YY_BUFFER_STATE yyb;
+
+    parser = MVST_Parser::create("<no-file>", src);
+    if (1)//0)
+        parser->trace(stdout, "<parser>: ");
+
+	parser->program = new ProgramNode();
+
+    mvstlex_init_extra(parser, &scanner);
+
+	printf("Src: (%s)\n", src.c_str());
+    /* Now we need to scan our string into the buffer. */
+    yyb = mvst_scan_string(src.c_str(), scanner);
+
+	parser->parse(TOK_DIRECTMETH);
+    while (mvstlex(scanner))
+        ;
+    parser->parse(TOK_EOF);
+
+	return parser->meth;
+}
+
 MVST_Parser * MVST_Parser::create(std::string fName, std::string & fText)
 {
 	return new yypParser(fName, fText);
@@ -122,13 +148,23 @@ Position MVST_Parser::pos()
 
 }
 
+file ::= directMeth EOF.
+
+
 file ::= lDecl(l) EOF.
 	{
 		for (auto d: l)
 			printf("ADecl\n");
 	}
 
-%type lDecl { std::list<DeclNode *> }
+directMeth ::= DIRECTMETH oIvarDefs(locals)
+		statementList(stmts)
+		oFinalDot.
+	{
+		meth = new MethodNode(false, "fakeselector", {}, locals, stmts);
+	}
+
+%type lDecl { std::vector<DeclNode *> }
 %type decl { DeclNode * }
 
 lDecl(L) ::= decl(d). { L = {d}; }
@@ -146,7 +182,7 @@ decl ::= ATinclude STRING(name).
 	}
 
 decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
-	SQB_OPEN 
+	SQB_OPEN
 		oIvarDefs(iVars)
 		olMethDecl(iMeths)
 	SQB_CLOSE.
@@ -157,8 +193,8 @@ decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
 		program->addClass(cls);
 	}
 
-%type oIvarDefs { std::list<std::string> }
-%type lIvar { std::list<std::string> }
+%type oIvarDefs { std::vector<std::string> }
+%type lIvar { std::vector<std::string> }
 
 oIvarDefs ::= .
 oIvarDefs(L) ::= BAR lIvar(l) BAR. { L = l; }
@@ -170,8 +206,8 @@ lIvar(L) ::= lIvar(l) IDENTIFIER(i).
 		L.push_back(i); 
 	}
 
-%type olMethDecl { std::list<MethodNode *> }
-%type lMethDecl { std::list<MethodNode *> }
+%type olMethDecl { std::vector<MethodNode *> }
+%type lMethDecl { std::vector<MethodNode *> }
 %type methDecl { MethodNode * }
 
 olMethDecl(L) ::= lMethDecl(l). { L = l; }
@@ -201,7 +237,7 @@ methDecl(D) ::= oCLASSRR(isClass) sel_decl(s)
 oCLASSRR(C) ::= . { C = false; }
 oCLASSRR(C) ::= CLASSRR. { C = true; }
 
-%type statementList { std::list<StmtNode *> }
+%type statementList { std::vector<StmtNode *> }
 %type statement { StmtNode * }
 
 statementList(L) ::= statement(s). { L = {s}; }
@@ -268,7 +304,7 @@ expression(E) ::= binary(e) keywordList(k).
 		E = new MessageExprNode(e, k);
 	}
 
-%type keywordList { std::list<std::pair<std::string, ExprNode *>> }
+%type keywordList { std::vector<std::pair<std::string, ExprNode *>> }
 
 keywordList(L) ::= keyword(k) binary(e).
 	{
@@ -322,8 +358,8 @@ lPrimary(L) ::= lPrimary(l) primary(p).
 literal(L) ::= HASH LBRACKET oLALiteral(a) RBRACKET.  { L = new ArrayExprNode(a); }
 literal ::= iLiteral.
 
-%type lALiteral { std::list<ExprNode *> }
-%type oLALiteral { std::list<ExprNode *> }
+%type lALiteral { std::vector<ExprNode *> }
+%type oLALiteral { std::vector<ExprNode *> }
 
 oLALiteral ::= .
 oLALiteral(A) ::= lALiteral(l). {A = l;}
@@ -374,13 +410,13 @@ block(B) ::= SQB_OPEN oBlockVarList(v) oStatementList(s) SQB_CLOSE.
 oFinalDot ::= .
 oFinalDot ::= DOT.
 
-%type oStatementList { std::list<StmtNode *> }
+%type oStatementList { std::vector<StmtNode *> }
 
 oStatementList ::= .
 oStatementList(L) ::= statementList(l). { L = l; }
 
-%type oBlockVarList { std::list<std::string> }
-%type colonVarList { std::list<std::string> }
+%type oBlockVarList { std::vector<std::string> }
+%type colonVarList { std::vector<std::string> }
 
 oBlockVarList(L) ::= colonVarList(l) BAR. { L = l; }
 oBlockVarList ::= .
@@ -399,7 +435,7 @@ colonVarList(L) ::= colonVarList(l) COLONVAR(v).
 		L.push_back(s);
 	}
 
-%type sel_decl { std::pair<std::string, std::list<std::string>> }
+%type sel_decl { std::pair<std::string, std::vector<std::string>> }
 
 sel_decl(S) ::= identifier(i). { S = {i, {}};  }
 sel_decl(S)
@@ -413,7 +449,7 @@ sel_decl(S)
 		S = k;
 	}
 
-%type keyw_decl_list { std::pair<std::string, std::list<std::string>> }
+%type keyw_decl_list { std::pair<std::string, std::vector<std::string>> }
 
 keyw_decl_list(L) ::= keyw_decl(k). {
     L = {k.first, {k.second}};

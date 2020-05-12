@@ -48,6 +48,16 @@ inline size_t Oop::size ()
     return actualObject ()->size;
 }
 
+inline int SmiOop::postInc ()
+{
+    return value++;
+}
+
+inline int SmiOop::preInc ()
+{
+    return ++value;
+}
+
 inline Oop * OopOop::vonNeumannSpace ()
 {
     return actualObject ()->vonNeumannSpace.oops;
@@ -80,12 +90,14 @@ inline uint8_t & ByteOop::basicatPut (size_t index, uint8_t value)
                value;
 }
 
-inline ClassOop & Oop::isa ()
+inline ClassOop Oop::isa ()
 {
+    if (isIntegerFlag)
+        return memMgr.clsSmi ();
     return memMgr.actualObjectForOop (*this)->isa;
 }
 
-inline ClassOop & Oop::setIsa (ClassOop val)
+inline ClassOop Oop::setIsa (ClassOop val)
 {
     return (memMgr.actualObjectForOop (*this)->isa = val);
 }

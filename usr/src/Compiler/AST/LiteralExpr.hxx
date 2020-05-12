@@ -1,11 +1,14 @@
-#include "AST.hxx"
+#include "Expr.hxx"
 
 struct LiteralExprNode : ExprNode
 {
+    virtual void synthInScope (AbstractScope * parentScope)
+    {
+    }
 };
 
 /* Character literal */
-struct CharExprNode : ExprNode
+struct CharExprNode : LiteralExprNode
 {
     std::string khar;
 
@@ -13,11 +16,11 @@ struct CharExprNode : ExprNode
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext);
+    virtual void generateOn (CodeGen & gen);
 };
 
 /* Symbol literal */
-struct SymbolExprNode : ExprNode
+struct SymbolExprNode : LiteralExprNode
 {
     std::string sym;
 
@@ -25,11 +28,11 @@ struct SymbolExprNode : ExprNode
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext);
+    virtual void generateOn (CodeGen & gen);
 };
 
 /* Integer literal */
-struct IntExprNode : ExprNode
+struct IntExprNode : LiteralExprNode
 {
     int num;
 
@@ -37,7 +40,7 @@ struct IntExprNode : ExprNode
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext);
+    virtual void generateOn (CodeGen & gen);
 };
 
 /* String literal */
@@ -49,11 +52,11 @@ struct StringExprNode : LiteralExprNode
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext);
+    virtual void generateOn (CodeGen & gen);
 };
 
 /* Integer literal */
-struct FloatExprNode : ExprNode
+struct FloatExprNode : LiteralExprNode
 {
     double num;
 
@@ -61,16 +64,16 @@ struct FloatExprNode : ExprNode
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext);
+    virtual void generateOn (CodeGen & gen);
 };
 
 struct ArrayExprNode : LiteralExprNode
 {
-    std::list<ExprNode *> elements;
+    std::vector<ExprNode *> elements;
 
-    ArrayExprNode (std::list<ExprNode *> exprs) : elements (exprs)
+    ArrayExprNode (std::vector<ExprNode *> exprs) : elements (exprs)
     {
     }
 
-    virtual void generateInContext (GenerationContext * aContext);
+    virtual void generateOn (CodeGen & gen);
 };

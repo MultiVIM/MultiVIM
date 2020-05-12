@@ -12,35 +12,92 @@
     }
 
 CastFun (ArrayOop);
+CastFun (BlockOop);
+CastFun (ByteArrayOop);
 CastFun (ClassOop);
+CastFun (ContextOop);
 CastFun (DictionaryOop);
 CastFun (LinkOop);
-CastFun (SymbolOop);
+CastFun (MethodOop);
+CastFun (OopOop);
+CastFun (ProcessOop);
 CastFun (StringOop);
+CastFun (SymbolOop);
 
-#define AccessorDef(ClassName, Type, Index, FunName, SetFunName)               \
-    inline Type & ClassName::FunName ()                                        \
+#define AccessorDef(Type, Index, FunName, SetFunName)                          \
+    inline Type & accessorsFor::FunName ()                                     \
     {                                                                          \
         return basicAt (Index).as##Type ();                                    \
     }                                                                          \
-    inline Type ClassName::SetFunName (Type value)                             \
+    inline Type accessorsFor::SetFunName (Type value)                          \
     {                                                                          \
         return basicatPut (Index, value).as##Type ();                          \
     }
 
-AccessorDef (ClassOop, SymbolOop, 1, name, setName);
-AccessorDef (ClassOop, ClassOop, 2, superClass, setSuperClass);
-AccessorDef (ClassOop, DictionaryOop, 3, methods, setMethods);
-AccessorDef (ClassOop, SmiOop, 4, nstSize, setNstSize);
-AccessorDef (ClassOop, ArrayOop, 5, nstVars, setNstVars);
+#define accessorsFor ClassOop
+AccessorDef (SymbolOop, 1, name, setName);
+AccessorDef (ClassOop, 2, superClass, setSuperClass);
+AccessorDef (DictionaryOop, 3, methods, setMethods);
+AccessorDef (SmiOop, 4, nstSize, setNstSize);
+AccessorDef (ArrayOop, 5, nstVars, setNstVars);
+#undef accessorsFor
 
-AccessorDef (LinkOop, Oop, 1, one, setOne);
-AccessorDef (LinkOop, Oop, 2, two, setTwo);
-AccessorDef (LinkOop, LinkOop, 3, nextLink, setNextLink);
+#define accessorsFor LinkOop
+AccessorDef (Oop, 1, one, setOne);
+AccessorDef (Oop, 2, two, setTwo);
+AccessorDef (LinkOop, 3, nextLink, setNextLink);
+#undef accessorsFor
 
 inline bool StringOop::strEquals (std::string aString)
 {
     return !strcmp ((char *)vonNeumannSpace (), aString.c_str ());
+}
+
+inline std::string StringOop::asString ()
+{
+    return std::string ((char *)vonNeumannSpace ());
+}
+
+#define accessorsFor MethodOop
+AccessorDef (ByteArrayOop, 1, bytecode, setBytecode);
+AccessorDef (ArrayOop, 2, literals, setLiterals);
+AccessorDef (StringOop, 3, sourceText, setSourceText);
+AccessorDef (SymbolOop, 4, selector, setSelector);
+AccessorDef (SmiOop, 5, stackSize, setStackSize);
+AccessorDef (SmiOop, 6, temporarySize, setTemporarySize);
+AccessorDef (ClassOop, 7, methodClass, setMethodClass);
+AccessorDef (SmiOop, 8, watch, setWatch);
+#undef accessorsFor
+
+#define accessorsFor BlockOop
+AccessorDef (ByteArrayOop, 1, bytecode, setBytecode);
+AccessorDef (ArrayOop, 2, literals, setLiterals);
+AccessorDef (StringOop, 3, sourceText, setSourceText);
+AccessorDef (SymbolOop, 4, selector, setSelector);
+AccessorDef (SmiOop, 5, stackSize, setStackSize);
+AccessorDef (SmiOop, 6, temporarySize, setTemporarySize);
+AccessorDef (Oop, 7, receiver, setReceiver);
+AccessorDef (SmiOop, 8, argumentCount, setArgumentCount);
+#undef accessorsFor
+
+#define accessorsFor ContextOop
+AccessorDef (ContextOop, 1, previousContext, setPreviousContext);
+AccessorDef (SmiOop, 2, programCounter, setProgramCounter);
+AccessorDef (Oop, 3, receiver, setReceiver);
+AccessorDef (ArrayOop, 4, arguments, setArguments);
+AccessorDef (ArrayOop, 5, temporaries, setTemporaries);
+AccessorDef (ByteArrayOop, 6, bytecode, setBytecode);
+AccessorDef (OopOop, 7, methodOrBlock, setMethodOrBlock);
+#undef accessorsFor
+
+#define accessorsFor ProcessOop
+AccessorDef (ContextOop, 1, context, setContext);
+#undef accessorsFor
+
+inline uint8_t ContextOop::fetchByte ()
+{
+    int pos = programCounter ().postInc ();
+    return bytecode ().basicAt (pos);
 }
 
 #endif

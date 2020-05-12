@@ -6,7 +6,10 @@
 #include <vector>
 
 #include "OldVM/VM.hxx"
+#include "Oops/Oops.hxx"
 #include "lemon/lemon_base.h"
+
+struct MethodNode;
 
 /* Details of the position of some source code. */
 class Position
@@ -182,6 +185,7 @@ class MVST_Parser : public lemon_base<Token>
     std::string path;
     std::string & fText;
     ProgramNode * program;
+    MethodNode * meth;
     int m_line = 0, m_col = 0, m_pos = 0;
     int m_oldLine = 0, m_oldCol = 0, m_oldPos = 0;
 
@@ -202,6 +206,7 @@ class MVST_Parser : public lemon_base<Token>
     }
 
     static ProgramNode * parseFile (std::string fName);
+    static MethodNode * parseText (std::string text);
     static MVST_Parser * create (std::string fName, std::string & fText);
 
     MVST_Parser (std::string f, std::string & ft)

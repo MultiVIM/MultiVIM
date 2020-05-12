@@ -59,6 +59,8 @@ set(CMAKE_OBJC_LINK_FLAGS "${CMAKE_OBJC_LINK_FLAGS} -L/usr/local/lib -lobjfw \
     -lobjfwrt  -lm -ldl -lpthread -fexceptions -fobjc-arc -fobjc-arc-exceptions")
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${CMAKE_OBJC_LINK_FLAGS}")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-attribute-packed-for-bitfield")
+
 FlexCXXComp(Compiler/Lexer.l)
 LemonCXXComp(Compiler/Parser.y)
 
@@ -74,12 +76,16 @@ add_executable(MultiVIM
     Lowlevel/MVLog.m
     "ObjFW Categories/OFMutableData+MV.m"
 
-    "Compiler/ASTBytecodeGeneration.cxx" "Compiler/Compiler.cxx"
-    "Compiler/AST/AST.cxx"
+    "Compiler/AST/Generation.cxx" "Compiler/Compiler.cxx"
+    "Compiler/AST/AST.cxx" "Compiler/AST/Printing.cxx" "Compiler/AST/Synth.cxx"
+    "Compiler/CodeGen.cxx"
 
     "ObjectMemory/ObjectMemory.cxx"
 
-    "Oops/Oops.cxx"
+    "Oops/Oops.cxx" "Oops/BlockOop.cxx" "Oops/DictionaryOop.cxx"
+    "Oops/MethodOop.cxx"
+
+    "VM/Interpreter.cxx"
 
     "OldVM/VM.cxx" "OldVM/Memory.cxx" "OldVM/Compiler.cxx"
     ${CMAKE_CURRENT_BINARY_DIR}/Lexer.l.cxx
