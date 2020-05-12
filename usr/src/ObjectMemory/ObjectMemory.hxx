@@ -163,6 +163,18 @@ class ClassOop : public OopOop
     DeclareAccessorPair (ArrayOop, nstVars, setNstVars);
 
     /**
+     * Adds an instance method to the class. Creates the method dictionary if
+     * necessary. Sets the method's class pointer accordingly.
+     */
+    void addMethod (MethodOop method);
+
+    /**
+     * Adds a class method to the class. Creates the metaclass' method
+     * dictionary if necessary. Sets the method's class pointer accordingly.
+     */
+    void addClassMethod (MethodOop method);
+
+    /**
      * For a class that was raw-allocated, sets it up in the same way as
      * allocate() does. Requires that the class has an allocated metaclass
      * stored into its isa field.

@@ -133,9 +133,9 @@ void MemoryManager::coldBoot ()
     bootMeth = MVST_Parser::parseText (" | test | [ [ test + 2 ] ]");
     bootMeth->synthInClassScope (NULL);
 
-    bootMeth->generate ().print (0);
+    // bootMeth->generate ().print (0);
     // printBytecode (bootMeth->generate ().bytecode ());
-    objSymbolTable ().print (0);
+    // objSymbolTable ().print (0);
 }
 
 Oop MemoryManager::objNil ()

@@ -11,6 +11,11 @@ VarNode * AbstractScope::lookup (std::string name)
         return new GlobalVarNode (name);
 }
 
+void ClassScope::addIvar (std::string name)
+{
+    iVars.push_back (new InstanceVarNode (iVars.size () + 1, name));
+}
+
 void AbstractCodeScope::addArg (std::string name)
 {
     locals.push_back (new LocalVarNode (locals.size () + 1, name));
@@ -169,49 +174,42 @@ void MethodNode::synthInClassScope (ClassScope * clsScope)
         stmt->synthInScope (scope);
 }
 
-/*int ClassNode::addIVarsToContextStartingFrom (CodeGen & gen, int index)
-{
-    scope = new ClassScope ();
-    assert (superClass || (superName == "nil"));
-
-    if (superClass)
-        index =
-            superClass->getClass ()->addIVarsToContextStartingFrom (gen, index);
-
-    for (auto i : iVars)
-    {
-        gen.addIvar (index++, i);
-    }
-
-    return index;
-}*/
-
-static int classOopAddIvarsToScopeStartingFrom (ClassOop aClass,
-                                                ClassScope * scope, int index)
+static void classOopAddIvarsToScopeStartingFrom (ClassOop aClass,
+                                                 ClassScope * scope)
 {
     ClassOop superClass = aClass.superClass ();
 
     if (!superClass.isNil ())
-        index = classOopAddIvarsToScopeStartingFrom (superClass, scope, index);
+        classOopAddIvarsToScopeStartingFrom (superClass, scope);
 
-    for (int i = 1; i <= superClass.nstVars ().size (); i++)
+    for (int i = 1; i <= aClass.nstVars ().size (); i++)
         scope->addIvar (
-            superClass.nstVars ().basicAt (i).asSymbolOop ().asString ());
+            aClass.nstVars ().basicAt (i).asSymbolOop ().asString ());
 }
 
 void ClassNode::synth ()
 {
     int index = 0;
+    scope = new ClassScope;
     ClassOop cls, superCls = memMgr.objNil ().asClassOop ();
 
     if (superName != "nil")
     {
         superCls = memMgr.lookupClass (superName);
-        assert (!cls.isNil ());
+        assert (!superCls.isNil ());
     }
 
     cls = memMgr.findOrCreateClass (superCls, name);
     cls.setNstVars (ArrayOop::symbolArrayFromStringVector (iVars));
+
+    classOopAddIvarsToScopeStartingFrom (cls, scope);
+    cls.setNstSize (SmiOop (scope->iVars.size ()));
+    memMgr.objGlobals ().symbolInsert (cls.name (), cls);
+
+    for (auto meth : iMethods)
+    {
+        meth->synthInClassScope (scope);
+    }
 }
 
 void ProgramNode::synth ()

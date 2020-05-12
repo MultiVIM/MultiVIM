@@ -35,7 +35,19 @@ CastFun (SymbolOop);
     }
 
 #define accessorsFor ClassOop
-AccessorDef (SymbolOop, 1, name, setName);
+inline SymbolOop & accessorsFor::name ()
+{
+    assert (!isNil ());
+
+    return basicAt (1).asSymbolOop ();
+}
+inline SymbolOop accessorsFor::setName (SymbolOop value)
+{
+    assert (!isNil ());
+    return basicatPut (1, value).asSymbolOop ();
+}
+
+// AccessorDef (SymbolOop, 1, name, setName);
 AccessorDef (ClassOop, 2, superClass, setSuperClass);
 AccessorDef (DictionaryOop, 3, methods, setMethods);
 AccessorDef (SmiOop, 4, nstSize, setNstSize);

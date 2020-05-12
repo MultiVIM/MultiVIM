@@ -88,7 +88,7 @@ MethodNode * MVST_Parser::parseText (std::string src)
 
     parser = MVST_Parser::create("<no-file>", src);
     if (1)//0)
-        parser->trace(stdout, "<parser>: ");
+        //parser->trace(stdout, "<parser>: ");
 
 	parser->program = new ProgramNode();
 

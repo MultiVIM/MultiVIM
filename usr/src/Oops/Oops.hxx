@@ -59,6 +59,10 @@ class DictionaryOop : public OopOop
      */
     Oop symbolLookup (std::string aString);
 
+#pragma mark creation
+
+    static DictionaryOop newWithSize (size_t numBuckets);
+
 #pragma mark misc
     void print (int in);
 };

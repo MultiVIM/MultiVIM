@@ -120,7 +120,7 @@ struct AbstractScope
 struct ClassScope : AbstractScope
 {
     /* Index + 1 = Smalltalk index */
-    std::vector<InstanceVarNode> iVars;
+    std::vector<InstanceVarNode *> iVars;
 
     AbstractScope * parent ()
     {

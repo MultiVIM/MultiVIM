@@ -27,7 +27,7 @@ std::pair<Oop, Oop> DictionaryOop::findPairByFun (int hash, ExtraType extraVal,
         hp = (Oop *)table.vonNeumannSpace () + (hash - 1);
         key = *hp++;   /* table at: hash */
         value = *hp++; /* table at: hash + 1 */
-        if (!key.isNil () && (*fun) (key, extraVal))
+        if ((!key.isNil ()) && (*fun) (key, extraVal))
             return {key, value};
         for (link = *(LinkOop *)hp; !link.isNil (); link = *(LinkOop *)hp)
         {
@@ -38,6 +38,7 @@ std::pair<Oop, Oop> DictionaryOop::findPairByFun (int hash, ExtraType extraVal,
                 return {key, value};
         }
     }
+
     return {Oop (), Oop ()};
 }
 
@@ -54,7 +55,8 @@ static void dispatchPrint (int in, Oop anOop)
     Case (Method);
     Case (Block);
     else if (anOop.isNil ()) std::cout << blanks (in) + "(nil)\n";
-    else std::cout << blanks (in) + "Unknown object.\n";
+    else std::cout << blanks (in) + "Unknown object: index " << anOop.index ()
+                   << " .\n";
 }
 
 void Oop::print (int in)
@@ -127,9 +129,7 @@ int strTest (Oop key, std::string aString)
 
 int identityTest (Oop key, Oop match)
 {
-    if (key == match)
-        return 1;
-    return 0;
+    return key == match;
 }
 
 void SmiOop::print (int in)
@@ -146,6 +146,19 @@ LinkOop LinkOop::newWith (Oop a, Oop b)
 }
 
 #pragma mark ClassOop
+
+void ClassOop::addMethod (MethodOop method)
+{
+    if (methods ().isNil ())
+        setMethods (DictionaryOop::newWithSize (20));
+    methods ().symbolInsert (method.selector (), method);
+    method.setMethodClass (*this);
+}
+
+void ClassOop::addClassMethod (MethodOop method)
+{
+    isa ().addMethod (method);
+}
 
 void ClassOop::setupClass (ClassOop superClass, std::string name)
 {
@@ -178,6 +191,8 @@ ClassOop ClassOop::allocate (ClassOop superClass, std::string name)
     ClassOop metaCls = memMgr.allocateOopObj (clsInstLength).asClassOop (),
              cls = memMgr.allocateOopObj (clsInstLength).asClassOop ();
 
+    cls.setIsa (metaCls);
+
     cls.setupClass (superClass, name);
 
     return cls;
@@ -198,9 +213,7 @@ void DictionaryOop::symbolInsert (SymbolOop key, Oop value)
 Oop DictionaryOop::symbolLookup (std::string aString)
 {
     SymbolOop sym = SymbolOop::fromString (aString);
-    return memMgr.objSymbolTable ()
-        .findPairByFun<Oop> (sym.index (), sym, identityTest)
-        .second;
+    return findPairByFun<Oop> (sym.index (), sym, identityTest).second;
 }
 
 SymbolOop SymbolOop::fromString (std::string aString)
@@ -225,8 +238,8 @@ SymbolOop SymbolOop::fromString (std::string aString)
 
 void SymbolOop::print (int in)
 {
-    std::cout << blanks (in) << "Symbol: " << (const char *)vonNeumannSpace ()
-              << "\n";
+    std::cout << blanks (in) << "Symbol " << index () << ": "
+              << (const char *)vonNeumannSpace () << "\n";
 }
 
 #pragma mark MethodOop

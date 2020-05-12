@@ -24,8 +24,10 @@ void DictionaryOop::insert (int hash, Oop key, Oop value)
 
         /* FIXME: I adapted this from the PDST C sources, and this doesn't
          * appear to handle anything other than symbols (because of
-         * tablentry == key). Make it a template in the future or make it accept
-         * a comparison callback like findPairByFun() in the future, maybe? */
+         * tablentry == key). Make it a template in the future or make it
+         * accept
+         * a comparison callback like findPairByFun() in the future, maybe?
+         */
         if (tablentry.isNil () || (tablentry == key))
         {
             table.basicatPut (hash + 1, key);
@@ -60,6 +62,14 @@ void DictionaryOop::insert (int hash, Oop key, Oop value)
     }
 }
 
+DictionaryOop DictionaryOop::newWithSize (size_t numBuckets)
+{
+    DictionaryOop dict = memMgr.allocateOopObj (1).asDictionaryOop ();
+    dict.setIsa (memMgr.clsDictionary ());
+    dict.basicatPut (1, ArrayOop::newWithSize (numBuckets * 3));
+    return dict;
+}
+
 void DictionaryOop::print (int in)
 {
     ArrayOop table = basicAt (1).asArrayOop ();
@@ -79,8 +89,10 @@ void DictionaryOop::print (int in)
     for (int i = 1; i <= table.size (); i += 3)
     {
         hp = (Oop *)table.vonNeumannSpace () + (i - 1);
-        key = *hp++;   /* table at: hash */
-        value = *hp++; /* table at: hash + 1 */
+        printf (" --> bucket: %d\n",
+                i - 1); //(3 * (i % (tablesize / 3))) - 1);
+        key = *hp++;    /* table at: hash */
+        value = *hp++;  /* table at: hash + 1 */
 
         std::cout << blanks (in + 1) + "{ Key:\n";
         key.print (in + 2);
