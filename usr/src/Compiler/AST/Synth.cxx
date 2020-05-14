@@ -30,8 +30,8 @@ ParentsHeapVarNode * AbstractCodeScope::promote (VarNode * aNode)
 {
     HeapVarNode * newVar =
         new HeapVarNode (myHeapVars.size () + 1, aNode->name);
-    printf ("Promoting\n");
-    aNode->print (5);
+    // printf ("Promoting\n");
+    // aNode->print (5);
     aNode->promoted = true;
     aNode->promotedIndex = newVar->index;
     myHeapVars.push_back ({newVar, aNode});
@@ -160,7 +160,7 @@ void ReturnStmtNode::synthInScope (AbstractScope * scope)
 
 #pragma decls
 
-void MethodNode::synthInClassScope (ClassScope * clsScope)
+MethodNode * MethodNode::synthInClassScope (ClassScope * clsScope)
 {
     /* We expect to get a class node already set up with its ivars etc. If not,
      * no problem. */
@@ -172,6 +172,8 @@ void MethodNode::synthInClassScope (ClassScope * clsScope)
         scope->addLocal (local);
     for (auto stmt : stmts)
         stmt->synthInScope (scope);
+
+    return this;
 }
 
 static void classOopAddIvarsToScopeStartingFrom (ClassOop aClass,
@@ -191,7 +193,7 @@ void ClassNode::synth ()
 {
     int index = 0;
     scope = new ClassScope;
-    ClassOop cls, superCls = memMgr.objNil ().asClassOop ();
+    ClassOop superCls = memMgr.objNil ().asClassOop ();
 
     if (superName != "nil")
     {
@@ -205,6 +207,9 @@ void ClassNode::synth ()
     classOopAddIvarsToScopeStartingFrom (cls, scope);
     cls.setNstSize (SmiOop (scope->iVars.size ()));
     memMgr.objGlobals ().symbolInsert (cls.name (), cls);
+
+    for (auto meth : cMethods)
+        meth->synthInClassScope (scope);
 
     for (auto meth : iMethods)
     {

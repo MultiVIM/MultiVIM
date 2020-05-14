@@ -75,7 +75,7 @@ AccessorDef (ByteArrayOop, 1, bytecode, setBytecode);
 AccessorDef (ArrayOop, 2, literals, setLiterals);
 AccessorDef (StringOop, 3, sourceText, setSourceText);
 AccessorDef (SymbolOop, 4, selector, setSelector);
-AccessorDef (SmiOop, 5, stackSize, setStackSize);
+AccessorDef (SmiOop, 5, heapVarsSize, setHeapVarsSize);
 AccessorDef (SmiOop, 6, temporarySize, setTemporarySize);
 AccessorDef (ClassOop, 7, methodClass, setMethodClass);
 AccessorDef (SmiOop, 8, watch, setWatch);
@@ -86,7 +86,7 @@ AccessorDef (ByteArrayOop, 1, bytecode, setBytecode);
 AccessorDef (ArrayOop, 2, literals, setLiterals);
 AccessorDef (StringOop, 3, sourceText, setSourceText);
 AccessorDef (SymbolOop, 4, selector, setSelector);
-AccessorDef (SmiOop, 5, stackSize, setStackSize);
+AccessorDef (SmiOop, 5, heapVarsSize, setHeapVarsSize);
 AccessorDef (SmiOop, 6, temporarySize, setTemporarySize);
 AccessorDef (Oop, 7, receiver, setReceiver);
 AccessorDef (SmiOop, 8, argumentCount, setArgumentCount);
@@ -95,11 +95,14 @@ AccessorDef (SmiOop, 8, argumentCount, setArgumentCount);
 #define accessorsFor ContextOop
 AccessorDef (ContextOop, 1, previousContext, setPreviousContext);
 AccessorDef (SmiOop, 2, programCounter, setProgramCounter);
-AccessorDef (Oop, 3, receiver, setReceiver);
-AccessorDef (ArrayOop, 4, arguments, setArguments);
-AccessorDef (ArrayOop, 5, temporaries, setTemporaries);
-AccessorDef (ByteArrayOop, 6, bytecode, setBytecode);
-AccessorDef (OopOop, 7, methodOrBlock, setMethodOrBlock);
+AccessorDef (SmiOop, 3, stackPointer, setStackPointer);
+AccessorDef (Oop, 4, receiver, setReceiver);
+AccessorDef (ArrayOop, 5, arguments, setArguments);
+AccessorDef (ArrayOop, 6, temporaries, setTemporaries);
+AccessorDef (ArrayOop, 7, heapVars, setHeapVars);
+AccessorDef (ArrayOop, 8, stack, setStack);
+AccessorDef (ByteArrayOop, 9, bytecode, setBytecode);
+AccessorDef (OopOop, 10, methodOrBlock, setMethodOrBlock);
 #undef accessorsFor
 
 #define accessorsFor ProcessOop

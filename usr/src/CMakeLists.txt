@@ -82,8 +82,8 @@ add_executable(MultiVIM
 
     "ObjectMemory/ObjectMemory.cxx"
 
-    "Oops/Oops.cxx" "Oops/BlockOop.cxx" "Oops/DictionaryOop.cxx"
-    "Oops/MethodOop.cxx"
+    "Oops/Oops.cxx" "Oops/BlockOop.cxx" "Oops/ContextOop.cxx"
+    "Oops/DictionaryOop.cxx" "Oops/MethodOop.cxx" "Oops/ProcessOop.cxx"
 
     "VM/Interpreter.cxx"
 

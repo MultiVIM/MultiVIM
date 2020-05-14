@@ -53,6 +53,8 @@ class DictionaryOop : public OopOop
      */
     void symbolInsert (SymbolOop key, Oop value);
 
+    Oop symbolLookup (SymbolOop aSymbol);
+
     /*
      * Looks up the value associated with whichever symbol carries string value
      * aString.
@@ -118,7 +120,7 @@ class MethodOop : public OopOop
     DeclareAccessorPair (ArrayOop, literals, setLiterals);
     DeclareAccessorPair (StringOop, sourceText, setSourceText);
     DeclareAccessorPair (SymbolOop, selector, setSelector);
-    DeclareAccessorPair (SmiOop, stackSize, setStackSize);
+    DeclareAccessorPair (SmiOop, heapVarsSize, setHeapVarsSize);
     DeclareAccessorPair (SmiOop, temporarySize, setTemporarySize);
     DeclareAccessorPair (ClassOop, methodClass, setMethodClass);
     DeclareAccessorPair (SmiOop, watch, setWatch);
@@ -137,7 +139,7 @@ class BlockOop : public OopOop
     DeclareAccessorPair (ArrayOop, literals, setLiterals);
     DeclareAccessorPair (StringOop, sourceText, setSourceText);
     DeclareAccessorPair (SymbolOop, selector, setSelector);
-    DeclareAccessorPair (SmiOop, stackSize, setStackSize);
+    DeclareAccessorPair (SmiOop, heapVarsSize, setHeapVarsSize);
     DeclareAccessorPair (SmiOop, temporarySize, setTemporarySize);
     /* FIXME: We will need to start copying blocks before pushing them to the
      * stack, because otherwise how do we reliably get the receiver at the time
@@ -155,14 +157,17 @@ class BlockOop : public OopOop
 
 class ContextOop : public OopOop
 {
-    static const int clsNstLength = 7;
+    static const int clsNstLength = 10;
 
   public:
     DeclareAccessorPair (ContextOop, previousContext, setPreviousContext);
     DeclareAccessorPair (SmiOop, programCounter, setProgramCounter);
+    DeclareAccessorPair (SmiOop, stackPointer, setStackPointer);
     DeclareAccessorPair (Oop, receiver, setReceiver);
     DeclareAccessorPair (ArrayOop, arguments, setArguments);
     DeclareAccessorPair (ArrayOop, temporaries, setTemporaries);
+    DeclareAccessorPair (ArrayOop, heapVars, setHeapVars);
+    DeclareAccessorPair (ArrayOop, stack, setStack);
     DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
     DeclareAccessorPair (OopOop, methodOrBlock, setMethodOrBlock);
 
@@ -170,14 +175,18 @@ class ContextOop : public OopOop
     uint8_t fetchByte ();
 
     void print (int in);
+
+    static ContextOop newWithMethod (Oop receiver, MethodOop aMethod);
 };
 
 class ProcessOop : public OopOop
 {
-    const int clsNstLength = 4;
+    static const int clsNstLength = 4;
 
   public:
     DeclareAccessorPair (ContextOop, context, setContext);
+
+    static ProcessOop allocate ();
 };
 
 #include "Oops.inl.hxx"

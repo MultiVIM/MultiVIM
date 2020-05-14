@@ -26,10 +26,12 @@ enum Opcode
     kStoreLocal,
     kStoreParentHeapVar,
     kStoreMyHeapVar,
+    kStoreGlobal,
 
-    /* Following bytecode is number of arguments;
-     * Top of stack is selector;
-     * while (argCount--) *args++ =  topOfStack. I.e. ToS is first arg. */
+    /* Following bytecode is number of arguments (nA);
+     * TOS is the selector. TOS - 1 is last arg, TOS -2 is 2nd-to-last arg, etc.
+     * TOS - nArgs is receiver.
+     */
     kSend,
     kSendSuper,
 
@@ -39,6 +41,9 @@ enum Opcode
     kReturn,
     kBlockReturn,
 
+    /* All below this take two args. */
+    kMinTwoArgs,
+
     /* These take two arguments. They move a variable (index is argAt: 1) to
        myHeapVar slot (index is argAt: 2). */
     kMoveParentHeapVarToMyHeapVars,
@@ -46,8 +51,11 @@ enum Opcode
     kMoveLocalToMyHeapVars,
 
     kPrimitive,
+
+    kMax,
 };
 
-void printBytecode (ByteArrayOop arr, int indent);
+void printBytecode (uint8_t code, uint8_t arg, uint8_t arg2);
+void printAllBytecode (ByteArrayOop arr, int indent);
 
 #endif

@@ -10,29 +10,36 @@ MemoryManager memMgr;
 
 #define kClassPairEntry(Name, Pos) kCls##Name##Meta = Pos, kCls##Name = Pos + 1
 
-static enum {
-    kObjNil = 0,
-    kObjTrue = 1,
-    kObjFalse = 2,
-    kObjSymbolTable = 3,
-    kObjGlobals = 4,
-    kObjUnused = 5,
-    kClassPairEntry (Object, 6),
-    kClassPairEntry (Symbol, 8),
-    kClassPairEntry (Smi, 10),
-    kClassPairEntry (Array, 12),
-    kClassPairEntry (ByteArray, 14),
-    kClassPairEntry (String, 16),
-    kClassPairEntry (Method, 18),
-    kClassPairEntry (Process, 20),
-    kClassPairEntry (UndefinedObject, 22),
-    kClassPairEntry (True, 24),
-    kClassPairEntry (False, 26),
-    kClassPairEntry (Link, 28),
-    kClassPairEntry (Dictionary, 30),
-    kClassPairEntry (Block, 32),
-    kMax,
-} coreObjects;
+struct CoreObjects
+{
+    enum
+    {
+        kObjNil = 0,
+        kObjTrue = 1,
+        kObjFalse = 2,
+        kObjSymbolTable = 3,
+        kObjGlobals = 4,
+        kObjUnused = 5,
+        kClassPairEntry (Object, 6),
+        kClassPairEntry (Symbol, 8),
+        kClassPairEntry (Smi, 10),
+        kClassPairEntry (Array, 12),
+        kClassPairEntry (ByteArray, 14),
+        kClassPairEntry (String, 16),
+        kClassPairEntry (Method, 18),
+        kClassPairEntry (Process, 20),
+        kClassPairEntry (UndefinedObject, 22),
+        kClassPairEntry (True, 24),
+        kClassPairEntry (False, 26),
+        kClassPairEntry (Link, 28),
+        kClassPairEntry (Dictionary, 30),
+        kClassPairEntry (Block, 32),
+        kClassPairEntry (Context, 34),
+        kClassPairEntry (SymbolTable, 36),
+        kClassPairEntry (SystemDictionary, 38),
+        kMax,
+    };
+};
 
 static const char * classNames[] = {
     "Object",
@@ -49,6 +56,9 @@ static const char * classNames[] = {
     "Link",
     "Dictionary",
     "Block",
+    "Context",
+    "SymbolTable",
+    "SystemDictionary",
 };
 
 OopOop MemoryManager::allocateOopObj (size_t len)
@@ -73,12 +83,13 @@ ByteOop MemoryManager::allocateByteObj (size_t len)
     return *static_cast<ByteOop *> (&result);
 }
 
-void MemoryManager::coldBoot ()
+void MemoryManager::setupInitialObjects ()
 {
-    std::cout << "MultiVIM Smalltalk: Cold boot in progress..\n";
+    std::cout << "Object Memory: Setting up initial objects..\n";
     MethodNode * bootMeth;
 
-    _table.resize (2048);
+    _table = (TableEntry *)calloc (65535, sizeof (*_table));
+
     lowestFreeSlot = 0;
 
     /* First, the basic objects and classes must be created. Using the usual
@@ -86,7 +97,7 @@ void MemoryManager::coldBoot ()
      * symbols - which changes the object table's current allocation-top. */
 
 #define CreateObj(Name, Size)                                                  \
-    assert (((allocateOopObj (Size)).index () == kObj##Name))
+    assert (((allocateOopObj (Size)).index () == CoreObjects::kObj##Name))
     CreateObj (Nil, 0);
     CreateObj (True, 0);
     CreateObj (False, 0);
@@ -95,8 +106,9 @@ void MemoryManager::coldBoot ()
     CreateObj (Unused, 0);
 
 #define CreateClassPair(Name)                                                  \
-    assert (ClassOop::allocateRawClass ().index () == kCls##Name##Meta);       \
-    assert (ClassOop::allocateRawClass ().index () == kCls##Name)
+    assert (ClassOop::allocateRawClass ().index () ==                          \
+            CoreObjects::kCls##Name##Meta);                                    \
+    assert (ClassOop::allocateRawClass ().index () == CoreObjects::kCls##Name)
 
     CreateClassPair (Object);
     CreateClassPair (Symbol);
@@ -112,15 +124,23 @@ void MemoryManager::coldBoot ()
     CreateClassPair (Link);
     CreateClassPair (Dictionary);
     CreateClassPair (Block);
+    CreateClassPair (Context);
 
     objSymbolTable ().basicatPut (1, allocateOopObj (3 * 53));
     objGlobals ().basicatPut (1, allocateOopObj (3 * 53));
 
-    for (int i = kClsObjectMeta; i < kMax; i++)
+#define AddGlobal(name, obj)                                                   \
+    objGlobals ().symbolInsert (SymbolOop::fromString ("name"), obj)
+
+    AddGlobal ("nil", objNil ());
+    AddGlobal ("true", objTrue ());
+    AddGlobal ("false", objFalse ());
+
+    for (int i = CoreObjects::kClsObjectMeta; i < kMax; i++)
     {
         ClassOop metaCls = Oop (false, i++).asClassOop (),
                  cls = Oop (false, i).asClassOop ();
-        int index = (i - 1 - kObjUnused) / 2;
+        int index = (i - 1 - CoreObjects::kObjUnused) / 2;
         /* Set the metaclass instance length to the length of a class... */
         metaCls.nstSize () = SmiOop (ClassOop::clsInstLength);
         metaCls.name () =
@@ -130,9 +150,6 @@ void MemoryManager::coldBoot ()
         objGlobals ().symbolInsert (cls.name (), cls);
     }
 
-    bootMeth = MVST_Parser::parseText (" | test | [ [ test + 2 ] ]");
-    bootMeth->synthInClassScope (NULL);
-
     // bootMeth->generate ().print (0);
     // printBytecode (bootMeth->generate ().bytecode ());
     // objSymbolTable ().print (0);
@@ -140,31 +157,31 @@ void MemoryManager::coldBoot ()
 
 Oop MemoryManager::objNil ()
 {
-    return Oop (false, kObjNil);
+    return Oop (false, CoreObjects::kObjNil);
 }
 Oop MemoryManager::objTrue ()
 {
-    return Oop (false, kObjTrue);
+    return Oop (false, CoreObjects::kObjTrue);
 }
 Oop MemoryManager::objFalse ()
 {
-    return Oop (false, kObjFalse);
+    return Oop (false, CoreObjects::kObjFalse);
 }
 
 DictionaryOop MemoryManager::objSymbolTable ()
 {
-    return Oop (false, kObjSymbolTable).asDictionaryOop ();
+    return Oop (false, CoreObjects::kObjSymbolTable).asDictionaryOop ();
 }
 
 DictionaryOop MemoryManager::objGlobals ()
 {
-    return Oop (false, kObjGlobals).asDictionaryOop ();
+    return Oop (false, CoreObjects::kObjGlobals).asDictionaryOop ();
 }
 
 #define GetClassFun(Name)                                                      \
     ClassOop MemoryManager::cls##Name ()                                       \
     {                                                                          \
-        return Oop (false, kCls##Name).asClassOop ();                          \
+        return Oop (false, CoreObjects::kCls##Name).asClassOop ();             \
     }
 
 GetClassFun (ObjectMeta);
@@ -179,6 +196,9 @@ GetClassFun (Process);
 GetClassFun (UndefinedObject);
 GetClassFun (Dictionary);
 GetClassFun (Block);
+GetClassFun (Context);
+GetClassFun (SymbolTable);
+GetClassFun (SystemDictionary);
 
 ClassOop MemoryManager::findOrCreateClass (ClassOop superClass,
                                            std::string name)

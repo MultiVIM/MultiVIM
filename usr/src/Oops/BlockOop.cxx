@@ -9,7 +9,7 @@ void BlockOop::print (int in)
     std::cout << blanks (in) + "Block\n" << blanks (in) << "{\n";
     in += 1;
     std::cout << blanks (in) + "Bytecode:\n";
-    printBytecode (bytecode (), in + 1);
+    printAllBytecode (bytecode (), in + 1);
     std::cout << blanks (in) + "Literals:\n";
     for (int i = 1; i <= literals ().size (); i++)
     {

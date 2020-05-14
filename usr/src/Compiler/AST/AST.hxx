@@ -5,6 +5,7 @@
 #include <map>
 
 #include "../Compiler.hxx"
+#include "Lowlevel/MVPrinting.hxx"
 #include "OldVM/VM.hxx"
 
 class CodeGen;
@@ -16,14 +17,8 @@ struct BlockScope;
 struct MethodScope;
 struct ClassScope;
 
-static inline std::string blanks (size_t n)
-{
-    return std::string (n, ' ');
-}
-
 struct Node
 {
-
     virtual void print (int in)
     {
         std::cout << blanks (in) << "<node: " << typeid (*this).name ()
@@ -87,7 +82,7 @@ struct MethodNode : DeclNode
     {
     }
 
-    void synthInClassScope (ClassScope * clsScope);
+    MethodNode * synthInClassScope (ClassScope * clsScope);
     MethodOop generate ();
 
     void print (int in);
@@ -96,6 +91,7 @@ struct MethodNode : DeclNode
 struct ClassNode : DeclNode
 {
     ClassScope * scope;
+    ClassOop cls;
 
     std::string name;
     std::string superName;
@@ -112,6 +108,7 @@ struct ClassNode : DeclNode
 
     void synth ();
     int addIVarsToContextStartingFrom (GenerationContext * aContext, int index);
+    void generate ();
 
     void print (int in);
 };
@@ -123,6 +120,7 @@ struct ProgramNode : DeclNode
     void addClass (ClassNode * aClass);
     void mergeProgram (ProgramNode * aNode);
     void synth ();
+    void generate ();
 
     void print (int in);
 };

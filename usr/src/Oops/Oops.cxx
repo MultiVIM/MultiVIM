@@ -210,10 +210,26 @@ void DictionaryOop::symbolInsert (SymbolOop key, Oop value)
     insert (key.index (), key, value);
 }
 
+Oop DictionaryOop::symbolLookup (SymbolOop aSymbol)
+{
+    return findPairByFun<Oop> (aSymbol.index (), aSymbol, identityTest).second;
+}
+
 Oop DictionaryOop::symbolLookup (std::string aString)
 {
     SymbolOop sym = SymbolOop::fromString (aString);
-    return findPairByFun<Oop> (sym.index (), sym, identityTest).second;
+    return symbolLookup (sym);
+}
+
+StringOop StringOop::fromString (std::string aString)
+{
+    StringOop newObj =
+        memMgr.allocateByteObj (aString.size () + 1).asStringOop ();
+
+    newObj.setIsa (memMgr.clsString ());
+    strncpy (
+        (char *)newObj.vonNeumannSpace (), aString.c_str (), aString.size ());
+    return newObj;
 }
 
 SymbolOop SymbolOop::fromString (std::string aString)

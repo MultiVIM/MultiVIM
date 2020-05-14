@@ -3,10 +3,13 @@
 
 #include "Oops/Oops.hxx"
 
-class Interpreter
+class Processor
 {
+    static Processor mainProcessor;
+
   public:
     void interpret (ProcessOop proc);
+    static void coldBootMainProcessor ();
 };
 
 #endif

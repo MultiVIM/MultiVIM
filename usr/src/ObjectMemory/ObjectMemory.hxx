@@ -203,7 +203,9 @@ class MemoryManager
     {
         ActualObject * obj;
     };
-    std::vector<TableEntry> _table;
+
+    TableEntry * _table;
+    size_t _tableSize;
 
   public:
 #pragma mark system objects
@@ -234,6 +236,9 @@ class MemoryManager
     ClassOop clsUndefinedObject ();
     ClassOop clsDictionary ();
     ClassOop clsLink ();
+    ClassOop clsContext ();
+    ClassOop clsSymbolTable ();
+    ClassOop clsSystemDictionary ();
 
 #pragma mark memory
     inline ActualObject * actualObjectForOop (Oop anOop);
@@ -256,11 +261,12 @@ class MemoryManager
     ClassOop lookupClass (std::string name);
 
 #pragma mark init
+
     /**
      * Performs a cold boot of the Object Manager. Essential objects are
      * provisionally set up such that it is possible to define classes.
      */
-    void coldBoot ();
+    void setupInitialObjects ();
 };
 
 #include "Lowlevel/MVBeginPackStruct.h"
