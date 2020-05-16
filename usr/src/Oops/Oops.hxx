@@ -7,6 +7,14 @@ int strHash (std::string str);
 int strTest (Oop key, std::string aString);
 int identityTest (Oop key, Oop match);
 
+class FloatOop : public ByteOop
+{
+  public:
+    inline double floatValue ();
+
+    static FloatOop fromDouble (double value);
+};
+
 class LinkOop : public OopOop
 {
   public:
@@ -113,15 +121,17 @@ class ClassPair
 
 class MethodOop : public OopOop
 {
-    static const int clsNstLength = 8;
+    static const int clsNstLength = 10;
 
   public:
     DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
     DeclareAccessorPair (ArrayOop, literals, setLiterals);
+    DeclareAccessorPair (SmiOop, argumentCount, setArgumentCount);
+    DeclareAccessorPair (SmiOop, temporarySize, setTemporarySize);
+    DeclareAccessorPair (SmiOop, heapVarsSize, setHeapVarsSize);
+    DeclareAccessorPair (SmiOop, stackSize, setStackSize);
     DeclareAccessorPair (StringOop, sourceText, setSourceText);
     DeclareAccessorPair (SymbolOop, selector, setSelector);
-    DeclareAccessorPair (SmiOop, heapVarsSize, setHeapVarsSize);
-    DeclareAccessorPair (SmiOop, temporarySize, setTemporarySize);
     DeclareAccessorPair (ClassOop, methodClass, setMethodClass);
     DeclareAccessorPair (SmiOop, watch, setWatch);
 
@@ -132,20 +142,18 @@ class MethodOop : public OopOop
 
 class BlockOop : public OopOop
 {
-    static const int clsNstLength = 8;
+    static const int clsNstLength = 9;
 
   public:
     DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
     DeclareAccessorPair (ArrayOop, literals, setLiterals);
-    DeclareAccessorPair (StringOop, sourceText, setSourceText);
-    DeclareAccessorPair (SymbolOop, selector, setSelector);
-    DeclareAccessorPair (SmiOop, heapVarsSize, setHeapVarsSize);
-    DeclareAccessorPair (SmiOop, temporarySize, setTemporarySize);
-    /* FIXME: We will need to start copying blocks before pushing them to the
-     * stack, because otherwise how do we reliably get the receiver at the time
-     * of closure? */
-    DeclareAccessorPair (Oop, receiver, setReceiver);
     DeclareAccessorPair (SmiOop, argumentCount, setArgumentCount);
+    DeclareAccessorPair (SmiOop, temporarySize, setTemporarySize);
+    DeclareAccessorPair (SmiOop, heapVarsSize, setHeapVarsSize);
+    DeclareAccessorPair (SmiOop, stackSize, setStackSize);
+    DeclareAccessorPair (StringOop, sourceText, setSourceText);
+    DeclareAccessorPair (Oop, receiver, setReceiver);
+    DeclareAccessorPair (ArrayOop, parentHeapVars, setParentHeapVars);
 
     /**
      * Allocates a new empty block.
@@ -157,7 +165,7 @@ class BlockOop : public OopOop
 
 class ContextOop : public OopOop
 {
-    static const int clsNstLength = 10;
+    static const int clsNstLength = 11;
 
   public:
     DeclareAccessorPair (ContextOop, previousContext, setPreviousContext);
@@ -167,6 +175,7 @@ class ContextOop : public OopOop
     DeclareAccessorPair (ArrayOop, arguments, setArguments);
     DeclareAccessorPair (ArrayOop, temporaries, setTemporaries);
     DeclareAccessorPair (ArrayOop, heapVars, setHeapVars);
+    DeclareAccessorPair (ArrayOop, parentHeapVars, setParentHeapVars);
     DeclareAccessorPair (ArrayOop, stack, setStack);
     DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
     DeclareAccessorPair (OopOop, methodOrBlock, setMethodOrBlock);
@@ -174,8 +183,26 @@ class ContextOop : public OopOop
     /* Fetch the next byte of bytecode, incrementing the program counter. */
     uint8_t fetchByte ();
 
+    /**
+     * Duplicate the top of the stack
+     */
+    void dup ();
+    /**
+     * Push a value to the stack
+     */
+    void push (Oop obj);
+    /**
+     * Pop a value from the stack
+     */
+    Oop pop ();
+    /**
+     * Fetch the value at the top of the stack
+     */
+    Oop top ();
+
     void print (int in);
 
+    static ContextOop newWithBlock (BlockOop aMethod);
     static ContextOop newWithMethod (Oop receiver, MethodOop aMethod);
 };
 

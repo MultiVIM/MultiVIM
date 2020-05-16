@@ -14,6 +14,7 @@ class ClassOop;
 class ClassPair;
 class ArrayOop;
 class DictionaryOop;
+class FloatOop;
 class LinkOop;
 class SymbolOop;
 class SmiOop;
@@ -43,6 +44,7 @@ class Oop
     {
     }
 
+    inline bool operator!= (const Oop & anOop);
     inline bool operator== (const Oop & anOop);
 
     /**
@@ -70,6 +72,7 @@ class Oop
     ByteArrayOop & asByteArrayOop ();
     ClassOop & asClassOop ();
     DictionaryOop & asDictionaryOop ();
+    FloatOop & asFloatOop ();
     LinkOop & asLinkOop ();
     StringOop & asStringOop ();
     SymbolOop & asSymbolOop ();
@@ -101,6 +104,8 @@ class SmiOop : public Oop
 
     inline int postInc ();
     inline int preInc ();
+    inline int postDec ();
+    inline int preDec ();
 
     void print (int in);
 };
@@ -191,6 +196,8 @@ class ClassOop : public OopOop
      * Allocates an empty classpair with the given superclass and name.
      */
     static ClassOop allocate (ClassOop superClass, std::string name);
+
+    void print (int in);
 };
 
 class MemoryManager
@@ -226,7 +233,7 @@ class MemoryManager
     ClassOop clsBlock ();
     ClassOop clsObjectMeta ();
     ClassOop clsObject ();
-    ClassOop clsSmi ();
+    ClassOop clsInteger ();
     ClassOop clsSymbol ();
     ClassOop clsString ();
     ClassOop clsArray ();
@@ -239,6 +246,9 @@ class MemoryManager
     ClassOop clsContext ();
     ClassOop clsSymbolTable ();
     ClassOop clsSystemDictionary ();
+    ClassOop clsTrue ();
+    ClassOop clsFalse ();
+    ClassOop clsFloat ();
 
 #pragma mark memory
     inline ActualObject * actualObjectForOop (Oop anOop);

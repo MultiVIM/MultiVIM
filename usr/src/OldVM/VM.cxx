@@ -152,17 +152,6 @@ objRef primBlockReturn (objRef arg[])
     return ((objRef)trueObj);
 }
 
-jmp_buf jb = {};
-
-void brkfun (int sig)
-{
-    longjmp (jb, 1);
-}
-
-void brkignore (int sig)
-{
-}
-
 bool execute (encPtr aProcess, int maxsteps);
 
 /*
@@ -181,14 +170,12 @@ objRef primExecute (objRef arg[])
     saveLinkPointer = linkPointer;
     saveCounterAddress = counterAddress;
     /* trap control-C */
-    signal (SIGINT, brkfun);
-    if (setjmp (jb))
-        returnedObject = (objRef)falseObj;
-    else if (execute (arg[0].ptr, 1 << 12))
-        returnedObject = (objRef)trueObj;
-    else
-        returnedObject = (objRef)falseObj;
-    signal (SIGINT, brkignore);
+    // signal (SIGINT, brkfun);
+    // if (setjmp (jb))
+    returnedObject = (objRef)falseObj;
+    // else if (execute (arg[0].ptr, 1 << 12)) returnedObject = (objRef)trueObj;
+    // else returnedObject = (objRef)falseObj;
+    // signal (SIGINT, brkignore);
     /* then restore previous environment */
     processStack = saveProcessStack;
     linkPointer = saveLinkPointer;
@@ -1026,7 +1013,7 @@ objRef primFloatDivide (objRef arg[])
 
 #define MAXFILES 32
 
-FILE * fp[MAXFILES] = {};
+static FILE * fp[MAXFILES] = {};
 
 /*
 Opens the file denoted by the first argument, if necessary.  Some of the

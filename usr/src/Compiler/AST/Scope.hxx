@@ -128,6 +128,7 @@ struct ClassScope : AbstractScope
     }
 
     void addIvar (std::string name);
+    virtual VarNode * lookup (std::string aName);
 };
 
 struct BlockNode;

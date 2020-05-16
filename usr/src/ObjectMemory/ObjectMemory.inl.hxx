@@ -5,6 +5,11 @@
 
 #include "ObjectMemory.hxx"
 
+inline bool Oop::operator!= (const Oop & anOop)
+{
+    return !operator== (anOop);
+}
+
 inline bool Oop::operator== (const Oop & anOop)
 {
     return (isIntegerFlag == anOop.isIntegerFlag) && (value == anOop.value);
@@ -58,6 +63,16 @@ inline int SmiOop::preInc ()
     return ++value;
 }
 
+inline int SmiOop::postDec ()
+{
+    return value--;
+}
+
+inline int SmiOop::preDec ()
+{
+    return --value;
+}
+
 inline Oop * OopOop::vonNeumannSpace ()
 {
     return actualObject ()->vonNeumannSpace.oops;
@@ -93,12 +108,13 @@ inline uint8_t & ByteOop::basicatPut (size_t index, uint8_t value)
 inline ClassOop Oop::isa ()
 {
     if (isIntegerFlag)
-        return memMgr.clsSmi ();
+        return memMgr.clsInteger ();
     return memMgr.actualObjectForOop (*this)->isa;
 }
 
 inline ClassOop Oop::setIsa (ClassOop val)
 {
+    assert (!isIntegerFlag);
     return (memMgr.actualObjectForOop (*this)->isa = val);
 }
 

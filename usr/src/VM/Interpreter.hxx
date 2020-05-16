@@ -3,6 +3,14 @@
 
 #include "Oops/Oops.hxx"
 
+struct ExecState
+{
+    ProcessOop proc;
+};
+
+typedef Oop PrimitiveMethod (ExecState & es, ArrayOop args);
+extern PrimitiveMethod * primVec[];
+
 class Processor
 {
     static Processor mainProcessor;

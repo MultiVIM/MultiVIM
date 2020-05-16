@@ -8,7 +8,20 @@ VarNode * AbstractScope::lookup (std::string name)
     if (parent ())
         return parent ()->lookup (name);
     else
+    {
+        printf ("In scope %s: Failed to find %s, assuming GLOBAL.\n",
+                typeid (*this).name (),
+                name.c_str ());
         return new GlobalVarNode (name);
+    }
+}
+
+VarNode * ClassScope::lookup (std::string name)
+{
+    for (auto v : iVars)
+        if (v->name == name)
+            return v;
+    return AbstractScope::lookup (name);
 }
 
 void ClassScope::addIvar (std::string name)
@@ -18,12 +31,12 @@ void ClassScope::addIvar (std::string name)
 
 void AbstractCodeScope::addArg (std::string name)
 {
-    locals.push_back (new LocalVarNode (locals.size () + 1, name));
+    args.push_back (new ArgumentVarNode (args.size () + 1, name));
 }
 
 void AbstractCodeScope::addLocal (std::string name)
 {
-    args.push_back (new ArgumentVarNode (args.size () + 1, name));
+    locals.push_back (new LocalVarNode (locals.size () + 1, name));
 }
 
 ParentsHeapVarNode * AbstractCodeScope::promote (VarNode * aNode)

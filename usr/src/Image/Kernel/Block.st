@@ -1,9 +1,7 @@
 Object subclass: Block [
-	| context argCount argLoc bytePointer |
-
-	blockContext: ctx [
-		context <- ctx
-	]
+	| bytecode literals argCount temporariesSize heapVarsSize stackSize
+	  sourceText receiver
+	  context argCount argLoc by |
 
 	checkArgumentCount: count [
 		^ (argCount = count)
@@ -35,8 +33,7 @@ Object subclass: Block [
 	]
 
 	value [
-		^ (self checkArgumentCount: 0)
-			ifTrue: [ context returnToBlock: bytePointer ]
+		^ <160 self>
 	]
 
 	value: x [

@@ -72,6 +72,10 @@ void VarNode::generatePromoteOn (CodeGen & gen)
         return;
 
     case kLocal:
+        printf ("Moving local NAME %s INDEX %d Promoted INDEX %d\n",
+                name.c_str (),
+                getIndex (),
+                promotedIndex);
         gen.genMoveLocalToMyHeapVars (getIndex (), promotedIndex);
         return;
 
@@ -145,8 +149,14 @@ void PrimitiveExprNode::generateOn (CodeGen & gen)
 
 void IdentExprNode::generateOn (CodeGen & gen)
 {
-    if (isSuper ())
+    if (isSuper () || id == "self")
         gen.genPushSelf ();
+    else if (id == "nil")
+        gen.genPushNil ();
+    else if (id == "true")
+        gen.genPushTrue ();
+    else if (id == "false")
+        gen.genPushFalse ();
     else
         var->generateOn (gen);
 }
@@ -181,7 +191,6 @@ void CascadeExprNode::generateOn (CodeGen & gen)
 
     for (auto it = ++std::begin (messages); it != std::end (messages); it++)
     {
-        // REMOVE: printf ("begin generate iteration\n\n");
         if (*it == messages.back ())
             /* as we are the last one, get rid of the original receiver
              * duplicate; we are consuming it. */
@@ -202,8 +211,6 @@ void BlockExprNode::generateOn (CodeGen & gen)
     BlockOop block = BlockOop::allocate ();
     CodeGen blockGen (true);
 
-    // REMOVE: printf ("\nBegin Block\n\n");
-
     for (auto & v : scope->myHeapVars)
         v.second->generatePromoteOn (blockGen);
 
@@ -213,11 +220,7 @@ void BlockExprNode::generateOn (CodeGen & gen)
         if (s != stmts.back ())
             blockGen.genPop ();
         else if (!dynamic_cast<ReturnStmtNode *> (s))
-        {
-            // REMOVE printf ("gen return as at end of line\n");
-            // REMOVE s->print (12);
             blockGen.genReturn ();
-        }
     }
 
     if (stmts.empty ())
@@ -231,11 +234,11 @@ void BlockExprNode::generateOn (CodeGen & gen)
     block.setArgumentCount (SmiOop (args.size ()));
     block.setTemporarySize (SmiOop (0));
     block.setHeapVarsSize (SmiOop (scope->myHeapVars.size ()));
+    block.setStackSize (blockGen.maxStackSize ());
 
     gen.popCurrentScope ();
-    // REMOVE printf ("\nEnd Block\n\n");
 
-    gen.genPushLiteralObject (block);
+    gen.genPushBlockCopy (block);
 }
 
 #pragma mark statements
@@ -260,13 +263,10 @@ void ReturnStmtNode::generateOn (CodeGen & gen)
 
 MethodOop MethodNode::generate ()
 {
+    bool finalIsReturn;
     MethodOop meth = MethodOop::allocate ();
     CodeGen gen;
 
-    printf (" -> %s\n", sel.c_str ());
-
-    // REMOVE printf ("\n\n\n\n\n\n\nBegin a Method %s of %s\n\n", sel.c_str
-    // ());
     gen.pushCurrentScope (scope);
 
     for (auto & v : scope->myHeapVars)
@@ -275,24 +275,26 @@ MethodOop MethodNode::generate ()
     for (auto s : stmts)
     {
         s->generateOn (gen);
-        if (s != stmts.back () || !dynamic_cast<ReturnStmtNode *> (s))
-        {
-            // REMOVE printf ("generate pop as not at end\n");
+        if (s != stmts.back () ||
+            !(finalIsReturn = dynamic_cast<ReturnStmtNode *> (s)))
             gen.genPop ();
-        }
     }
 
-    if (!1)
+    if (!finalIsReturn)
     {
-        // gen.genPushSelf ();
-        // gen.genReturn ();
+        gen.genPushSelf ();
+        gen.genReturn ();
     }
 
     meth.setSelector (SymbolOop::fromString (sel));
     meth.setBytecode (ByteArrayOop::fromVector (gen.bytecode ()));
     meth.setLiterals (ArrayOop::fromVector (gen.literals ()));
+    meth.setArgumentCount (args.size ());
     meth.setTemporarySize (locals.size ());
     meth.setHeapVarsSize (scope->myHeapVars.size ());
+    meth.setStackSize (gen.maxStackSize ());
+
+    // meth.print (2);
 
     gen.popCurrentScope ();
 

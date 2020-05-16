@@ -84,8 +84,9 @@ add_executable(MultiVIM
 
     "Oops/Oops.cxx" "Oops/BlockOop.cxx" "Oops/ContextOop.cxx"
     "Oops/DictionaryOop.cxx" "Oops/MethodOop.cxx" "Oops/ProcessOop.cxx"
+    "Oops/Printing.cxx"
 
-    "VM/Interpreter.cxx"
+    "VM/Interpreter.cxx" "VM/Primitive.cxx"
 
     "OldVM/VM.cxx" "OldVM/Memory.cxx" "OldVM/Compiler.cxx"
     ${CMAKE_CURRENT_BINARY_DIR}/Lexer.l.cxx

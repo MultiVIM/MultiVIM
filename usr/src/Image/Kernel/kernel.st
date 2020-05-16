@@ -1,5 +1,6 @@
 @include 'Object.st'
 @include 'Behavior.st'
+@include 'Block.st'
 @include 'Class.st'
 @include 'Metaclass.st'
 @include 'Boolean.st'

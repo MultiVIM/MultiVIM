@@ -83,7 +83,7 @@ void DictionaryOop::print (int in)
     /* now see if table is valid */
     if ((tablesize = table.size ()) < 3)
     {
-        printf ("Table Size: %d\n", tablesize);
+        printf ("In Print: Table Size: %d\n", tablesize);
         perror ("system error lookup on null table");
     }
     for (int i = 1; i <= table.size (); i += 3)

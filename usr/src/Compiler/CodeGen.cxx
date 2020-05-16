@@ -5,7 +5,6 @@ void CodeGen::willPush (int n)
 {
     _curStackHeight += n;
 
-    // REMOVE printf ("push %d, now %d\n", n, _curStackHeight);
     if (_curStackHeight > _highestStackHeight)
         _highestStackHeight = _curStackHeight;
 }
@@ -13,7 +12,6 @@ void CodeGen::willPush (int n)
 void CodeGen::willPop (int n)
 {
     _curStackHeight -= n;
-    // REMOVE  printf ("pop %d, now %d\n", n, _curStackHeight);
 }
 
 void CodeGen::genCode (uint8_t code)
@@ -32,6 +30,12 @@ void CodeGen::genInstruction (uint8_t opcode, uint8_t arg)
 void CodeGen::genPushInteger (int val)
 {
     genPushLiteralObject (SmiOop (val));
+}
+
+void CodeGen::genPushBlockCopy (BlockOop block)
+{
+    willPush ();
+    genInstruction (Opcode::kPushBlockCopy, genLiteral (block));
 }
 
 int CodeGen::genLiteral (Oop aLiteral)
@@ -79,8 +83,8 @@ void CodeGen::genPushArgument (uint8_t index)
 
 void CodeGen::genPushGlobal (std::string name)
 {
-    genPushLiteralObject ((SymbolOop::fromString (name)));
     genPushLiteralObject (memMgr.objGlobals ());
+    genPushLiteralObject ((SymbolOop::fromString (name)));
     genMessage (false, 1, "at:");
 }
 
@@ -114,6 +118,18 @@ void CodeGen::genPushNil ()
     genInstruction (Opcode::kPushNil);
 }
 
+void CodeGen::genPushTrue ()
+{
+    willPush ();
+    genInstruction (Opcode::kPushTrue);
+}
+
+void CodeGen::genPushFalse ()
+{
+    willPush ();
+    genInstruction (Opcode::kPushFalse);
+}
+
 void CodeGen::genPop ()
 {
     genInstruction (Opcode::kPop);
@@ -123,6 +139,7 @@ void CodeGen::genPop ()
 void CodeGen::genPrimitive (uint8_t primNum, uint8_t nArgs)
 {
     genInstruction (Opcode::kPrimitive, primNum);
+    genCode (nArgs); /* primitive is 2-arged */
     /* pops all args, but pushes result */
     willPop (nArgs - 1);
 }

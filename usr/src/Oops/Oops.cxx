@@ -50,10 +50,15 @@ static void dispatchPrint (int in, Oop anOop)
     else if (anOop.isa () == memMgr.cls##ClassName ())                         \
         anOop.as##ClassName##Oop ()                                            \
             .print (in)
-    Case (Smi);
+    else if (anOop.isa () == memMgr.clsInteger ())
+        anOop.asSmiOop ().print (in);
     Case (Symbol);
     Case (Method);
     Case (Block);
+    else if ((anOop.index () > memMgr.clsObject ().index ()) &&
+             (anOop.index () < memMgr.clsSystemDictionary ().index ()))
+        anOop.asClassOop ()
+            .print (in);
     else if (anOop.isNil ()) std::cout << blanks (in) + "(nil)\n";
     else std::cout << blanks (in) + "Unknown object: index " << anOop.index ()
                    << " .\n";

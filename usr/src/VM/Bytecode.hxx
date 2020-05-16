@@ -19,6 +19,7 @@ enum Opcode
     kPushLiteral,
     kPushParentHeapVar,
     kPushMyHeapVar,
+    kPushBlockCopy,
 
     /* As above, storing top of stack into the location. (Globals are
        implemented by sending the `value` mess*/

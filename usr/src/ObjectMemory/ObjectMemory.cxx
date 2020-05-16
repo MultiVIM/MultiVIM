@@ -22,7 +22,7 @@ struct CoreObjects
         kObjUnused = 5,
         kClassPairEntry (Object, 6),
         kClassPairEntry (Symbol, 8),
-        kClassPairEntry (Smi, 10),
+        kClassPairEntry (Integer, 10),
         kClassPairEntry (Array, 12),
         kClassPairEntry (ByteArray, 14),
         kClassPairEntry (String, 16),
@@ -37,29 +37,29 @@ struct CoreObjects
         kClassPairEntry (Context, 34),
         kClassPairEntry (SymbolTable, 36),
         kClassPairEntry (SystemDictionary, 38),
+        kClassPairEntry (Float, 40),
         kMax,
     };
 };
 
-static const char * classNames[] = {
-    "Object",
-    "Symbol",
-    "Smi",
-    "Array",
-    "ByteArray",
-    "String",
-    "Method",
-    "Process",
-    "UndefinedObject",
-    "True",
-    "False",
-    "Link",
-    "Dictionary",
-    "Block",
-    "Context",
-    "SymbolTable",
-    "SystemDictionary",
-};
+static const char * classNames[] = {"Object",
+                                    "Symbol",
+                                    "Integer",
+                                    "Array",
+                                    "ByteArray",
+                                    "String",
+                                    "Method",
+                                    "Process",
+                                    "UndefinedObject",
+                                    "True",
+                                    "False",
+                                    "Link",
+                                    "Dictionary",
+                                    "Block",
+                                    "Context",
+                                    "SymbolTable",
+                                    "SystemDictionary",
+                                    "Float"};
 
 OopOop MemoryManager::allocateOopObj (size_t len)
 {
@@ -67,6 +67,7 @@ OopOop MemoryManager::allocateOopObj (size_t len)
     ActualObject * obj =
         (ActualObject *)calloc (1, sizeof (ActualObject) + sizeof (Oop) * len);
     Oop result (false, slot);
+    obj->kind = ActualObject::kOopRef;
     obj->size = len;
     _table[slot] = {obj};
     return *static_cast<OopOop *> (&result);
@@ -78,6 +79,7 @@ ByteOop MemoryManager::allocateByteObj (size_t len)
     ActualObject * obj =
         (ActualObject *)calloc (1, sizeof (ActualObject) + sizeof (Oop) * len);
     Oop result (false, slot);
+    obj->kind = ActualObject::kByte;
     obj->size = len;
     _table[slot] = {obj};
     return *static_cast<ByteOop *> (&result);
@@ -112,7 +114,7 @@ void MemoryManager::setupInitialObjects ()
 
     CreateClassPair (Object);
     CreateClassPair (Symbol);
-    CreateClassPair (Smi);
+    CreateClassPair (Integer);
     CreateClassPair (Array);
     CreateClassPair (ByteArray);
     CreateClassPair (String);
@@ -125,6 +127,9 @@ void MemoryManager::setupInitialObjects ()
     CreateClassPair (Dictionary);
     CreateClassPair (Block);
     CreateClassPair (Context);
+    CreateClassPair (SymbolTable);
+    CreateClassPair (SystemDictionary);
+    CreateClassPair (Float);
 
     objSymbolTable ().basicatPut (1, allocateOopObj (3 * 53));
     objGlobals ().basicatPut (1, allocateOopObj (3 * 53));
@@ -136,19 +141,35 @@ void MemoryManager::setupInitialObjects ()
     AddGlobal ("true", objTrue ());
     AddGlobal ("false", objFalse ());
 
-    for (int i = CoreObjects::kClsObjectMeta; i < kMax; i++)
+    objNil ().setIsa (clsUndefinedObject ());
+    objTrue ().setIsa (clsTrue ());
+    objFalse ().setIsa (clsFalse ());
+    objSymbolTable ().setIsa (clsDictionary ());
+    objGlobals ().setIsa (clsDictionary ());
+
+    printf ("Symtab %d.isa: %d\n",
+            objSymbolTable ().index (),
+            objSymbolTable ().isa ().index ());
+    printf ("Globals %d .isa: %d\n",
+            objGlobals ().index (),
+            objGlobals ().isa ().index ());
+
+    for (int i = CoreObjects::kClsObjectMeta; i < CoreObjects::kMax; i++)
     {
         ClassOop metaCls = Oop (false, i++).asClassOop (),
                  cls = Oop (false, i).asClassOop ();
         int index = (i - 1 - CoreObjects::kObjUnused) / 2;
         /* Set the metaclass instance length to the length of a class... */
         metaCls.nstSize () = SmiOop (ClassOop::clsInstLength);
-        metaCls.name () =
-            SymbolOop::fromString (std::string (classNames[index]) + "Meta");
-        cls.name () = SymbolOop::fromString (classNames[index]);
+        metaCls.setName (
+            SymbolOop::fromString (std::string (classNames[index]) + "Meta"));
+        cls.setName (SymbolOop::fromString (classNames[index]));
         cls.setIsa (metaCls);
+        printf ("Do %s\n", classNames[index]);
         objGlobals ().symbolInsert (cls.name (), cls);
     }
+
+    clsBlock ().print (5);
 
     // bootMeth->generate ().print (0);
     // printBytecode (bootMeth->generate ().bytecode ());
@@ -186,7 +207,7 @@ DictionaryOop MemoryManager::objGlobals ()
 
 GetClassFun (ObjectMeta);
 GetClassFun (Object);
-GetClassFun (Smi);
+GetClassFun (Integer);
 GetClassFun (Symbol);
 GetClassFun (String);
 GetClassFun (Array);
@@ -199,6 +220,9 @@ GetClassFun (Block);
 GetClassFun (Context);
 GetClassFun (SymbolTable);
 GetClassFun (SystemDictionary);
+GetClassFun (True);
+GetClassFun (False);
+GetClassFun (Float);
 
 ClassOop MemoryManager::findOrCreateClass (ClassOop superClass,
                                            std::string name)

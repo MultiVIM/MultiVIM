@@ -77,9 +77,12 @@ class CodeGen
     void genPushMyHeapVar (uint8_t index);
     void genPushSelf ();
     void genPushNil ();
+    void genPushTrue ();
+    void genPushFalse ();
     void genPushLiteral (uint8_t num);
     void genPushLiteralObject (Oop anObj);
     void genPushInteger (int val);
+    void genPushBlockCopy (BlockOop block);
 
     void genPop ();
 
@@ -95,4 +98,9 @@ class CodeGen
 
     void genBlockReturn ();
     void genReturn ();
+
+    int maxStackSize ()
+    {
+        return _highestStackHeight;
+    }
 };

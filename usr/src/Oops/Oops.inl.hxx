@@ -5,6 +5,18 @@
 
 #include "Oops.hxx"
 
+inline double FloatOop::floatValue ()
+{
+    return *(double *)vonNeumannSpace ();
+}
+
+inline FloatOop FloatOop::fromDouble (double value)
+{
+    FloatOop newFloat = memMgr.allocateByteObj (sizeof (double)).asFloatOop ();
+    *(double *)newFloat.vonNeumannSpace () = value;
+    return newFloat;
+}
+
 #define CastFun(To)                                                            \
     inline To & Oop::as##To ()                                                 \
     {                                                                          \
@@ -17,6 +29,7 @@ CastFun (ByteArrayOop);
 CastFun (ClassOop);
 CastFun (ContextOop);
 CastFun (DictionaryOop);
+CastFun (FloatOop);
 CastFun (LinkOop);
 CastFun (MethodOop);
 CastFun (OopOop);
@@ -47,7 +60,6 @@ inline SymbolOop accessorsFor::setName (SymbolOop value)
     return basicatPut (1, value).asSymbolOop ();
 }
 
-// AccessorDef (SymbolOop, 1, name, setName);
 AccessorDef (ClassOop, 2, superClass, setSuperClass);
 AccessorDef (DictionaryOop, 3, methods, setMethods);
 AccessorDef (SmiOop, 4, nstSize, setNstSize);
@@ -73,23 +85,26 @@ inline std::string StringOop::asString ()
 #define accessorsFor MethodOop
 AccessorDef (ByteArrayOop, 1, bytecode, setBytecode);
 AccessorDef (ArrayOop, 2, literals, setLiterals);
-AccessorDef (StringOop, 3, sourceText, setSourceText);
-AccessorDef (SymbolOop, 4, selector, setSelector);
-AccessorDef (SmiOop, 5, heapVarsSize, setHeapVarsSize);
-AccessorDef (SmiOop, 6, temporarySize, setTemporarySize);
-AccessorDef (ClassOop, 7, methodClass, setMethodClass);
-AccessorDef (SmiOop, 8, watch, setWatch);
+AccessorDef (SmiOop, 3, argumentCount, setArgumentCount);
+AccessorDef (SmiOop, 4, heapVarsSize, setHeapVarsSize);
+AccessorDef (SmiOop, 5, temporarySize, setTemporarySize);
+AccessorDef (SmiOop, 6, stackSize, setStackSize);
+AccessorDef (StringOop, 7, sourceText, setSourceText);
+AccessorDef (SymbolOop, 8, selector, setSelector);
+AccessorDef (ClassOop, 9, methodClass, setMethodClass);
+AccessorDef (SmiOop, 10, watch, setWatch);
 #undef accessorsFor
 
 #define accessorsFor BlockOop
 AccessorDef (ByteArrayOop, 1, bytecode, setBytecode);
 AccessorDef (ArrayOop, 2, literals, setLiterals);
-AccessorDef (StringOop, 3, sourceText, setSourceText);
-AccessorDef (SymbolOop, 4, selector, setSelector);
-AccessorDef (SmiOop, 5, heapVarsSize, setHeapVarsSize);
-AccessorDef (SmiOop, 6, temporarySize, setTemporarySize);
-AccessorDef (Oop, 7, receiver, setReceiver);
-AccessorDef (SmiOop, 8, argumentCount, setArgumentCount);
+AccessorDef (SmiOop, 3, argumentCount, setArgumentCount);
+AccessorDef (SmiOop, 4, heapVarsSize, setHeapVarsSize);
+AccessorDef (SmiOop, 5, temporarySize, setTemporarySize);
+AccessorDef (SmiOop, 6, stackSize, setStackSize);
+AccessorDef (StringOop, 7, sourceText, setSourceText);
+AccessorDef (Oop, 8, receiver, setReceiver);
+AccessorDef (ArrayOop, 9, parentHeapVars, setParentHeapVars);
 #undef accessorsFor
 
 #define accessorsFor ContextOop
@@ -100,9 +115,10 @@ AccessorDef (Oop, 4, receiver, setReceiver);
 AccessorDef (ArrayOop, 5, arguments, setArguments);
 AccessorDef (ArrayOop, 6, temporaries, setTemporaries);
 AccessorDef (ArrayOop, 7, heapVars, setHeapVars);
-AccessorDef (ArrayOop, 8, stack, setStack);
-AccessorDef (ByteArrayOop, 9, bytecode, setBytecode);
-AccessorDef (OopOop, 10, methodOrBlock, setMethodOrBlock);
+AccessorDef (ArrayOop, 8, parentHeapVars, setParentHeapVars);
+AccessorDef (ArrayOop, 9, stack, setStack);
+AccessorDef (ByteArrayOop, 10, bytecode, setBytecode);
+AccessorDef (OopOop, 11, methodOrBlock, setMethodOrBlock);
 #undef accessorsFor
 
 #define accessorsFor ProcessOop
@@ -113,6 +129,29 @@ inline uint8_t ContextOop::fetchByte ()
 {
     int pos = programCounter ().postInc ();
     return bytecode ().basicAt (pos);
+}
+
+inline void ContextOop::dup ()
+{
+    int oldVal = stackPointer ().intValue ();
+    stack ().basicatPut (stackPointer ().preInc (), stack ().basicAt (oldVal));
+}
+
+inline void ContextOop::push (Oop obj)
+{
+    printf ("StackPointer: %d\n", stackPointer ().preInc ());
+    stack ().basicatPut (stackPointer ().intValue (), obj);
+}
+
+inline Oop ContextOop::pop ()
+{
+    assert (stackPointer ().intValue ());
+    return stack ().basicAt (stackPointer ().postDec ());
+}
+
+inline Oop ContextOop::top ()
+{
+    return stack ().basicAt (stackPointer ().intValue ());
 }
 
 #endif
