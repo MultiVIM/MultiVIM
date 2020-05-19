@@ -28,8 +28,16 @@ void VarNode::generateOn (CodeGen & gen)
             gen.genPushMyHeapVar (promotedIndex);
         return;
     case kParentsHeapVar:
-        gen.genPushParentHeapVar (getIndex ());
+    {
+        std::map<int, int>::iterator it =
+            gen.currentScope ()->parentHeapVarToMyHeapVar.find (getIndex ());
+        if (promoted ||
+            it != gen.currentScope ()->parentHeapVarToMyHeapVar.end ())
+            gen.genPushMyHeapVar (it->second);
+        else
+            gen.genPushParentHeapVar (getIndex ());
         return;
+    }
     case kHeapVar:
         gen.genPushMyHeapVar (getIndex ());
         return;
@@ -48,13 +56,21 @@ void VarNode::generateAssignOn (CodeGen & gen, ExprNode * expr)
         return;
     case kLocal:
         if (!promoted)
-            gen.genPushLocal (getIndex ());
+            gen.genStoreLocal (getIndex ());
         else
             gen.genStoreMyHeapVar (promotedIndex);
         return;
     case kParentsHeapVar:
-        gen.genStoreParentHeapVar (getIndex ());
+    {
+        std::map<int, int>::iterator it =
+            gen.currentScope ()->parentHeapVarToMyHeapVar.find (getIndex ());
+        if (promoted ||
+            it != gen.currentScope ()->parentHeapVarToMyHeapVar.end ())
+            gen.genStoreMyHeapVar (it->second);
+        else
+            gen.genStoreParentHeapVar (getIndex ());
         return;
+    }
     case kHeapVar:
         gen.genStoreMyHeapVar (getIndex ());
         return;
@@ -69,13 +85,11 @@ void VarNode::generatePromoteOn (CodeGen & gen)
     {
     case kParentsHeapVar:
         gen.genMoveParentHeapVarToMyHeapVars (getIndex (), promotedIndex);
+        gen.currentScope ()->parentHeapVarToMyHeapVar[getIndex ()] =
+            promotedIndex;
         return;
 
     case kLocal:
-        printf ("Moving local NAME %s INDEX %d Promoted INDEX %d\n",
-                name.c_str (),
-                getIndex (),
-                promotedIndex);
         gen.genMoveLocalToMyHeapVars (getIndex (), promotedIndex);
         return;
 
@@ -85,6 +99,20 @@ void VarNode::generatePromoteOn (CodeGen & gen)
     }
 
     assert (!"Unreached\n");
+}
+
+/**
+ * Restores the myheapvar value to the parents' heapvars. Implements the ability
+ * to mutate parents' data.
+ */
+void VarNode::generateRestoreOn (CodeGen & gen)
+{
+    switch (kind)
+    {
+    case kParentsHeapVar:
+        gen.genMoveMyHeapVarToParentHeapVars (promotedIndex, getIndex ());
+        return;
+    }
 }
 
 void IntExprNode::generateOn (CodeGen & gen)
@@ -157,6 +185,8 @@ void IdentExprNode::generateOn (CodeGen & gen)
         gen.genPushTrue ();
     else if (id == "false")
         gen.genPushFalse ();
+    else if (id == "Smalltalk")
+        gen.genPushSmalltalk ();
     else
         var->generateOn (gen);
 }
@@ -206,10 +236,18 @@ void CascadeExprNode::generateOn (CodeGen & gen)
     }
 }
 
+void BlockExprNode::generateReturnPreludeOn (CodeGen & gen)
+{
+    for (auto & v : scope->myHeapVars)
+        v.second->generateRestoreOn (gen);
+}
+
 void BlockExprNode::generateOn (CodeGen & gen)
 {
     BlockOop block = BlockOop::allocate ();
     CodeGen blockGen (true);
+
+    blockGen.pushCurrentScope (scope);
 
     for (auto & v : scope->myHeapVars)
         v.second->generatePromoteOn (blockGen);
@@ -220,11 +258,15 @@ void BlockExprNode::generateOn (CodeGen & gen)
         if (s != stmts.back ())
             blockGen.genPop ();
         else if (!dynamic_cast<ReturnStmtNode *> (s))
+        {
+            generateReturnPreludeOn (gen);
             blockGen.genReturn ();
+        }
     }
 
     if (stmts.empty ())
     {
+        generateReturnPreludeOn (gen);
         blockGen.genPushNil ();
         blockGen.genReturn ();
     }
@@ -236,7 +278,7 @@ void BlockExprNode::generateOn (CodeGen & gen)
     block.setHeapVarsSize (SmiOop (scope->myHeapVars.size ()));
     block.setStackSize (blockGen.maxStackSize ());
 
-    gen.popCurrentScope ();
+    // gen.popCurrentScope ();
 
     gen.genPushBlockCopy (block);
 }
@@ -294,7 +336,7 @@ MethodOop MethodNode::generate ()
     meth.setHeapVarsSize (scope->myHeapVars.size ());
     meth.setStackSize (gen.maxStackSize ());
 
-    // meth.print (2);
+    //   meth.print (2);
 
     gen.popCurrentScope ();
 
@@ -309,6 +351,8 @@ void ClassNode::generate ()
     for (auto m : cMethods)
         cls.addClassMethod (m->generate ());
 
+    for (auto m : cMethods)
+        cls.addClassMethod (m->generate ());
     for (auto m : iMethods)
         cls.addMethod (m->generate ());
 }

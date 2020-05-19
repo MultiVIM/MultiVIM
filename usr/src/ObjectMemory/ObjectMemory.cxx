@@ -19,25 +19,30 @@ struct CoreObjects
         kObjFalse = 2,
         kObjSymbolTable = 3,
         kObjGlobals = 4,
-        kObjUnused = 5,
-        kClassPairEntry (Object, 6),
-        kClassPairEntry (Symbol, 8),
-        kClassPairEntry (Integer, 10),
-        kClassPairEntry (Array, 12),
-        kClassPairEntry (ByteArray, 14),
-        kClassPairEntry (String, 16),
-        kClassPairEntry (Method, 18),
-        kClassPairEntry (Process, 20),
-        kClassPairEntry (UndefinedObject, 22),
-        kClassPairEntry (True, 24),
-        kClassPairEntry (False, 26),
-        kClassPairEntry (Link, 28),
-        kClassPairEntry (Dictionary, 30),
-        kClassPairEntry (Block, 32),
-        kClassPairEntry (Context, 34),
-        kClassPairEntry (SymbolTable, 36),
-        kClassPairEntry (SystemDictionary, 38),
-        kClassPairEntry (Float, 40),
+        kObjsmalltalk = 5,
+        kObjUnused1 = 6,
+        kObjUnused2 = 7,
+        kObjUnused3 = 8,
+        kObjMinClass = 9,
+        kClassPairEntry (Object, 10),
+        kClassPairEntry (Symbol, 12),
+        kClassPairEntry (Integer, 14),
+        kClassPairEntry (Array, 16),
+        kClassPairEntry (ByteArray, 18),
+        kClassPairEntry (String, 20),
+        kClassPairEntry (Method, 22),
+        kClassPairEntry (Process, 24),
+        kClassPairEntry (UndefinedObject, 26),
+        kClassPairEntry (True, 28),
+        kClassPairEntry (False, 30),
+        kClassPairEntry (Link, 32),
+        kClassPairEntry (Dictionary, 34),
+        kClassPairEntry (Block, 36),
+        kClassPairEntry (Context, 38),
+        kClassPairEntry (SymbolTable, 40),
+        kClassPairEntry (SystemDictionary, 42),
+        kClassPairEntry (Float, 44),
+        kClassPairEntry (VM, 46),
         kMax,
     };
 };
@@ -59,11 +64,13 @@ static const char * classNames[] = {"Object",
                                     "Context",
                                     "SymbolTable",
                                     "SystemDictionary",
-                                    "Float"};
+                                    "Float",
+                                    "VM"};
 
 OopOop MemoryManager::allocateOopObj (size_t len)
 {
     size_t slot = lowestFreeSlot++;
+    // printf ("Slot: %d\n", slot);
     ActualObject * obj =
         (ActualObject *)calloc (1, sizeof (ActualObject) + sizeof (Oop) * len);
     Oop result (false, slot);
@@ -83,6 +90,30 @@ ByteOop MemoryManager::allocateByteObj (size_t len)
     obj->size = len;
     _table[slot] = {obj};
     return *static_cast<ByteOop *> (&result);
+}
+
+Oop MemoryManager::copyObj (Oop obj)
+{
+    assert (!obj.isInteger ());
+
+    if (obj.actualObject ()->kind == ActualObject::kByte)
+    {
+        ByteOop newObj = allocateByteObj (obj.size ());
+        newObj.setIsa (obj.isa ());
+        memcpy (newObj.vonNeumannSpace (),
+                obj.asByteArrayOop ().vonNeumannSpace (),
+                obj.size ());
+        return newObj;
+    }
+    else
+    {
+        OopOop newObj = allocateOopObj (obj.size ());
+        newObj.setIsa (obj.isa ());
+        memcpy (newObj.vonNeumannSpace (),
+                obj.asOopOop ().vonNeumannSpace (),
+                obj.size () * sizeof (Oop));
+        return newObj;
+    }
 }
 
 void MemoryManager::setupInitialObjects ()
@@ -105,7 +136,11 @@ void MemoryManager::setupInitialObjects ()
     CreateObj (False, 0);
     CreateObj (SymbolTable, 1);
     CreateObj (Globals, 1);
-    CreateObj (Unused, 0);
+    CreateObj (smalltalk, 0);
+    CreateObj (Unused1, 0);
+    CreateObj (Unused2, 0);
+    CreateObj (Unused3, 0);
+    CreateObj (MinClass, 0);
 
 #define CreateClassPair(Name)                                                  \
     assert (ClassOop::allocateRawClass ().index () ==                          \
@@ -130,9 +165,10 @@ void MemoryManager::setupInitialObjects ()
     CreateClassPair (SymbolTable);
     CreateClassPair (SystemDictionary);
     CreateClassPair (Float);
+    CreateClassPair (VM);
 
-    objSymbolTable ().basicatPut (1, allocateOopObj (3 * 53));
-    objGlobals ().basicatPut (1, allocateOopObj (3 * 53));
+    objSymbolTable ().basicatPut (1, ArrayOop::newWithSize (3 * 53));
+    objGlobals ().basicatPut (1, ArrayOop::newWithSize (3 * 53));
 
 #define AddGlobal(name, obj)                                                   \
     objGlobals ().symbolInsert (SymbolOop::fromString ("name"), obj)
@@ -145,7 +181,8 @@ void MemoryManager::setupInitialObjects ()
     objTrue ().setIsa (clsTrue ());
     objFalse ().setIsa (clsFalse ());
     objSymbolTable ().setIsa (clsDictionary ());
-    objGlobals ().setIsa (clsDictionary ());
+    objGlobals ().setIsa (clsSystemDictionary ());
+    // objVM ().setIsa (clsVM ());
 
     printf ("Symtab %d.isa: %d\n",
             objSymbolTable ().index (),
@@ -158,11 +195,12 @@ void MemoryManager::setupInitialObjects ()
     {
         ClassOop metaCls = Oop (false, i++).asClassOop (),
                  cls = Oop (false, i).asClassOop ();
-        int index = (i - 1 - CoreObjects::kObjUnused) / 2;
+        int index = (i - 1 - CoreObjects::kObjMinClass) / 2;
         /* Set the metaclass instance length to the length of a class... */
         metaCls.nstSize () = SmiOop (ClassOop::clsInstLength);
         metaCls.setName (
             SymbolOop::fromString (std::string (classNames[index]) + "Meta"));
+        metaCls.setIsa (clsObjectMeta ());
         cls.setName (SymbolOop::fromString (classNames[index]));
         cls.setIsa (metaCls);
         printf ("Do %s\n", classNames[index]);
@@ -223,6 +261,8 @@ GetClassFun (SystemDictionary);
 GetClassFun (True);
 GetClassFun (False);
 GetClassFun (Float);
+GetClassFun (VM);
+GetClassFun (Link);
 
 ClassOop MemoryManager::findOrCreateClass (ClassOop superClass,
                                            std::string name)

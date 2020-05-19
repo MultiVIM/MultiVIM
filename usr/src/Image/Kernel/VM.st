@@ -1,4 +1,8 @@
-Object subclass: Smalltalk [
+Object subclass: VM [
+
+	class>>error: aString [
+		<162 aString>
+	]
 
 	echo [
 		" enable - disable echo input "

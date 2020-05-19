@@ -3,3 +3,4 @@
 @include 'Array.st'
 @include 'ByteArray.st'
 @include 'String.st'
+@include 'Dictionary.st'

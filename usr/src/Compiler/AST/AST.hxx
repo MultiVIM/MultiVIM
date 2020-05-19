@@ -106,6 +106,8 @@ struct ClassNode : DeclNode
     ClassNode (std::string name, std::string superName,
                std::vector<std::string> cVars, std::vector<std::string> iVars);
 
+    void addMethods (std::vector<MethodNode *> meths);
+
     void synth ();
     int addIVarsToContextStartingFrom (GenerationContext * aContext, int index);
     void generate ();

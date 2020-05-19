@@ -68,6 +68,8 @@ class CodeGen
                                            uint8_t promotedIndex);
     void genMoveArgumentToMyHeapVars (uint8_t index, uint8_t promotedIndex);
     void genMoveLocalToMyHeapVars (uint8_t index, uint8_t promotedIndex);
+    void genMoveMyHeapVarToParentHeapVars (uint8_t myIndex,
+                                           uint8_t parentIndex);
 
     void genPushArgument (uint8_t index);
     void genPushGlobal (std::string name);
@@ -79,6 +81,7 @@ class CodeGen
     void genPushNil ();
     void genPushTrue ();
     void genPushFalse ();
+    void genPushSmalltalk ();
     void genPushLiteral (uint8_t num);
     void genPushLiteralObject (Oop anObj);
     void genPushInteger (int val);

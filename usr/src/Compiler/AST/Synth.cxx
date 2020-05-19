@@ -9,9 +9,9 @@ VarNode * AbstractScope::lookup (std::string name)
         return parent ()->lookup (name);
     else
     {
-        printf ("In scope %s: Failed to find %s, assuming GLOBAL.\n",
+        /*printf ("In scope %s: Failed to find %s, assuming GLOBAL.\n",
                 typeid (*this).name (),
-                name.c_str ());
+                name.c_str ());*/
         return new GlobalVarNode (name);
     }
 }

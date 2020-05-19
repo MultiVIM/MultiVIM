@@ -53,7 +53,7 @@ ByteArray subclass: String [
 	basicAt: index put: aValue [
 		(aValue isMemberOf: Char)
 			ifTrue: [ super basicAt: index put: aValue asInteger ]
-			ifFalse: [ smalltalk error:
+			ifFalse: [ VM error:
 				'cannot put non Char into string' ]
 	]
 

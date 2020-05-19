@@ -1,4 +1,4 @@
-Collection subclass: Array [
+IndexedCollection subclass: Array [
 
     class>>basicNew [
 		^ self basicNew: 0
@@ -32,7 +32,7 @@ Collection subclass: Array [
 	at: index put: value [
 		(self includesKey: index)
 			ifTrue: [ self basicAt: index put: value ]
-			ifFalse: [ smalltalk error: 
+			ifFalse: [ VM error: 
 				'illegal index to at:put: for array' ]
 	]
 

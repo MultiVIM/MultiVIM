@@ -77,6 +77,11 @@ inline bool StringOop::strEquals (std::string aString)
     return !strcmp ((char *)vonNeumannSpace (), aString.c_str ());
 }
 
+inline const char * StringOop::asCStr ()
+{
+    return (const char *)vonNeumannSpace ();
+}
+
 inline std::string StringOop::asString ()
 {
     return std::string ((char *)vonNeumannSpace ());
@@ -105,6 +110,7 @@ AccessorDef (SmiOop, 6, stackSize, setStackSize);
 AccessorDef (StringOop, 7, sourceText, setSourceText);
 AccessorDef (Oop, 8, receiver, setReceiver);
 AccessorDef (ArrayOop, 9, parentHeapVars, setParentHeapVars);
+AccessorDef (ContextOop, 10, homeMethodContext, setHomeMethodContext);
 #undef accessorsFor
 
 #define accessorsFor ContextOop
@@ -119,6 +125,7 @@ AccessorDef (ArrayOop, 8, parentHeapVars, setParentHeapVars);
 AccessorDef (ArrayOop, 9, stack, setStack);
 AccessorDef (ByteArrayOop, 10, bytecode, setBytecode);
 AccessorDef (OopOop, 11, methodOrBlock, setMethodOrBlock);
+AccessorDef (ContextOop, 12, homeMethodContext, setHomeMethodContext);
 #undef accessorsFor
 
 #define accessorsFor ProcessOop
@@ -139,8 +146,8 @@ inline void ContextOop::dup ()
 
 inline void ContextOop::push (Oop obj)
 {
-    printf ("StackPointer: %d\n", stackPointer ().preInc ());
-    stack ().basicatPut (stackPointer ().intValue (), obj);
+    // printf ("StackPointer: %d\n", stackPointer ().preInc ());
+    stack ().basicatPut (stackPointer ().preInc (), obj);
 }
 
 inline Oop ContextOop::pop ()

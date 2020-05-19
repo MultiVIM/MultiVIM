@@ -1,5 +1,10 @@
 #include "Oops.hxx"
 
+bool ContextOop::isBlockContext ()
+{
+    return methodOrBlock ().isa () == memMgr.clsBlock ();
+}
+
 ContextOop ContextOop::newWithBlock (BlockOop aMethod)
 {
     ContextOop ctx = memMgr.allocateOopObj (clsNstLength).asContextOop ();
@@ -15,8 +20,8 @@ ContextOop ContextOop::newWithBlock (BlockOop aMethod)
     ctx.setHeapVars (
         ArrayOop::newWithSize (aMethod.heapVarsSize ().intValue ()));
     ctx.setParentHeapVars (aMethod.parentHeapVars ());
-    ctx.setStack (ArrayOop::newWithSize (
-        aMethod.stackSize ().intValue () /* nil pushed by execblock prim */));
+    ctx.setStack (ArrayOop::newWithSize (aMethod.stackSize ().intValue () +
+                                         1 /* nil pushed by execblock prim */));
     ctx.setProgramCounter (SmiOop (1));
     ctx.setStackPointer (SmiOop (0));
 

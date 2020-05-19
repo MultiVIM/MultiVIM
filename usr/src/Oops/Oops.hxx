@@ -22,6 +22,8 @@ class LinkOop : public OopOop
     DeclareAccessorPair (Oop, two, setTwo);
     DeclareAccessorPair (LinkOop, nextLink, setNextLink);
 
+    void print (int in);
+
     static LinkOop newWith (Oop a, Oop b);
 };
 
@@ -92,6 +94,7 @@ class StringOop : public ByteArrayOop
     static StringOop fromString (std::string aString);
 
     bool strEquals (std::string aString);
+    const char * asCStr ();
     std::string asString ();
 };
 
@@ -142,7 +145,7 @@ class MethodOop : public OopOop
 
 class BlockOop : public OopOop
 {
-    static const int clsNstLength = 9;
+    static const int clsNstLength = 10;
 
   public:
     DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
@@ -154,6 +157,7 @@ class BlockOop : public OopOop
     DeclareAccessorPair (StringOop, sourceText, setSourceText);
     DeclareAccessorPair (Oop, receiver, setReceiver);
     DeclareAccessorPair (ArrayOop, parentHeapVars, setParentHeapVars);
+    DeclareAccessorPair (ContextOop, homeMethodContext, setHomeMethodContext);
 
     /**
      * Allocates a new empty block.
@@ -165,7 +169,7 @@ class BlockOop : public OopOop
 
 class ContextOop : public OopOop
 {
-    static const int clsNstLength = 11;
+    static const int clsNstLength = 12;
 
   public:
     DeclareAccessorPair (ContextOop, previousContext, setPreviousContext);
@@ -179,6 +183,7 @@ class ContextOop : public OopOop
     DeclareAccessorPair (ArrayOop, stack, setStack);
     DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
     DeclareAccessorPair (OopOop, methodOrBlock, setMethodOrBlock);
+    DeclareAccessorPair (ContextOop, homeMethodContext, setHomeMethodContext);
 
     /* Fetch the next byte of bytecode, incrementing the program counter. */
     uint8_t fetchByte ();
@@ -199,6 +204,8 @@ class ContextOop : public OopOop
      * Fetch the value at the top of the stack
      */
     Oop top ();
+
+    bool isBlockContext ();
 
     void print (int in);
 

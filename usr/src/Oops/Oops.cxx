@@ -4,6 +4,18 @@
 #include "Lowlevel/MVPrinting.hxx"
 #include "Oops.hxx"
 
+void LinkOop::print (int in)
+{
+    std::cout << blanks (in) << "Link " << index () << "{\n";
+    std::cout << blanks (in) << "One:\n";
+    one ().print (in + 2);
+    std::cout << blanks (in) << "Two:\n";
+    two ().print (in + 2);
+    std::cout << blanks (in) << "nextLink:\n";
+    nextLink ().print (in + 2);
+    std::cout << blanks (in) << "}\n";
+}
+
 template <typename ExtraType>
 std::pair<Oop, Oop> DictionaryOop::findPairByFun (int hash, ExtraType extraVal,
                                                   int (*fun) (Oop, ExtraType))
@@ -44,7 +56,12 @@ std::pair<Oop, Oop> DictionaryOop::findPairByFun (int hash, ExtraType extraVal,
 
 static void dispatchPrint (int in, Oop anOop)
 {
-    if (anOop.isa () == memMgr.clsDictionary ())
+    if (anOop == memMgr.objFalse ())
+        std::cout << blanks (in) + "<FALSE>\n";
+    else if (anOop == memMgr.objTrue ())
+        std::cout << blanks (in) + "<TRUE>\n";
+    else if (anOop.isa () == memMgr.clsDictionary () ||
+             anOop.isa () == memMgr.clsSystemDictionary ())
         anOop.asDictionaryOop ().print (in);
 #define Case(ClassName)                                                        \
     else if (anOop.isa () == memMgr.cls##ClassName ())                         \
@@ -52,9 +69,12 @@ static void dispatchPrint (int in, Oop anOop)
             .print (in)
     else if (anOop.isa () == memMgr.clsInteger ())
         anOop.asSmiOop ().print (in);
+    else if (anOop.isa () == memMgr.clsString ())
+        anOop.asSymbolOop ().print (in);
     Case (Symbol);
     Case (Method);
     Case (Block);
+    Case (Link);
     else if ((anOop.index () > memMgr.clsObject ().index ()) &&
              (anOop.index () < memMgr.clsSystemDictionary ().index ()))
         anOop.asClassOop ()
@@ -145,6 +165,7 @@ void SmiOop::print (int in)
 LinkOop LinkOop::newWith (Oop a, Oop b)
 {
     LinkOop newLink = memMgr.allocateOopObj (3).asLinkOop ();
+    newLink.setIsa (memMgr.clsLink ());
     newLink.setOne (a);
     newLink.setTwo (b);
     return newLink;

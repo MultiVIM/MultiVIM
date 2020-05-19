@@ -9,7 +9,7 @@ Magnitude subclass: Char [
 		" can only compare characters to characters "
 		^ aValue isChar
 			ifTrue: [ value < aValue asInteger ]
-			ifFalse: [ smalltalk error: 'char compared to nonchar']
+			ifFalse: [ VM error: 'char compared to nonchar']
 	]
 
 	== aValue [
@@ -31,7 +31,7 @@ Magnitude subclass: Char [
 		" return an integer representing our value "
 		self isDigit ifTrue: [ ^ value - $0 asInteger ].
 		self isUppercase ifTrue: [ ^ value - $A asInteger + 10 ].
-		^ smalltalk error: 'illegal conversion, char to digit'
+		^ VM error: 'illegal conversion, char to digit'
 	]
 
 	isAlphaNumeric [

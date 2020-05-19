@@ -2,7 +2,7 @@ Magnitude subclass: Collection [
 
 	< coll [
 		(coll respondsTo: #includes:)
-			ifFalse: [ ^ smalltalk error:
+			ifFalse: [ ^ VM error:
 				  'collection compared to non collection'].
 		self do: [:x | ((self occurrencesOf: x) < 
 			(coll occurrencesOf: x))ifFalse: [ ^ false ]].

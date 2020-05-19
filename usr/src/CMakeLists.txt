@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 cmake_policy(SET CMP0072 NEW)
 project("MultiVIM" LANGUAGES C CXX OBJC OBJCXX)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
 
 include (CMake/LemFlex.cmake)
 
@@ -17,6 +18,7 @@ set(MV_SMALLTALK_DIR ${MV_SRC}/Smalltalk)
 # Dependencies
 #
 find_package(PkgConfig REQUIRED)
+find_package(BoehmGC REQUIRED)
 
 pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
 pkg_check_modules(Pango REQUIRED IMPORTED_TARGET pangocairo)
@@ -99,8 +101,8 @@ target_include_directories(MultiVIM PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_SOURCE
 target_include_directories(MultiVIM SYSTEM BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/../closed/fltk
     ${CMAKE_BINARY_DIR}/closed/fltk)
-target_link_libraries(MultiVIM PkgConfig::Cairo PkgConfig::Pango fltk
-    fltk_cairo fltk_images stdc++fs)
+target_link_libraries(MultiVIM BoehmGC::BoehmGC PkgConfig::Cairo
+    PkgConfig::Pango fltk fltk_cairo fltk_images stdc++fs)
 
 set_target_properties(MultiVIM PROPERTIES
     CXX_STANDARD 17)

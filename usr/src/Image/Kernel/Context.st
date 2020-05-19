@@ -16,7 +16,7 @@ Object subclass: Context [
 
 	blockReturn [
 		<18 self>
-			ifFalse: [ ^ smalltalk error: 
+			ifFalse: [ ^ VM error: 
 				'incorrect context for block return']
 	]
 

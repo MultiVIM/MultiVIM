@@ -161,6 +161,10 @@ struct CascadeExprNode : ExprNode
 
 struct BlockExprNode : ExprNode
 {
+  private:
+    void generateReturnPreludeOn (CodeGen & gen);
+
+  public:
     BlockScope * scope;
     std::vector<std::string> args;
     std::vector<StmtNode *> stmts;

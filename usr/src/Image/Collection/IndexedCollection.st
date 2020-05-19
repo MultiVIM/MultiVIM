@@ -14,7 +14,7 @@ Collection subclass: IndexedCollection [
 
 	at: aKey [
 		^ self at: aKey 
-			ifAbsent: [ smalltalk error: 'index to at: illegal' ]
+			ifAbsent: [ <2000>. VM error: 'index to at: illegal' ]
 	]
 
 	at: index ifAbsent: exceptionBlock [
@@ -41,7 +41,7 @@ Collection subclass: IndexedCollection [
 
 	indexOf: aBlock [
 		^ self indexOf: aBlock
-			ifAbsent: [ smalltalk error: 'index not found']
+			ifAbsent: [ VM error: 'index not found']
 	]
 
 	indexOf: aBlock ifAbsent: exceptionBlock [

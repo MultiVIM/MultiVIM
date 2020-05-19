@@ -10,6 +10,7 @@ enum Opcode
     kPushTrue,
     kPushFalse,
     kPushContext,
+    kPushSmalltalk,
 
     /* These take the next byte as their argument - which index of iVar/arg/etc
        to push. - 1-based indexing. */
@@ -36,6 +37,9 @@ enum Opcode
     kSend,
     kSendSuper,
 
+    /* Following bytecode is index of special binop */
+    kBinOp,
+
     kDuplicate,
     kPop,
 
@@ -50,6 +54,7 @@ enum Opcode
     kMoveParentHeapVarToMyHeapVars,
     kMoveArgumentToMyHeapVars,
     kMoveLocalToMyHeapVars,
+    kMoveMyHeapVarToParentHeapVars,
 
     kPrimitive,
 

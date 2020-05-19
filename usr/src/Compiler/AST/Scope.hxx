@@ -38,6 +38,7 @@ struct VarNode : Node
      * Generates code to move up this variable into myHeapVars.
      */
     void generatePromoteOn (CodeGen & gen);
+    void generateRestoreOn (CodeGen & gen);
 };
 
 struct SpecialVarNode : VarNode
@@ -112,6 +113,12 @@ struct GlobalVarNode : VarNode
 struct AbstractScope
 {
     virtual AbstractScope * parent () = 0;
+
+    /* FIXME: We store here mappings from parent heapvar numbers to local
+     * heapvar numbers following promotions, because we create new parent
+     * heapvar references all the time and can't just update them by setting
+     * 'promoted' field as with others. This is an ugly and unpleasant hack. */
+    std::map<int, int> parentHeapVarToMyHeapVar;
 
     GlobalVarNode * addClass (ClassNode * aClass);
     virtual VarNode * lookup (std::string aName);

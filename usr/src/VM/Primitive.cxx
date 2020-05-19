@@ -196,6 +196,10 @@ Called from
 */
 Oop primClassOfPut (ExecState & es, ArrayOop args)
 {
+    fprintf (stderr,
+             "Setting ClassOf %d to %d\n, ",
+             args.basicAt (1).index (),
+             args.basicAt (2).index ());
     args.basicAt (1).setIsa (args.basicAt (2).asClassOop ());
     return (args.basicAt (1));
 }
@@ -231,14 +235,28 @@ Oop primBasicAt (ExecState & es, ArrayOop args)
 {
     int i;
     if (args.basicAt (1).isInteger ())
+    {
+        printf ("*************\n\n\n\nARG 1 is an integer!\n\n\n\n******\n\n");
         return (memMgr.objNil ());
+    }
     /* if (!args.basicAt (1).kind == OopsRefObj)
         return (memMgr.objNil ()); */
     if (!args.basicAt (2).isInteger ())
+    {
+        printf ("*************\n\n\n\nARG 2 isn't integer!\n\n\n\n******\n\n");
         return (memMgr.objNil ());
+    }
     i = args.basicAt (2).asSmiOop ().intValue ();
     if (i < 1 || i > args.basicAt (1).size ())
+    {
+        printf ("*************\n\n\n\nARG II (%d) out of "
+                "goose!!!\n\n\n\n******\n\n",
+                i);
         return (memMgr.objNil ());
+    }
+    printf ("*************\nBasicAt: %d\n******\n\n", i);
+    // args.basicAt (1).asOopOop ().basicAt (i).print (10);
+
     return args.basicAt (1).asOopOop ().basicAt (i);
 }
 
@@ -479,10 +497,6 @@ Also called for SendBinary bytecodes.
 Oop primAdd (ExecState & es, ArrayOop args)
 {
     long longresult;
-    printf ("\n\n\n\n PRIM ADD\n\n\n\n");
-    args.basicAt (1).print (10);
-    args.basicAt (2).print (10);
-    printf ("\n\n\n\n\n\n");
 
     if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
         return (memMgr.objNil ());
@@ -639,6 +653,7 @@ Also called for SendBinary bytecodes.
 Oop primQuotient (ExecState & es, ArrayOop args)
 {
     long longresult;
+    printf ("PRIMQUO\n\n");
     if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
         return (memMgr.objNil ());
     if (args.basicAt (2).asSmiOop ().intValue () == 0)
@@ -659,10 +674,21 @@ Called for SendBinary bytecodes.
 Oop primRemainder (ExecState & es, ArrayOop args)
 {
     long longresult;
+    printf ("PRIMREM\n\n");
+
     if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
+    {
+        printf ("Unacceptable! Args:\n");
+
+        // args.basicAt (1).print (15);
+        // args.basicAt (2).print (15);
         return (memMgr.objNil ());
+    }
     if (args.basicAt (2).asSmiOop ().intValue () == 0)
+    {
+        printf ("Unacceptable! Argsat 2 is 0.\n");
         return (memMgr.objNil ());
+    }
     longresult = args.basicAt (1).asSmiOop ().intValue ();
     longresult %= args.basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: boundscheck smi
@@ -1163,9 +1189,44 @@ Oop primExecBlock (ExecState & es, ArrayOop args)
         ctx.arguments ().basicatPut (i - 1, args.basicAt (i));
     }
 
-    ctx.setPreviousContext (es.proc.context ());
+    ctx.setPreviousContext (es.proc.context ().previousContext ());
     es.proc.setContext (ctx);
-    printf ("------------Entering block----------------\n");
+    printf ("=> Entering block\n");
+    return Oop ();
+}
+
+Oop primDumpVariable (ExecState & es, ArrayOop args)
+{
+    ContextOop ctx = es.proc.context ();
+    printf ("\n\n\n\n!!!!!!!!!!!!!!!!!!!!\n%d\n", args.basicAt (1));
+
+    args.basicAt (1).print (20);
+    args.basicAt (1).isa ().print (20);
+    printf ("!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n");
+    while ((ctx = ctx.previousContext ()) != memMgr.objNil ())
+        printf ("          --> %s>>%s\n",
+                ctx.receiver ().isa ().name ().asString ().c_str (),
+                ctx.isBlockContext () ? "<block>"
+                                      : ctx.methodOrBlock ()
+                                            .asMethodOop ()
+                                            .selector ()
+                                            .asString ()
+                                            .c_str ());
+    return Oop ();
+}
+
+Oop primMsg (ExecState & es, ArrayOop args)
+{
+    printf ("!!\n\nMessage: '%s'\n\n\n!!\n\n",
+            args.basicAt (1).asStringOop ().asString ().c_str ());
+    return Oop ();
+}
+
+Oop primFatal (ExecState & es, ArrayOop args)
+{
+    printf ("!!\n\nFatal error: '%s'\n\n\n!!\n\n",
+            args.basicAt (1).asStringOop ().asString ().c_str ());
+    abort ();
     return Oop ();
 }
 
@@ -1331,4 +1392,7 @@ PrimitiveMethod * primVec[255] = {
     /*158*/ &unsupportedPrim, //&primPutChunk,
     /*159*/ &unsupportedPrim,
     /*160*/ &primExecBlock,
+    /*161*/ &primDumpVariable,
+    /*162*/ &primMsg,
+    /*163*/ &primFatal,
 };

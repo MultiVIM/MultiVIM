@@ -14,10 +14,13 @@ extern PrimitiveMethod * primVec[];
 class Processor
 {
     static Processor mainProcessor;
+    static SymbolOop binSels[28];
 
   public:
     void interpret (ProcessOop proc);
     static void coldBootMainProcessor ();
+    /* returns -1 if NOT optimised */
+    static int optimisedBinopSym (SymbolOop sym);
 };
 
 #endif

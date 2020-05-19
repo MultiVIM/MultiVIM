@@ -11,9 +11,6 @@ Object
 Object
 	subclass: #File
 	instanceVariableNames: 'name number mode'!
-Object
-	subclass: #Link
-	instanceVariableNames: 'key value nextLink'!
 
 IndexedCollection
 	subclass: #Dictionary
@@ -33,9 +30,6 @@ List
 Number
 	subclass: #Float
 	instanceVariableNames: ''!
-Number
-	subclass: #Fraction
-	instanceVariableNames: 'top bottom'!
 Integer
 	subclass: #LongInteger
 	instanceVariableNames: 'negative digits'!
@@ -728,92 +722,6 @@ Float methods!
 
 
 
-
-
-
-{!
-FractionMeta methods!
-	top: tNum bottom: bNum
-		^ self new top: tNum bottom: bNum!
-}!
-
-
-
-
-
-
-{!
-Fraction methods!
-	* f
-		f isFraction
-			ifTrue: [ ^ (top * f top) / (bottom * f bottom) ]
-			ifFalse: [ ^ super * f ]!
-	+ f
-		f isFraction
-			ifTrue: [ ^ ((top * f bottom) + (bottom * f top)) /
-					(bottom * f bottom) ]
-			ifFalse:[ ^ super + f ]!
-	- f
-		f isFraction
-			ifTrue: [ ^ ((top * f bottom) - (bottom * f top)) /
-					(bottom * f bottom) ]
-			ifFalse:[ ^ super - f ]!
-	/ f
-		^ self * f reciprocal!
-	< f
-		f isFraction
-			ifTrue: [ ^ (top * f bottom) < (bottom * f top) ]
-			ifFalse:[ ^ super < f ]!
-	= f
-		f isFraction
-			ifTrue: [ ^ (top = f top) and: [ bottom = f bottom ] ]
-			ifFalse: [ ^ super = f ]!
-	abs
-		^ top abs / bottom!
-	asFloat
-		" convert to a floating point number "
-
-		^ top asFloat / bottom asFloat!
-	bottom
-		^ bottom!
-	coerce: x
-		" coerce a value into being a fraction "
-
-		^ x asFraction!
-	generality
-		" generality value - used in mixed type arithmetic "
-		^ 5!
-	isFraction
-		^ true!
-	ln
-		^ (top ln) - (bottom ln)!
-	printString
-		^ top printString, '/', bottom printString!
-	raisedTo: x
-		^ (top raisedTo: x) / (bottom raisedTo: x)!
-	reciprocal
-		^ bottom / top!
-	top
-		^ top!
-	top: tNum bottom: bNum
-		top <- tNum.
-		bottom <- bNum!
-	truncated
-		" convert to an integer rounded towards zero "
-		^ top quo: bottom!
-	with: t over: b
-		" initialization "
-
-		top <- t.
-		bottom <- b!
-}!
-
-
-
-
-
-
-
 {!
 InstNode methods!
 assign: encoder
@@ -871,90 +779,10 @@ Interval methods!
 
 
 
-{!
-LinkMeta methods!
-	key: aKey value: aValue
-		^ self new key: aKey value: aValue!
-	value: aValue
-		^ self new value: aValue!
-	value: aValue link: aLink
-		^ self new value: aValue link: aLink!
-}!
-
-
-
-
-
 
 {!
 Link methods!
-	add: newValue whenFalse: aBlock
-		(aBlock value: value value: newValue)
-			ifTrue: [ (nextLink notNil)
-				ifTrue: [ nextLink <- nextLink add: newValue
-					whenFalse: aBlock ]
-			ifFalse: [ nextLink <- Link value: newValue] ]
-			ifFalse: [ ^ Link value: newValue link: self ]!
-	at: aKey ifAbsent: exceptionBlock
-		(aKey = key)
-			ifTrue: [ ^value ]
-			ifFalse: [ ^ (nextLink notNil)
-					ifTrue: [ nextLink at: aKey
-						    ifAbsent: exceptionBlock ]
-					ifFalse: exceptionBlock ]!
-	at: aKey put: aValue
-		(aKey = key)
-			ifTrue: [ value <- aValue ]
-			ifFalse: [ (nextLink notNil)
-				ifTrue: [ nextLink at: aKey put: aValue]
-				ifFalse: [ nextLink <- Link
-						key: aKey value: aValue] ]!
-	binaryDo: aBlock
-		aBlock value: key value: value.
-		(nextLink notNil)
-			ifTrue: [ nextLink binaryDo: aBlock ]!
-	includesKey: aKey
-		(key = aKey)
-			ifTrue: [ ^ true ].
-		(nextLink notNil)
-			ifTrue: [ ^ nextLink includesKey: aKey ]
-			ifFalse: [ ^ false ]!
-	key
-		^ key!
-	key: aKey
-		key <- aKey!
-	key: aKey value: aValue
-		key <- aKey.
-		value <- aValue!
-	link: aLink
-		nextLink <- aLink!
-	next
-		^ nextLink!
-	removeKey: aKey
-		(aKey = key)
-			ifTrue: [ ^ nextLink ]
-			ifFalse: [ (nextLink notNil)
-				ifTrue: [ nextLink <- nextLink removeKey: aKey]]!
-	removeValue: aValue
-		(aValue = value)
-			ifTrue: [ ^ nextLink ]
-			ifFalse: [ (nextLink notNil)
-				ifTrue: [ nextLink <- nextLink removeValue: aValue]]!
-	reverseDo: aBlock
-		(nextLink notNil)
-			ifTrue: [ nextLink reverseDo: aBlock ].
-		aBlock value: value!
-	size
-		(nextLink notNil)
-			ifTrue: [ ^ 1 + nextLink size]
-			ifFalse: [ ^ 1 ]!
-	value
-		^ value!
-	value: aValue
-		value <- aValue!
-	value: aValue link: aLink
-		value <- aValue.
-		nextLink <- aLink!
+
 }!
 
 

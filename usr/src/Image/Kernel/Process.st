@@ -36,7 +36,7 @@ Object subclass: Process [
 		(overflowed isNil and: [(stack size > 8192)])
 			ifTrue: [
 				overflowed <- true.
-				smalltalk error: 'process stack overflowed'].
+				VM error: 'process stack overflowed'].
 		<19 self> ifTrue: [] ifFalse: [ self terminate ].
 	]
 

@@ -11,6 +11,15 @@ ClassNode::ClassNode (std::string name, std::string superName,
 {
 }
 
+void ClassNode::addMethods (std::vector<MethodNode *> meths)
+{
+    for (auto m : meths)
+        if (m->isClassMethod)
+            cMethods.push_back (m);
+        else
+            iMethods.push_back (m);
+}
+
 void ProgramNode::addClass (ClassNode * aClass)
 {
     classes.push_back (aClass);

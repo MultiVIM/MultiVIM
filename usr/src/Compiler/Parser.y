@@ -183,21 +183,30 @@ decl ::= ATinclude STRING(name).
 
 decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
 	SQB_OPEN
-		oIvarDefs(iVars)
+		oCAndIvarDefs(iVars)
 		olMethDecl(iMeths)
 	SQB_CLOSE.
 	{
 		ClassNode * cls = new ClassNode(name, super, {}, iVars);
-		cls->iMethods = iMeths;
+		cls->addMethods(iMeths);
 		D = cls;
 		program->addClass(cls);
 	}
 
+%type oCAndIvarDefs { std::vector<std::string>}
 %type oIvarDefs { std::vector<std::string> }
+%type oLIvar { std::vector<std::string> }
 %type lIvar { std::vector<std::string> }
+
+oCAndIvarDefs ::= .
+oCAndIvarDefs(L) ::= BAR oLIvar(l) BAR. { L = l; }
+oCAndIvarDefs(L) ::= BAR oLIvar(l) BAR BAR lIvar BAR. { L = l; }
 
 oIvarDefs ::= .
 oIvarDefs(L) ::= BAR lIvar(l) BAR. { L = l; }
+
+oLIvar ::= .
+oLIvar(L) ::= lIvar(l). { L = l; }
 
 lIvar(L) ::= IDENTIFIER(i). { L = {i}; }
 lIvar(L) ::= lIvar(l) IDENTIFIER(i).

@@ -1,5 +1,6 @@
 #include "CodeGen.hxx"
 #include "VM/Bytecode.hxx"
+#include "VM/Interpreter.hxx"
 
 void CodeGen::willPush (int n)
 {
@@ -69,6 +70,14 @@ void CodeGen::genMoveLocalToMyHeapVars (uint8_t index, uint8_t promotedIndex)
     genCode (promotedIndex);
 }
 
+void CodeGen::genMoveMyHeapVarToParentHeapVars (uint8_t myIndex,
+                                                uint8_t parentIndex)
+
+{
+    genInstruction (Opcode::kMoveMyHeapVarToParentHeapVars, myIndex);
+    genCode (parentIndex);
+}
+
 void CodeGen::genPushInstanceVar (uint8_t index)
 {
     willPush ();
@@ -130,6 +139,12 @@ void CodeGen::genPushFalse ()
     genInstruction (Opcode::kPushFalse);
 }
 
+void CodeGen::genPushSmalltalk ()
+{
+    willPush ();
+    genInstruction (Opcode::kPushSmalltalk);
+}
+
 void CodeGen::genPop ()
 {
     genInstruction (Opcode::kPop);
@@ -174,11 +189,24 @@ void CodeGen::genMessage (bool isSuper, size_t numArgs, std::string selector)
 {
     SymbolOop messagesym = SymbolOop::fromString (selector);
 
+    if (!isSuper)
+    {
+        int sym;
+        if ((sym = Processor::optimisedBinopSym (messagesym)) != -1)
+        {
+            willPop (numArgs);
+            genInstruction (Opcode::kBinOp, sym);
+            return;
+        }
+    }
+
     genPushLiteralObject (messagesym);
+
     if (isSuper)
         genInstruction (Opcode::kSendSuper, numArgs);
     else
         genInstruction (Opcode::kSend, numArgs);
+
     /* pops nArgs + selector + receiver, but pushes result */
     willPop (numArgs + 1);
 }

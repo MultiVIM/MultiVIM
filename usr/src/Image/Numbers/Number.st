@@ -34,7 +34,7 @@ Magnitude subclass: Number
 
 	\\ value [
 		" remainder after integer division "
-		^ self - (self // value * value)
+		^ self - ((self // value) * value)
 	]
 
 	abs [
@@ -56,6 +56,12 @@ Magnitude subclass: Number
 
 	exp [
 		^ self asFloat exp
+	]
+
+	fib [
+		^ self < 2
+			ifTrue: [ 1 ]
+			ifFalse: [ (self - 2) fib + (self - 1) fib ]
 	]
 
 	floor [		| i |
@@ -87,7 +93,7 @@ Magnitude subclass: Number
 
 	maxgen: value [
 		(self isNumber and: [ value isNumber ])
-			ifFalse: [ ^ smalltalk error: 
+			ifFalse: [ ^ VM error: 
 				'arithmetic on non-numbers' ].
 		^ (self generality > value generality)
 			ifTrue: [ self ]
@@ -141,7 +147,7 @@ Magnitude subclass: Number
 
 	sqrt [
 		^ (self negative)
-			ifTrue: [ smalltalk error: 'sqrt of negative']
+			ifTrue: [ VM error: 'sqrt of negative']
 			ifFalse: [ self raisedTo: 0.5 ]
 	]
 

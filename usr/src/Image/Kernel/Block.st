@@ -6,7 +6,7 @@ Object subclass: Block [
 	checkArgumentCount: count [
 		^ (argCount = count)
 			ifTrue: [ true ]
-			ifFalse: [ smalltalk error:
+			ifFalse: [ VM error:
 				'wrong number of arguments passed to block'.
 				false ]
 	]
