@@ -17,6 +17,7 @@
 #include "LGPL/Controls/Fl_Drag_Tabs.H"
 #include "LGPL/Controls/Flw_Split.H"
 #include "MVTextView.hh"
+#include "MVWebView.hxx"
 
 class MVMainWindowView : public Fl_Cairo_Window
 {
@@ -64,9 +65,15 @@ class MVMainWindowView : public Fl_Cairo_Window
         return h () - mainAreaY () - (msgBarHeight + statusBarHeight);
     }
 
+    void addTopLevelWebView (MVWebView * aView)
+    {
+        MVMDIWindow * win = mainArea.createBigWindow ("Welcome");
+        win->addFullSizeChild (aView);
+    }
+
     void addTopLevelTextView (TextView * aView)
     {
-        MVMDIWindow * win = mainArea.createBigWindow ();
+        MVMDIWindow * win = mainArea.createBigWindow ("Buffer 1");
         win->addFullSizeChild (aView);
         /// extView = aView;
         // mainArea->addTab (textView);

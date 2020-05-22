@@ -18,7 +18,7 @@ class MVMDIWorkspace : public Fl_Scroll, public MVWExtras
 
     void activate (MVMDIWindow & win);
     void addWindow (MVMDIWindow & win);
-    MVMDIWindow * createBigWindow ();
+    MVMDIWindow * createBigWindow (const char * l = "Untitled");
     int handle (int event);
 };
 

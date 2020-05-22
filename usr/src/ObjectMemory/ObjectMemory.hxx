@@ -8,7 +8,7 @@
 
 #include "Oops/Oop.hxx"
 
-class ClassOop : public OopOop
+class ClassOopDesc : public OopOopDesc
 {
   public:
     /*
@@ -58,62 +58,46 @@ class ClassOop : public OopOop
 
 class MemoryManager
 {
-    friend class Oop;
-
-    size_t lowestFreeSlot;
-
-    struct TableEntry
-    {
-        ActualObject * obj;
-    };
-
-    TableEntry * _table;
-    size_t _tableSize;
+    friend class OopDesc;
 
   public:
 #pragma mark system objects
-    Oop objNil ();
-    Oop objTrue ();
-    Oop objFalse ();
-
-    /**
-     * Retrieves the dictionary of symbols, indexed by string hash value.
-     */
-    DictionaryOop objSymbolTable ();
-    /*
-     * Retrieves the dictionary of global variables, indexed by object table
-     * entry of the symbol. Known as 'Smalltalk' in-world.
-     */
-    DictionaryOop objGlobals ();
-
-    ClassOop clsBlock ();
-    ClassOop clsObjectMeta ();
-    ClassOop clsObject ();
-    ClassOop clsInteger ();
-    ClassOop clsSymbol ();
-    ClassOop clsString ();
-    ClassOop clsArray ();
-    ClassOop clsByteArray ();
-    ClassOop clsMethod ();
-    ClassOop clsProcess ();
-    ClassOop clsUndefinedObject ();
-    ClassOop clsDictionary ();
-    ClassOop clsLink ();
-    ClassOop clsContext ();
-    ClassOop clsSymbolTable ();
-    ClassOop clsSystemDictionary ();
-    ClassOop clsTrue ();
-    ClassOop clsFalse ();
-    ClassOop clsFloat ();
-    ClassOop clsVM ();
+    static Oop objNil;
+    static Oop objTrue;
+    static Oop objFalse;
+    /* Indexed by string hash */
+    static DictionaryOop objSymbolTable;
+    /* Indexed by value */
+    static DictionaryOop objGlobals;
+    static Oop objsmalltalk;
+    static Oop objUnused1;
+    static Oop objUnused2;
+    static Oop objUnused3;
+    static Oop objMinClass;
+    static ClassOop clsObjectMeta;
+    static ClassOop clsObject;
+    static ClassOop clsSymbol;
+    static ClassOop clsInteger;
+    static ClassOop clsArray;
+    static ClassOop clsByteArray;
+    static ClassOop clsString;
+    static ClassOop clsMethod;
+    static ClassOop clsProcess;
+    static ClassOop clsUndefinedObject;
+    static ClassOop clsTrue;
+    static ClassOop clsFalse;
+    static ClassOop clsLink;
+    static ClassOop clsDictionary;
+    static ClassOop clsBlock;
+    static ClassOop clsContext;
+    static ClassOop clsSymbolTable;
+    static ClassOop clsSystemDictionary;
+    static ClassOop clsFloat;
+    static ClassOop clsVM;
+    static ClassOop clsChar;
 
 #pragma mark memory
-    inline ActualObject * actualObjectForOop (Oop anOop);
 
-    /**
-     * Allocates a raw classpair (no iVar vector, no method dictionary.)
-     */
-    ClassPair allocateRawClassPair (std::string name);
     /**
      * Allocates an object composed of object pointers.
      */
@@ -142,39 +126,6 @@ class MemoryManager
 };
 
 #include "Lowlevel/MVBeginPackStruct.h"
-class ActualObject
-{
-  protected:
-    friend class Oop;
-    friend class OopOop;
-    friend class ByteOop;
-    friend class MemoryManager;
-
-    enum
-    {
-        kByte,
-        kOopRef,
-        kWeakOopRef,
-    } kind : 3;
-    /**
-     * Has this object been fully marked by the garbage collector?
-     */
-    bool marked : 1;
-    /**
-     * Is this object (and all objects transitively accessible from it) to be
-     * preserved even if not transitively accessible from the roots?
-     */
-    bool volatil : 1;
-    uintptr_t size : 29;
-
-    /* Oop to this object's class. */
-    ClassOop isa PACKSTRUCT;
-    /* Space for the object's fields. */
-    union {
-        uint8_t bytes[0];
-        Oop oops[0];
-    } vonNeumannSpace PACKSTRUCT;
-};
 #include "Lowlevel/MVEndPackStruct.h"
 
 extern MemoryManager memMgr;

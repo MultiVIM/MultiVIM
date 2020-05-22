@@ -4,17 +4,17 @@
 #include "Oops.hxx"
 #include "VM/Bytecode.hxx"
 
-void MethodOop::print (int in)
+void MethodOopDesc::print (int in)
 {
     std::cout << blanks (in) + "Method\n" << blanks (in) << "{\n";
     in += 1;
     std::cout << blanks (in) + "Bytecode:\n";
     printAllBytecode (bytecode (), in + 1);
     std::cout << blanks (in) + "Literals:\n";
-    for (int i = 1; i <= literals ().size (); i++)
+    for (int i = 1; i <= literals ()->size (); i++)
     {
         std::cout << blanks (in) + "Literal " << i << ":\n";
-        literals ().basicAt (i).print (i + 2);
+        literals ()->basicAt (i)->print (i + 2);
     }
 
     /*   DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);

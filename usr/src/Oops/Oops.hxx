@@ -2,20 +2,21 @@
 #define CLASSOOP_HXX_
 
 #include "ObjectMemory/ObjectMemory.hxx"
+#include "Oop.hxx"
 
 int strHash (std::string str);
 int strTest (Oop key, std::string aString);
 int identityTest (Oop key, Oop match);
 
-class FloatOop : public ByteOop
+class CharOopDesc : public OopOopDesc
 {
   public:
-    inline double floatValue ();
+    DeclareAccessorPair (SmiOop, value, setValue);
 
-    static FloatOop fromDouble (double value);
+    static CharOop newWith (intptr_t value);
 };
 
-class LinkOop : public OopOop
+class LinkOopDesc : public OopOopDesc
 {
   public:
     DeclareAccessorPair (Oop, one, setOne);
@@ -27,7 +28,7 @@ class LinkOop : public OopOop
     static LinkOop newWith (Oop a, Oop b);
 };
 
-class ArrayOop : public OopOop
+class ArrayOopDesc : public OopOopDesc
 {
   public:
     static ArrayOop newWithSize (size_t size);
@@ -35,7 +36,7 @@ class ArrayOop : public OopOop
     static ArrayOop symbolArrayFromStringVector (std::vector<std::string> vec);
 };
 
-class DictionaryOop : public OopOop
+class DictionaryOopDesc : public OopOopDesc
 {
   public:
     /**
@@ -81,14 +82,14 @@ class DictionaryOop : public OopOop
 
 /* Only at:ifAbsent: and at:put: need be implemented to do ByteArrays. The other
  * logic can remain identical. */
-class ByteArrayOop : public ByteOop
+class ByteArrayOopDesc : public ByteOopDesc
 {
   public:
     static ByteArrayOop newWithSize (size_t size);
     static ByteArrayOop fromVector (std::vector<uint8_t> vec);
 };
 
-class StringOop : public ByteArrayOop
+class StringOopDesc : public ByteArrayOopDesc
 {
   public:
     static StringOop fromString (std::string aString);
@@ -98,7 +99,7 @@ class StringOop : public ByteArrayOop
     std::string asString ();
 };
 
-class SymbolOop : public StringOop
+class SymbolOopDesc : public StringOopDesc
 {
   public:
     static SymbolOop fromString (std::string aString);
@@ -122,7 +123,7 @@ class ClassPair
     static ClassPair allocateRaw ();
 };
 
-class MethodOop : public OopOop
+class MethodOopDesc : public OopOopDesc
 {
     static const int clsNstLength = 10;
 
@@ -143,7 +144,7 @@ class MethodOop : public OopOop
     void print (int in);
 };
 
-class BlockOop : public OopOop
+class BlockOopDesc : public OopOopDesc
 {
     static const int clsNstLength = 10;
 
@@ -167,7 +168,7 @@ class BlockOop : public OopOop
     void print (int in);
 };
 
-class ContextOop : public OopOop
+class ContextOopDesc : public OopOopDesc
 {
     static const int clsNstLength = 12;
 
@@ -185,6 +186,8 @@ class ContextOop : public OopOop
     DeclareAccessorPair (OopOop, methodOrBlock, setMethodOrBlock);
     DeclareAccessorPair (ContextOop, homeMethodContext, setHomeMethodContext);
 
+    /* Initialise all fields that need to be (i.e. the SmiOops) */
+    void init ();
     /* Fetch the next byte of bytecode, incrementing the program counter. */
     uint8_t fetchByte ();
 
@@ -213,7 +216,7 @@ class ContextOop : public OopOop
     static ContextOop newWithMethod (Oop receiver, MethodOop aMethod);
 };
 
-class ProcessOop : public OopOop
+class ProcessOopDesc : public OopOopDesc
 {
     static const int clsNstLength = 4;
 

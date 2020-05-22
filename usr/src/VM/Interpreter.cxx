@@ -100,14 +100,14 @@ void printBytecode (uint8_t code, uint8_t arg, uint8_t arg2)
 
 void printAllBytecode (ByteArrayOop arr, int indent)
 {
-    for (int i = 1; i < arr.size ();)
+    for (int i = 1; i < arr->size ();)
     {
-        uint8_t code = arr.basicAt (i++);
-        uint8_t arg = arr.basicAt (i++);
+        uint8_t code = arr->basicAt (i++);
+        uint8_t arg = arr->basicAt (i++);
 
         if (code >= kMinTwoArgs && code <= kMax)
         {
-            printBytecode (code, arg, arr.basicAt (i++));
+            printBytecode (code, arg, arr->basicAt (i++));
         }
         else
         {
@@ -116,39 +116,54 @@ void printAllBytecode (ByteArrayOop arr, int indent)
     }
 }
 
-static MethodOop lookupMethodInClass (ClassOop cls, SymbolOop selector,
-                                      bool super)
+static MethodOop lookupMethodInClass (ExecState & es, ClassOop cls,
+                                      SymbolOop selector, bool super)
 {
-    ClassOop lookupClass = super ? cls.superClass () : cls;
+    ClassOop lookupClass = super ? cls->superClass () : cls;
     MethodOop meth;
 
-    dprintf (" -> Begin search in class %s\n",
-             lookupClass.name ().asString ().c_str ());
+    dprintf (" -> Begin search in class %s\n", lookupClass->name ()->asCStr ());
 
-    if (!lookupClass.methods ().isNil ())
-        meth = lookupClass.methods ().symbolLookup (selector).asMethodOop ();
+    if (!lookupClass->methods ().isNil ())
+        meth = lookupClass->methods ()->symbolLookup (selector)->asMethodOop ();
     else
         dprintf (" -> Class %s has blank methods table\n ",
-                 lookupClass.name ().asString ().c_str ());
+                 lookupClass->name ()->asCStr ());
 
     if (meth.isNil ())
     {
         ClassOop super;
-        if (((super = lookupClass.superClass ()) == memMgr.objNil ()) ||
+        if (((super = lookupClass->superClass ()) == Oop::nil ()) ||
             (super == lookupClass))
         {
+            ContextOop ctx = es.proc->context ();
             dprintf (" -> Failed to find method %s in class %s\n",
-                     selector.asString ().c_str (),
-                     cls.name ().asString ().c_str ());
+                     selector->asCStr (),
+                     cls->name ()->asCStr ());
+            dprintf ("          --> %s>>%s\n",
+                     ctx->receiver ().isa ()->name ()->asCStr (),
+                     ctx->isBlockContext () ? "<block>"
+                                            : ctx->methodOrBlock ()
+                                                  ->asMethodOop ()
+                                                  ->selector ()
+                                                  ->asCStr ());
+            while ((ctx = ctx->previousContext ()) != Oop::nil ())
+                dprintf ("          --> %s>>%s\n",
+                         ctx->receiver ().isa ()->name ()->asCStr (),
+                         ctx->isBlockContext () ? "<block>"
+                                                : ctx->methodOrBlock ()
+                                                      ->asMethodOop ()
+                                                      ->selector ()
+                                                      ->asCStr ());
             abort ();
         }
         else
         {
             dprintf (
                 " -> DID NOT find method %s in class %s, searching super\n",
-                selector.asString ().c_str (),
-                cls.name ().asString ().c_str ());
-            return lookupMethodInClass (super, selector, false);
+                selector->asCStr (),
+                cls->name ()->asCStr ());
+            return lookupMethodInClass (es, super, selector, false);
         }
     }
 
@@ -161,48 +176,53 @@ static void doSend (ExecState & es, Oop receiver, SymbolOop selector,
     MethodOop candidate;
 
     dprintf ("- Send %s to (isa %d)%s\n",
-             selector.asString ().c_str (),
+             selector->asCStr (),
              receiver.isa ().index (),
-             receiver.isa ().name ().asString ().c_str ());
+             receiver.isa ()->name ()->asCStr ());
 
-    // receiver.print (2);
+    // receiver->print (2);
 
-    candidate = lookupMethodInClass (receiver.isa (), selector, toSuper);
+    candidate = lookupMethodInClass (es, receiver.isa (), selector, toSuper);
 
     if (!candidate.isNil ())
     {
-        ContextOop ctx = ContextOop::newWithMethod (receiver, candidate);
-        ctx.setArguments (arguments);
-        ctx.setPreviousContext (es.proc.context ());
-        es.proc.setContext (ctx);
+        ContextOop ctx = ContextOopDesc::newWithMethod (receiver, candidate);
+        ctx->setArguments (arguments);
+        ctx->setPreviousContext (es.proc->context ());
+        es.proc->setContext (ctx);
         dprintf ("------------%s>>%s----------------\n",
 
-                 receiver.isa ().name ().asString ().c_str (),
-                 candidate.selector ().asString ().c_str ());
+                 receiver.isa ()->name ()->asCStr (),
+                 candidate->selector ()->asCStr ());
     }
     else
-        es.proc.context ().push (memMgr.objNil ());
+        es.proc->context ()->push (Oop::nil ());
 }
 
 void opSend (ExecState & es, int numArgs, bool toSuper)
 {
-    SymbolOop selector = es.proc.context ().pop ().asSymbolOop ();
-    ArrayOop arguments = ArrayOop::newWithSize (numArgs);
+    SymbolOop selector = es.proc->context ()->pop ()->asSymbolOop ();
+    ArrayOop arguments = ArrayOopDesc::newWithSize (numArgs);
     Oop receiver;
     MethodOop candidate;
 
     for (int i = numArgs; i > 0; i--)
     {
         // printf ("-> Argument %d:\n", i);
-        arguments.basicatPut (i, es.proc.context ().pop ());
-        // arguments.basicAt (i).print (10);
+        arguments->basicatPut (i, es.proc->context ()->pop ());
+        // arguments->basicAt (i)->print (10);
     }
 
-    receiver = es.proc.context ().pop ();
+    receiver = es.proc->context ()->pop ();
 
     doSend (es, receiver, selector, arguments, toSuper);
 }
 extern "C" int usleep (int);
+
+/*static ContextOop firstMethodContext (ExecState & es)
+{
+
+}*/
 
 void Processor::interpret (ProcessOop proc)
 {
@@ -211,139 +231,154 @@ void Processor::interpret (ProcessOop proc)
     bool shouldRun;
 
     es.proc = proc;
+    SmiOop * test = (SmiOop *)calloc (1, sizeof (SmiOop));
+    printf ("\n\n\n\n\nsizeof: %d, %d, %d\n\n\n\n",
+            sizeof (TagPtr),
+            test->intValue (),
+            test->isInteger ());
 
-    // proc.context ().methodOrBlock ().print (5);
+    proc->context ()->init ();
+    proc->context ()->programCounter ()->print (5);
+    proc->context ()->methodOrBlock ()->print (5);
 
-    while (opcode = proc.context ().fetchByte ())
+    while (1)
     {
+        opcode = proc->context ()->fetchByte ();
+        if (!opcode)
+            abort ();
         // usleep (5000);
-        uint8_t arg = proc.context ().fetchByte ();
+        uint8_t arg = proc->context ()->fetchByte ();
         uint8_t arg2;
 
         if (opcode > kMinTwoArgs && opcode < kMax)
-            arg2 = es.proc.context ().fetchByte ();
+            arg2 = es.proc->context ()->fetchByte ();
 
         dprintf ("[%d@%p]",
-                 proc.context ().programCounter ().intValue (),
-                 proc.context ().index ());
+                 proc->context ()->programCounter ().intValue (),
+                 proc->context ().index ());
         printBytecode (opcode, arg, arg2);
 
         switch (opcode)
         {
 
         case kPushSelf:
-            es.proc.context ().push (es.proc.context ().receiver ());
+            es.proc->context ()->push (es.proc->context ()->receiver ());
             break;
 
         case kPushNil:
-            es.proc.context ().push (memMgr.objNil ());
+            es.proc->context ()->push (Oop::nil ());
             break;
 
         case kPushTrue:
-            es.proc.context ().push (memMgr.objTrue ());
+            es.proc->context ()->push (MemoryManager::objTrue);
             break;
 
         case kPushFalse:
-            es.proc.context ().push (memMgr.objFalse ());
+            es.proc->context ()->push (MemoryManager::objFalse);
             break;
 
         case kPushSmalltalk:
-            es.proc.context ().push (memMgr.objGlobals ());
+            es.proc->context ()->push (MemoryManager::objGlobals);
             break;
 
         case kPushContext:
-            es.proc.context ().push (es.proc.context ());
+            es.proc->context ()->push (es.proc->context ());
             break;
 
         case kPushInstanceVar:
         {
-            Oop var = es.proc.context ().receiver ().asOopOop ().basicAt (arg);
-            es.proc.context ().push (var);
+            Oop var =
+                es.proc->context ()->receiver ()->asOopOop ()->basicAt (arg);
+            es.proc->context ()->push (var);
             break;
         }
 
         case kPushArgument:
         {
-            Oop var = es.proc.context ().arguments ().basicAt (arg);
-            es.proc.context ().push (var);
+            Oop var = es.proc->context ()->arguments ()->basicAt (arg);
+            es.proc->context ()->push (var);
             break;
         }
 
         case kPushLocal:
         {
-            Oop var = es.proc.context ().temporaries ().basicAt (arg);
-            es.proc.context ().push (var);
+            Oop var = es.proc->context ()->temporaries ()->basicAt (arg);
+            es.proc->context ()->push (var);
             break;
         }
 
         case kPushLiteral:
         {
-            Oop var = es.proc.context ()
-                          .methodOrBlock ()
-                          .asMethodOop ()
-                          .literals ()
-                          .basicAt (arg);
-            es.proc.context ().push (var);
+            Oop var = es.proc->context ()
+                          ->methodOrBlock ()
+                          ->asMethodOop ()
+                          ->literals ()
+                          ->basicAt (arg);
+            es.proc->context ()->push (var);
             break;
         }
 
         case kPushParentHeapVar:
         {
-            Oop val = es.proc.context ().parentHeapVars ().basicAt (arg);
-            es.proc.context ().push (val);
+            Oop val = es.proc->context ()->parentHeapVars ()->basicAt (arg);
+            es.proc->context ()->push (val);
             break;
         }
 
         case kPushMyHeapVar:
         {
-            Oop var = es.proc.context ().heapVars ().basicAt (arg);
-            es.proc.context ().push (var);
+            Oop var = es.proc->context ()->heapVars ()->basicAt (arg);
+            es.proc->context ()->push (var);
             break;
         }
 
         case kPushBlockCopy:
         {
             BlockOop var = memMgr
-                               .copyObj (es.proc.context ()
-                                             .methodOrBlock ()
-                                             .asMethodOop ()
-                                             .literals ()
-                                             .basicAt (arg))
-                               .asBlockOop ();
-            var.setParentHeapVars (es.proc.context ().heapVars ());
-            var.setReceiver (es.proc.context ().receiver ());
+                               .copyObj (es.proc->context ()
+                                             ->methodOrBlock ()
+                                             ->asMethodOop ()
+                                             ->literals ()
+                                             ->basicAt (arg))
+                               ->asBlockOop ();
+            /*ContextOop home = es.proc->context ()->isBlockContext ()
+                                  ? firstMethodContext (es)
+                                  : es.proc->context ();*/
+            var->setParentHeapVars (es.proc->context ()->heapVars ());
+            var->setReceiver (es.proc->context ()->receiver ());
             printf ("=> Set home method continuation to %p\n",
-                    es.proc.context ().index ());
-            var.setHomeMethodContext (es.proc.context ());
-            es.proc.context ().push (var);
+                    es.proc->context ().index ());
+            var->setHomeMethodContext (es.proc->context ());
+            es.proc->context ()->push (var);
             break;
         }
 
         case kStoreInstanceVar:
         {
-            Oop val = es.proc.context ().top ();
-            es.proc.context ().receiver ().asOopOop ().basicatPut (arg, val);
+            Oop val = es.proc->context ()->top ();
+            es.proc->context ()->receiver ()->asOopOop ()->basicatPut (arg,
+                                                                       val);
             break;
         }
 
         case kStoreLocal:
         {
-            Oop val = es.proc.context ().top ();
-            es.proc.context ().temporaries ().basicatPut (arg, val);
+            Oop val = es.proc->context ()->top ();
+            es.proc->context ()->temporaries ()->basicatPut (arg, val);
             break;
         }
 
         case kStoreParentHeapVar:
         {
-            Oop val = es.proc.context ().top ();
-            es.proc.context ().parentHeapVars ().basicatPut (arg, val);
+            Oop val = es.proc->context ()->top ();
+            es.proc->context ()->parentHeapVars ()->basicatPut (arg, val);
             break;
         }
 
         case kStoreMyHeapVar:
         {
-            Oop val = es.proc.context ().top ();
-            es.proc.context ().heapVars ().basicatPut (arg, val);
+            Oop val = es.proc->context ()->top ();
+            es.proc->context ()->heapVars ()->basicatPut (arg, val);
             break;
         }
 
@@ -355,11 +390,11 @@ void Processor::interpret (ProcessOop proc)
 
         case kSend:
             /*printf ("\n\n\n");
-            for (int i = es.proc.context ().stackPointer ().intValue (); i > 0;
+            for (int i = es.proc->context()->stackPointer ().intValue (); i > 0;
                  i--)
             {
                 printf ("STACK AT %d\n", i);
-                es.proc.context ().stack ().basicAt (i).print (15);
+                es.proc->context()->stack ()->basicAt (i)->print (15);
             }
             printf ("\n\n\n");*/
             opSend (es, arg, false);
@@ -375,31 +410,32 @@ void Processor::interpret (ProcessOop proc)
             if (arg >= 0 && arg <= 12)
             {
                 Oop returned;
-                ArrayOop args = ArrayOop::newWithSize (2);
+                ArrayOop args = ArrayOopDesc::newWithSize (2);
 
-                args.basicatPut (2, es.proc.context ().pop ());
-                args.basicatPut (1, es.proc.context ().pop ());
+                args->basicatPut (2, es.proc->context ()->pop ());
+                args->basicatPut (1, es.proc->context ()->pop ());
+
+                dprintf ("Prim %s\n", binSels[arg]->asCStr ());
 
                 returned = primVec[60 + arg](es, args);
                 if (!returned.isNil ())
                 {
-                    es.proc.context ().push (returned);
+                    es.proc->context ()->push (returned);
                     break;
                 }
                 else
                 {
-                    ArrayOop sendArgs = ArrayOop::newWithSize (1);
-                    Oop receiver = args.basicAt (1);
-                    printf (
-                        "=====> For selector %s>>%s, argument %s, prim %d "
-                        "returned NIL.\n",
-                        receiver.isa ().name ().asString ().c_str (),
-                        binSels[arg].asString ().c_str (),
+                    ArrayOop sendArgs = ArrayOopDesc::newWithSize (1);
+                    Oop receiver = args->basicAt (1);
+                    printf ("=====> For selector %s>>%s, argument %s, prim %d "
+                            "returned NIL.\n",
+                            receiver.isa ()->name ()->asCStr (),
+                            binSels[arg]->asCStr (),
 
-                        args.basicAt (2).isa ().name ().asString ().c_str (),
-                        arg);
+                            args->basicAt (2).isa ()->name ()->asCStr (),
+                            arg);
 
-                    sendArgs.basicatPut (1, args.basicAt (2));
+                    sendArgs->basicatPut (1, args->basicAt (2));
                     doSend (es, receiver, binSels[arg], sendArgs, false);
                 }
 
@@ -407,58 +443,60 @@ void Processor::interpret (ProcessOop proc)
             }
             else
             {
-                ArrayOop sendArgs = ArrayOop::newWithSize (1);
+                ArrayOop sendArgs = ArrayOopDesc::newWithSize (1);
                 Oop receiver;
 
-                sendArgs.basicatPut (1, es.proc.context ().pop ());
-                receiver = es.proc.context ().pop ();
+                sendArgs->basicatPut (1, es.proc->context ()->pop ());
+                receiver = es.proc->context ()->pop ();
                 doSend (es, receiver, binSels[arg], sendArgs, false);
+                break;
             }
         }
 
         case kDuplicate:
-            es.proc.context ().dup ();
+            es.proc->context ()->dup ();
             break;
 
         case kPop:
-            es.proc.context ().pop ();
+            es.proc->context ()->pop ();
             break;
 
         case kReturn:
         {
-            Oop result = es.proc.context ().pop ();
-            ContextOop prevContext = es.proc.context ().previousContext ();
+            Oop result = es.proc->context ()->pop ();
+            ContextOop prevContext = es.proc->context ()->previousContext ();
             if (!prevContext.isNil ())
             {
                 // printf ("RESULT!\n");
-                // result.print (5);
-                prevContext.push (result);
-                es.proc.setContext (prevContext);
+                // result->print (5);
+                prevContext->push (result);
+                es.proc->setContext (prevContext);
                 printf ("Returning:\n");
-                // result.print (5);
+                result->print (5);
                 dprintf ("----------------RETURNED-------------------\n");
-                dprintf (
-                    "-----------INTO %s>>%s-------------\n",
-                    prevContext.receiver ().isa ().name ().asString ().c_str (),
-                    prevContext.isBlockContext () ? "<block>"
-                                                  : prevContext.methodOrBlock ()
-                                                        .asMethodOop ()
-                                                        .selector ()
-                                                        .asString ()
-                                                        .c_str ());
+                dprintf ("-----------INTO %s>>%s-------------\n",
+                         prevContext->receiver ().isa ()->name ()->asCStr (),
+                         prevContext->isBlockContext ()
+                             ? "<block>"
+                             : prevContext->methodOrBlock ()
+                                   ->asMethodOop ()
+                                   ->selector ()
+                                   ->asString ()
+                                   .c_str ());
             }
             else
             {
                 printf ("FINAL RESULT:\n\n");
-                result.print (0);
-                for (int i = es.proc.context ().stackPointer ().intValue ();
+                result->print (0);
+                for (int i = es.proc->context ()->stackPointer ().intValue ();
                      i > 0;
                      i--)
                 {
                     dprintf ("STACK AT %d\n", i);
-                    // es.proc.context ().stack ().basicAt (i).print (15);
+                    // es.proc->context()->stack ()->basicAt (i)->print (15);
                 }
                 dprintf ("\n\n\n");
+                goto end;
             }
 
             break;
@@ -466,20 +504,35 @@ void Processor::interpret (ProcessOop proc)
 
         case kBlockReturn:
         {
-            Oop result = es.proc.context ().pop ();
-            ContextOop prevContext = es.proc.context ();
-            ContextOop homeContext = es.proc.context ()
-                                         .methodOrBlock ()
-                                         .asBlockOop ()
-                                         .homeMethodContext ();
+            Oop result = es.proc->context ()->pop ();
+            ContextOop prevContext = es.proc->context ();
+            ContextOop homeContext = es.proc->context ()
+                                         ->methodOrBlock ()
+                                         ->asBlockOop ()
+                                         ->homeMethodContext ();
             int i = 1;
-            while ((prevContext = prevContext.previousContext ()) !=
+            while ((prevContext = prevContext->previousContext ()) !=
                        homeContext &&
                    !prevContext.isNil ())
                 i++;
-            /* and twice more: once to escape the enclosing block>>value, then
-             * once more to escape the enclosing method. */
-            prevContext = prevContext.previousContext ();
+            printf ("Home context: %p\n, %p\n", homeContext, prevContext);
+
+            /* FIXME: Is this legit? It seems hacky to me. Better that we
+             * somehow make all blocks defined in a given method (even if
+             * nested) share the correct homecontext somehow. */
+            while (prevContext->isBlockContext ())
+            {
+                homeContext = prevContext->methodOrBlock ()
+                                  ->asBlockOop ()
+                                  ->homeMethodContext ();
+                while ((prevContext = prevContext->previousContext ()) !=
+                           homeContext &&
+                       !prevContext.isNil ())
+                    i++;
+            }
+
+            /* Finally, escape the containing method. */
+            prevContext = prevContext->previousContext ();
 
             if (prevContext.isNil ())
             {
@@ -488,66 +541,69 @@ void Processor::interpret (ProcessOop proc)
                          i,
                          homeContext.index ());
                 printf ("FINAL RESULT:\n\n");
-                result.print (2);
+                result->print (2);
             }
             else
             {
-                prevContext.push (result);
-                es.proc.setContext (prevContext);
+                prevContext->push (result);
+                es.proc->setContext (prevContext);
                 printf ("Returning:\n");
-                // result.print (5);
+                result->print (5);
                 dprintf ("---------NON-LOCAL RETURNED (%d FRAMES)---------\n",
                          i);
-                dprintf (
-                    "-----------INTO %s>>%s-------------\n",
-                    prevContext.receiver ().isa ().name ().asString ().c_str (),
-                    prevContext.isBlockContext () ? "<block>"
-                                                  : prevContext.methodOrBlock ()
-                                                        .asMethodOop ()
-                                                        .selector ()
-                                                        .asString ()
-                                                        .c_str ());
+                dprintf ("-----------INTO %s>>%s (%p:%p)-------------\n",
+                         prevContext->receiver ().isa ()->name ()->asCStr (),
+                         prevContext->isBlockContext ()
+                             ? "<block>"
+                             : prevContext->methodOrBlock ()
+                                   ->asMethodOop ()
+                                   ->selector ()
+                                   ->asString ()
+                                   .c_str (),
+                         prevContext.index (),
+                         homeContext.index ());
             }
+            break;
         }
 
         case kMoveParentHeapVarToMyHeapVars:
         {
-            Oop val = es.proc.context ().parentHeapVars ().basicAt (arg);
-            es.proc.context ().heapVars ().basicatPut (arg2, val);
+            Oop val = es.proc->context ()->parentHeapVars ()->basicAt (arg);
+            es.proc->context ()->heapVars ()->basicatPut (arg2, val);
             break;
         }
 
         case kMoveArgumentToMyHeapVars:
         {
-            Oop val = es.proc.context ().arguments ().basicAt (arg);
-            es.proc.context ().heapVars ().basicatPut (arg2, val);
+            Oop val = es.proc->context ()->arguments ()->basicAt (arg);
+            es.proc->context ()->heapVars ()->basicatPut (arg2, val);
             break;
         }
 
         case kMoveLocalToMyHeapVars:
         {
-            Oop val = es.proc.context ().temporaries ().basicAt (arg);
-            es.proc.context ().heapVars ().basicatPut (arg2, val);
+            Oop val = es.proc->context ()->temporaries ()->basicAt (arg);
+            es.proc->context ()->heapVars ()->basicatPut (arg2, val);
             break;
         }
 
         case kMoveMyHeapVarToParentHeapVars:
         {
-            Oop val = es.proc.context ().heapVars ().basicAt (arg);
-            es.proc.context ().parentHeapVars ().basicatPut (arg2, val);
+            Oop val = es.proc->context ()->heapVars ()->basicAt (arg);
+            es.proc->context ()->parentHeapVars ()->basicatPut (arg2, val);
             break;
         }
 
         case kPrimitive:
         {
-            ArrayOop arguments = ArrayOop::newWithSize (arg2);
+            ArrayOop arguments = ArrayOopDesc::newWithSize (arg2);
 
             for (int i = arg2; i > 0; i--)
             {
-                arguments.basicatPut (i, es.proc.context ().pop ());
+                arguments->basicatPut (i, es.proc->context ()->pop ());
             }
 
-            es.proc.context ().push (primVec[arg](es, arguments));
+            es.proc->context ()->push (primVec[arg](es, arguments));
             break;
         }
 
@@ -555,17 +611,19 @@ void Processor::interpret (ProcessOop proc)
             printf ("UNIMPLEMENTED %s\n", bytecodeNames[opcode]);
         }
     }
+end:
+    return;
 }
 
 void Processor::coldBootMainProcessor ()
 {
     Processor mainProc;
-    MethodOop start = MVST_Parser::parseText ("^ 5 radix: 10")
+    MethodOop start = MVST_Parser::parseText ("^ 153 radix: 16")
                           ->synthInClassScope (nullptr)
                           ->generate ();
-    ProcessOop firstProcess = ProcessOop::allocate ();
-    firstProcess.setContext (
-        ContextOop::newWithMethod (memMgr.objNil (), start));
+    ProcessOop firstProcess = ProcessOopDesc::allocate ();
+    firstProcess->setContext (
+        ContextOopDesc::newWithMethod (Oop::nil (), start));
 
     mainProc.interpret (firstProcess);
 }
@@ -575,11 +633,11 @@ int Processor::optimisedBinopSym (SymbolOop name)
     if (binSels[0].isNil ())
     {
         for (int i = 0; i < 28; i++)
-            binSels[i] = SymbolOop::fromString (binStr[i]);
+            binSels[i] = SymbolOopDesc::fromString (binStr[i]);
     }
 
     for (int i = 0; i < 28; i++)
-        if (name.strEquals (binStr[i]))
+        if (name->strEquals (binStr[i]))
             return i;
     return -1;
 }

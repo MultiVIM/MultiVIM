@@ -5,7 +5,7 @@
 
 Oop unsupportedPrim (ExecState & es, ArrayOop args)
 {
-    return (memMgr.objNil ());
+    return (Oop::nil ());
 }
 
 /*
@@ -16,7 +16,7 @@ Called from Scheduler>>initialize
 Oop primAvailCount (ExecState & es, ArrayOop args)
 {
     // fprintf (stderr, "free: %d\n", availCount ());
-    return (memMgr.objNil ());
+    return (Oop::nil ());
 }
 
 /*
@@ -48,7 +48,8 @@ Oop primFlipWatching (ExecState & es, ArrayOop args)
 {
     /* fixme */
     bool watching = !watching;
-    return ((Oop) (watching ? memMgr.objTrue () : memMgr.objFalse ()));
+    return (
+        (Oop) (watching ? MemoryManager::objTrue : MemoryManager::objFalse));
 }
 
 /*
@@ -67,7 +68,7 @@ Called from Object>>class
 */
 Oop primClass (ExecState & es, ArrayOop args)
 {
-    return (args.basicAt (1).isa ());
+    return (args->basicAt (1).isa ());
 }
 
 /*
@@ -77,10 +78,10 @@ Called from Object>>basicSize
 Oop primSize (ExecState & es, ArrayOop args)
 {
     int i;
-    if (args.basicAt (1).isInteger ())
+    if (args->basicAt (1).isInteger ())
         i = 0;
     else
-        i = args.basicAt (1).size ();
+        i = args->basicAt (1)->asMemOop ()->size ();
     return (SmiOop (i));
 }
 
@@ -90,10 +91,10 @@ Called from Object>>hash
 */
 Oop primHash (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1).isInteger ())
-        return (args.basicAt (1));
+    if (args->basicAt (1).isInteger ())
+        return (args->basicAt (1));
     else
-        return (SmiOop (args.basicAt (1).index ()));
+        return (SmiOop (args->basicAt (1).index ()));
 }
 
 /*
@@ -118,14 +119,14 @@ Oop primBlockReturn (ExecState & es, ArrayOop args)
     // first get previous link pointer
     i = intValueOf (orefOf (processStack, linkPointer).val);
     // then creating context pointer
-    j = intValueOf (orefOf (args.basicAt (1).ptr, 1).val);
-    if (ptrNe (orefOf (processStack, j + 1), args.basicAt (1)))
-        return ((Oop)memMgr.objFalse ());
+    j = intValueOf (orefOf (args->basicAt (1)->ptr, 1).val);
+    if (ptrNe (orefOf (processStack, j + 1), args->basicAt (1)))
+        return ((Oop)MemoryManager::objFalse);
     // first change link pointer to that of creator
     orefOfPut (processStack, i, orefOf (processStack, j));
     // then change return point to that of creator
     orefOfPut (processStack, i + 2, orefOf (processStack, j + 2)); */
-    return ((Oop)memMgr.objTrue ());
+    return ((Oop)MemoryManager::objTrue);
 }
 
 jmp_buf jb = {};
@@ -159,11 +160,11 @@ Oop primExecute (ExecState & es, ArrayOop args)
     // trap control-C
     signal (SIGINT, brkfun);
     if (setjmp (jb))
-        returnedObject = (Oop)memMgr.objFalse ();
-    else if (execute (args.basicAt (1).ptr, 1 << 12))
-        returnedObject = (Oop)memMgr.objTrue ();
+        returnedObject = (Oop)MemoryManager::objFalse;
+    else if (execute (args->basicAt (1)->ptr, 1 << 12))
+        returnedObject = (Oop)MemoryManager::objTrue;
     else
-        returnedObject = (Oop)memMgr.objFalse ();
+        returnedObject = (Oop)MemoryManager::objFalse;
     signal (SIGINT, brkignore);
     // then restore previous environment
     processStack = saveProcessStack;
@@ -179,10 +180,10 @@ Called from Object>>==
 */
 Oop primIdent (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1) == args.basicAt (2))
-        return ((Oop)memMgr.objTrue ());
+    if (args->basicAt (1) == args->basicAt (2))
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -198,10 +199,10 @@ Oop primClassOfPut (ExecState & es, ArrayOop args)
 {
     fprintf (stderr,
              "Setting ClassOf %d to %d\n, ",
-             args.basicAt (1).index (),
-             args.basicAt (2).index ());
-    args.basicAt (1).setIsa (args.basicAt (2).asClassOop ());
-    return (args.basicAt (1));
+             args->basicAt (1),
+             args->basicAt (2));
+    args->basicAt (1).setIsa (args->basicAt (2)->asClassOop ());
+    return (args->basicAt (1));
 }
 
 /*
@@ -215,15 +216,15 @@ Called from
 */
 Oop primStringCat (ExecState & es, ArrayOop args)
 {
-    uint8_t * src1 = args.basicAt (1).asStringOop ().vonNeumannSpace ();
+    uint8_t * src1 = args->basicAt (1)->asStringOop ()->vonNeumannSpace ();
     size_t len1 = strlen ((char *)src1);
-    uint8_t * src2 = args.basicAt (2).asStringOop ().vonNeumannSpace ();
+    uint8_t * src2 = args->basicAt (2)->asStringOop ()->vonNeumannSpace ();
     size_t len2 = strlen ((char *)src2);
-    StringOop ans = memMgr.allocateByteObj (len1 + len2 + 1).asStringOop ();
-    uint8_t * tgt = ans.vonNeumannSpace ();
+    StringOop ans = memMgr.allocateByteObj (len1 + len2 + 1)->asStringOop ();
+    uint8_t * tgt = ans->vonNeumannSpace ();
     (void)memcpy (tgt, src1, len1);
     (void)memcpy (tgt + len1, src2, len2);
-    ans.setIsa (memMgr.clsString ());
+    ans.setIsa (MemoryManager::clsString);
     return ((Oop)ans);
 }
 
@@ -234,30 +235,30 @@ Called from Object>>basicAt:
 Oop primBasicAt (ExecState & es, ArrayOop args)
 {
     int i;
-    if (args.basicAt (1).isInteger ())
+    if (args->basicAt (1).isInteger ())
     {
         printf ("*************\n\n\n\nARG 1 is an integer!\n\n\n\n******\n\n");
-        return (memMgr.objNil ());
+        return (Oop::nil ());
     }
-    /* if (!args.basicAt (1).kind == OopsRefObj)
-        return (memMgr.objNil ()); */
-    if (!args.basicAt (2).isInteger ())
+    /* if (!args->basicAt (1)->kind == OopsRefObj)
+        return (Oop::nil ()); */
+    if (!args->basicAt (2).isInteger ())
     {
         printf ("*************\n\n\n\nARG 2 isn't integer!\n\n\n\n******\n\n");
-        return (memMgr.objNil ());
+        return (Oop::nil ());
     }
-    i = args.basicAt (2).asSmiOop ().intValue ();
-    if (i < 1 || i > args.basicAt (1).size ())
+    i = args->basicAt (2).asSmiOop ().intValue ();
+    if (i < 1 || i > args->basicAt (1)->asMemOop ()->size ())
     {
         printf ("*************\n\n\n\nARG II (%d) out of "
                 "goose!!!\n\n\n\n******\n\n",
                 i);
-        return (memMgr.objNil ());
+        return (Oop::nil ());
     }
     printf ("*************\nBasicAt: %d\n******\n\n", i);
-    // args.basicAt (1).asOopOop ().basicAt (i).print (10);
+    // args->basicAt (1)->asOopOop ()->basicAt (i)->print (10);
 
-    return args.basicAt (1).asOopOop ().basicAt (i);
+    return args->basicAt (1)->asOopOop ()->basicAt (i);
 }
 
 /*
@@ -268,10 +269,10 @@ Called from ByteArray>>basicAt:
 Oop primByteAt (ExecState & es, ArrayOop args) /*fix*/
 {
     int i;
-    if (!args.basicAt (2).isInteger ())
+    if (!args->basicAt (2).isInteger ())
         perror ("non integer index byteAt:");
-    i = args.basicAt (1).asByteArrayOop ().basicAt (
-        args.basicAt (2).asSmiOop ().intValue ());
+    i = args->basicAt (1)->asByteArrayOop ()->basicAt (
+        args->basicAt (2).asSmiOop ().intValue ());
     if (i < 0)
         i += 256;
     return (SmiOop (i));
@@ -284,9 +285,9 @@ Called from Symbol>>assign:
 */
 Oop primSymbolAssign (ExecState & es, ArrayOop args) /*fix*/
 {
-    memMgr.objGlobals ().symbolInsert (args.basicAt (1).asSymbolOop (),
-                                       args.basicAt (2));
-    return (args.basicAt (1));
+    MemoryManager::objGlobals->symbolInsert (args->basicAt (1)->asSymbolOop (),
+                                             args->basicAt (2));
+    return (args->basicAt (1));
 }
 
 /*
@@ -305,9 +306,9 @@ Oop primBlockCall (ExecState & es, ArrayOop args) /*fix*/
     /* first get previous link */
     // FIXME:  i = intValueOf (orefOf (processStack, linkPointer).val);
     /* change context and byte pointer */
-    /// orefOfPut (processStack, i + 1, args.basicAt (1));
-    // orefOfPut (processStack, i + 4, args.basicAt (2));
-    return (args.basicAt (1));
+    /// orefOfPut (processStack, i + 1, args->basicAt (1));
+    // orefOfPut (processStack, i + 4, args->basicAt (2));
+    return (args->basicAt (1));
 }
 
 /*
@@ -323,10 +324,10 @@ Oop primBlockClone (ExecState & es, ArrayOop args) /*fix*/
 {
     Oop returnedObject;
     // FIXME: returnedObject = (Oop)newBlock ();
-    // orefOfPut (returnedObject.ptr, 1, args.basicAt (2));
-    // orefOfPut (returnedObject.ptr, 2, orefOf (args.basicAt (1).ptr, 2));
-    // orefOfPut (returnedObject.ptr, 3, orefOf (args.basicAt (1).ptr, 3));
-    // orefOfPut (returnedObject.ptr, 4, orefOf (args.basicAt (1).ptr, 4));
+    // orefOfPut (returnedObject.ptr, 1, args->basicAt (2));
+    // orefOfPut (returnedObject.ptr, 2, orefOf (args->basicAt (1)->ptr, 2));
+    // orefOfPut (returnedObject.ptr, 3, orefOf (args->basicAt (1)->ptr, 3));
+    // orefOfPut (returnedObject.ptr, 4, orefOf (args->basicAt (1)->ptr, 4));
     return (returnedObject);
 }
 
@@ -339,17 +340,17 @@ Called from Object>>basicAt:put:
 Oop primBasicAtPut (ExecState & es, ArrayOop args)
 {
     int i;
-    if (args.basicAt (1).isInteger ())
-        return (memMgr.objNil ());
-    /* if (!args.basicAt (1).kind == OopsRefObj)
-        return (memMgr.objNil ()); */
-    if (!args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    i = args.basicAt (2).asSmiOop ().intValue ();
-    if (i < 1 || i > args.basicAt (1).size ())
-        return (memMgr.objNil ());
-    args.basicAt (1).asOopOop ().basicatPut (i, args.basicAt (3));
-    return args.basicAt (1);
+    if (args->basicAt (1).isInteger ())
+        return (Oop::nil ());
+    /* if (!args->basicAt (1)->kind == OopsRefObj)
+        return (Oop::nil ()); */
+    if (!args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    i = args->basicAt (2).asSmiOop ().intValue ();
+    if (i < 1 || i > args->basicAt (1)->asMemOop ()->size ())
+        return (Oop::nil ());
+    args->basicAt (1)->asOopOop ()->basicatPut (i, args->basicAt (3));
+    return args->basicAt (1);
 }
 
 /*
@@ -361,14 +362,15 @@ Called from ByteArray>>basicAt:put:
 Oop primByteAtPut (ExecState & es, ArrayOop args) /*fix*/
 {
     int i;
-    if (!args.basicAt (2).isInteger ())
+    printf ("ByteAtPut %d %d\n", args->basicAt (2).asSmiOop ().intValue ());
+    if (!args->basicAt (2).isInteger ())
         perror ("non integer index byteAt:");
-    if (!args.basicAt (3).isInteger ())
+    if (!args->basicAt (3).isInteger ())
         perror ("assigning non int to byte");
-    args.basicAt (1).asByteArrayOop ().basicatPut (
-        args.basicAt (2).asSmiOop ().intValue (),
-        args.basicAt (3).asSmiOop ().intValue ());
-    return (args.basicAt (1));
+    args->basicAt (1)->asByteArrayOop ()->basicatPut (
+        args->basicAt (2).asSmiOop ().intValue (),
+        args->basicAt (3).asSmiOop ().intValue ());
+    return (args->basicAt (1));
 }
 
 inline intptr_t min (intptr_t one, intptr_t two)
@@ -391,13 +393,13 @@ Called from String>>copyFrom:to:
 */
 Oop primCopyFromTo (ExecState & es, ArrayOop args) /*fix*/
 {
-    if ((!args.basicAt (2).isInteger () || (!args.basicAt (3).isInteger ())))
+    if ((!args->basicAt (2).isInteger () || (!args->basicAt (3).isInteger ())))
         perror ("non integer index / copyFromTo");
     {
-        uint8_t * src = args.basicAt (1).asStringOop ().vonNeumannSpace ();
+        uint8_t * src = args->basicAt (1)->asStringOop ()->vonNeumannSpace ();
         size_t len = strlen ((char *)src);
-        int pos1 = args.basicAt (2).asSmiOop ().intValue ();
-        int pos2 = args.basicAt (3).asSmiOop ().intValue ();
+        int pos1 = args->basicAt (2).asSmiOop ().intValue ();
+        int pos2 = args->basicAt (2).asSmiOop ().intValue ();
         int req = pos2 + 1 - pos1;
         size_t act;
         StringOop ans;
@@ -406,22 +408,22 @@ Oop primCopyFromTo (ExecState & es, ArrayOop args) /*fix*/
             act = min (req, strlen (((char *)src) + (pos1 - 1)));
         else
             act = 0;
-        ans = memMgr.allocateByteObj (act + 1).asStringOop ();
-        tgt = ans.vonNeumannSpace ();
+        ans = memMgr.allocateByteObj (act + 1)->asStringOop ();
+        tgt = ans->vonNeumannSpace ();
         (void)memcpy (tgt, src + (pos1 - 1), act);
-        ans.setIsa (memMgr.clsString ());
+        ans.setIsa (MemoryManager::clsString);
         return ((Oop)ans);
     }
 }
 
 Oop primParse (ExecState & es, ArrayOop args) /*del*/
 {
-    /*setInstanceVariables (args.basicAt(1).ptr);
-    if (parse (args.basicAt(3).ptr, (char *)vonNeumannSpaceOf
-    (args.basicAt(2).ptr), false))
+    /*setInstanceVariables (args->basicAt(1)->ptr);
+    if (parse (args->basicAt(2)->ptr, (char *)vonNeumannSpaceOf
+    (args->basicAt(2)->ptr), false))
     {
-        flushCache (orefOf (args.basicAt(3).ptr, messageInMethod).ptr,
-    args.basicAt(1).ptr); return ((Oop)memMgr.objTrue());
+        flushCache (orefOf (args->basicAt(2)->ptr, messageInMethod).ptr,
+    args->basicAt(1)->ptr); return ((Oop)memMgr.objTrue());
     }
     else
         return ((Oop)memMgr.objFalse());*/
@@ -434,11 +436,10 @@ Called from Integer>>asFloat
 */
 Oop primAsFloat (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger ())
-        return (memMgr.objNil ());
-    return (args.basicAt (
-        1)); // FIXME:(Oop)FloatOop::fromDouble ((double)args.basicAt
-             // (1).asSmiOop ().intValue ()));
+    if (!args->basicAt (1).isInteger ())
+        return (Oop::nil ());
+    return (args->basicAt (1)); // FIXME:(Oop)FloatOop((double)args->basicAt
+                                // (1).asSmiOop ().intValue ()));
 }
 
 /*
@@ -451,10 +452,10 @@ Called from
 */
 Oop primSetTimeSlice (ExecState & es, ArrayOop args)
 {
-    /*FIXME: if (!args.basicAt (1).isInteger ()))
-        return (memMgr.objNil ());
-    *counterAddress = args.basicAt (1).asSmiOop ().intValue ();*/
-    return (memMgr.objNil ());
+    /*FIXME: if (!args->basicAt (1).isInteger ()))
+        return (Oop::nil ());
+    *counterAddress = args->basicAt (1).asSmiOop ().intValue ();*/
+    return (Oop::nil ());
 }
 
 /*
@@ -467,10 +468,10 @@ Called from
 */
 Oop primAllocOrefObj (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger ())
-        return (memMgr.objNil ());
+    if (!args->basicAt (1).isInteger ())
+        return (Oop::nil ());
     return (
-        (Oop)memMgr.allocateOopObj (args.basicAt (1).asSmiOop ().intValue ()));
+        (Oop)memMgr.allocateOopObj (args->basicAt (1).asSmiOop ().intValue ()));
 }
 
 /*
@@ -482,10 +483,10 @@ Called from
 */
 Oop primAllocByteObj (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger ())
-        return (memMgr.objNil ());
-    return (
-        (Oop)memMgr.allocateByteObj (args.basicAt (1).asSmiOop ().intValue ()));
+    if (!args->basicAt (1).isInteger ())
+        return (Oop::nil ());
+    return ((Oop)memMgr.allocateByteObj (
+        args->basicAt (1).asSmiOop ().intValue ()));
 }
 
 /*
@@ -498,14 +499,14 @@ Oop primAdd (ExecState & es, ArrayOop args)
 {
     long longresult;
 
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    longresult += args.basicAt (2).asSmiOop ().intValue ();
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    longresult += args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: bounds test SMI 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (memMgr.objNil ());
+        return (Oop::nil ());
 }
 
 /*
@@ -517,14 +518,14 @@ Also called for SendBinary bytecodes.
 Oop primSubtract (ExecState & es, ArrayOop args)
 {
     long longresult;
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    longresult -= args.basicAt (2).asSmiOop ().intValue ();
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    longresult -= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: smi boundcheck 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (memMgr.objNil ());
+        return (Oop::nil ());
 }
 
 /*
@@ -535,13 +536,13 @@ Also called for SendBinary bytecodes.
 */
 Oop primLessThan (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    if (args.basicAt (1).asSmiOop ().intValue () <
-        args.basicAt (2).asSmiOop ().intValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    if (args->basicAt (1).asSmiOop ().intValue () <
+        args->basicAt (2).asSmiOop ().intValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -552,13 +553,13 @@ Also called for SendBinary bytecodes.
 */
 Oop primGreaterThan (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    if (args.basicAt (1).asSmiOop ().intValue () >
-        args.basicAt (2).asSmiOop ().intValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    if (args->basicAt (1).asSmiOop ().intValue () >
+        args->basicAt (2).asSmiOop ().intValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -568,13 +569,13 @@ Called for SendBinary bytecodes.
 */
 Oop primLessOrEqual (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    if (args.basicAt (1).asSmiOop ().intValue () <=
-        args.basicAt (2).asSmiOop ().intValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    if (args->basicAt (1).asSmiOop ().intValue () <=
+        args->basicAt (2).asSmiOop ().intValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -584,13 +585,13 @@ Called for SendBinary bytecodes.
 */
 Oop primGreaterOrEqual (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    if (args.basicAt (1).asSmiOop ().intValue () >=
-        args.basicAt (2).asSmiOop ().intValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    if (args->basicAt (1).asSmiOop ().intValue () >=
+        args->basicAt (2).asSmiOop ().intValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -600,13 +601,13 @@ Called for SendBinary bytecodes.
 */
 Oop primEqual (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    if (args.basicAt (1).asSmiOop ().intValue () ==
-        args.basicAt (2).asSmiOop ().intValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    if (args->basicAt (1).asSmiOop ().intValue () ==
+        args->basicAt (2).asSmiOop ().intValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -616,13 +617,13 @@ Called for SendBinary bytecodes.
 */
 Oop primNotEqual (ExecState & es, ArrayOop args)
 {
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    if (args.basicAt (1).asSmiOop ().intValue () !=
-        args.basicAt (2).asSmiOop ().intValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    if (args->basicAt (1).asSmiOop ().intValue () !=
+        args->basicAt (2).asSmiOop ().intValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -634,14 +635,14 @@ Also called for SendBinary bytecodes.
 Oop primMultiply (ExecState & es, ArrayOop args)
 {
     long longresult;
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    longresult *= args.basicAt (2).asSmiOop ().intValue ();
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    longresult *= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: boundscheck 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (memMgr.objNil ());
+        return (Oop::nil ());
 }
 
 /*
@@ -654,16 +655,16 @@ Oop primQuotient (ExecState & es, ArrayOop args)
 {
     long longresult;
     printf ("PRIMQUO\n\n");
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    if (args.basicAt (2).asSmiOop ().intValue () == 0)
-        return (memMgr.objNil ());
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    longresult /= args.basicAt (2).asSmiOop ().intValue ();
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    if (args->basicAt (2).asSmiOop ().intValue () == 0)
+        return (Oop::nil ());
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    longresult /= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: boundscheck 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (memMgr.objNil ());
+        return (Oop::nil ());
 }
 
 /*
@@ -676,25 +677,25 @@ Oop primRemainder (ExecState & es, ArrayOop args)
     long longresult;
     printf ("PRIMREM\n\n");
 
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
     {
         printf ("Unacceptable! Args:\n");
 
-        // args.basicAt (1).print (15);
-        // args.basicAt (2).print (15);
-        return (memMgr.objNil ());
+        // args->basicAt (1)->print (15);
+        // args->basicAt (2)->print (15);
+        return (Oop::nil ());
     }
-    if (args.basicAt (2).asSmiOop ().intValue () == 0)
+    if (args->basicAt (2).asSmiOop ().intValue () == 0)
     {
         printf ("Unacceptable! Argsat 2 is 0.\n");
-        return (memMgr.objNil ());
+        return (Oop::nil ());
     }
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    longresult %= args.basicAt (2).asSmiOop ().intValue ();
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    longresult %= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (memMgr.objNil ());
+        return (Oop::nil ());
 }
 
 /*
@@ -706,10 +707,10 @@ Also called for SendBinary bytecodes.
 Oop primBitAnd (ExecState & es, ArrayOop args)
 {
     long longresult;
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    longresult &= args.basicAt (2).asSmiOop ().intValue ();
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    longresult &= args->basicAt (2).asSmiOop ().intValue ();
     return (SmiOop (longresult));
 }
 
@@ -722,10 +723,10 @@ Also called for SendBinary bytecodes.
 Oop primBitXor (ExecState & es, ArrayOop args)
 {
     long longresult;
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    longresult ^= args.basicAt (2).asSmiOop ().intValue ();
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    longresult ^= args->basicAt (2).asSmiOop ().intValue ();
     return (SmiOop (longresult));
 }
 
@@ -739,13 +740,13 @@ Called from Integer>>bitXor:
 Oop primBitShift (ExecState & es, ArrayOop args)
 {
     long longresult;
-    if (!args.basicAt (1).isInteger () || !args.basicAt (2).isInteger ())
-        return (memMgr.objNil ());
-    longresult = args.basicAt (1).asSmiOop ().intValue ();
-    if (args.basicAt (2).asSmiOop ().intValue () < 0)
-        longresult >>= -args.basicAt (2).asSmiOop ().intValue ();
+    if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
+        return (Oop::nil ());
+    longresult = args->basicAt (1).asSmiOop ().intValue ();
+    if (args->basicAt (2).asSmiOop ().intValue () < 0)
+        longresult >>= -args->basicAt (2).asSmiOop ().intValue ();
     else
-        longresult <<= args.basicAt (2).asSmiOop ().intValue ();
+        longresult <<= args->basicAt (2).asSmiOop ().intValue ();
     return (SmiOop (longresult));
 }
 
@@ -756,8 +757,8 @@ Called from String>>size
 */
 Oop primStringSize (ExecState & es, ArrayOop args)
 {
-    return (SmiOop (
-        strlen ((char *)args.basicAt (1).asStringOop ().vonNeumannSpace ())));
+    return (SmiOop (strlen (
+        (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ())));
 }
 
 /*
@@ -769,8 +770,8 @@ Called from
 */
 Oop primStringHash (ExecState & es, ArrayOop args)
 {
-    return (SmiOop (
-        strHash ((char *)args.basicAt (1).asStringOop ().vonNeumannSpace ())));
+    return (SmiOop (strHash (
+        (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ())));
 }
 
 /*
@@ -782,8 +783,8 @@ Called from String>>asSymbol
 */
 Oop primAsSymbol (ExecState & es, ArrayOop args)
 {
-    return ((Oop)SymbolOop::fromString (
-        (char *)args.basicAt (1).asStringOop ().vonNeumannSpace ()));
+    return ((Oop)SymbolOopDesc::fromString (
+        (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ()));
 }
 
 /*
@@ -794,10 +795,10 @@ Called from Symbol>>value
 Oop primGlobalValue (ExecState & es, ArrayOop args)
 {
     printf ("Requested global value of %s\n",
-            (char *)args.basicAt (1).asStringOop ().vonNeumannSpace ());
-    return (memMgr.objNil ());
-    // FIXME: (Oop)globalValue ((char *)vonNeumannSpaceOf (args.basicAt
-    // (1).ptr)));
+            (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ());
+    return (Oop::nil ());
+    // FIXME: (Oop)globalValue ((char *)vonNeumannSpaceOf (args->basicAt
+    // (1)->ptr)));
 }
 
 /*
@@ -807,8 +808,8 @@ Called from String>>unixCommand
 */
 Oop primHostCommand (ExecState & es, ArrayOop args)
 {
-    return (SmiOop (
-        system ((char *)args.basicAt (1).asStringOop ().vonNeumannSpace ())));
+    return (SmiOop (system (
+        (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ())));
 }
 
 /*
@@ -819,8 +820,8 @@ Called from Float>>printString
 Oop primAsString (ExecState & es, ArrayOop args)
 {
     char buffer[32];
-    (void)sprintf (buffer, "%g", args.basicAt (1).asFloatOop ().floatValue ());
-    return ((Oop)StringOop::fromString (buffer));
+    (void)sprintf (buffer, "%g", args->basicAt (1).asFloatOop ().floatValue ());
+    return ((Oop)StringOopDesc::fromString (buffer));
 }
 
 /*
@@ -829,8 +830,8 @@ Called from Float>>ln
 */
 Oop primNaturalLog (ExecState & es, ArrayOop args)
 {
-    return ((Oop)FloatOop::fromDouble (
-        log (args.basicAt (1).asFloatOop ().floatValue ())));
+    return (
+        (Oop)FloatOop (log (args->basicAt (1).asFloatOop ().floatValue ())));
 }
 
 /*
@@ -839,8 +840,8 @@ Called from Float>>exp
 */
 Oop primERaisedTo (ExecState & es, ArrayOop args)
 {
-    return ((Oop)FloatOop::fromDouble (
-        exp (args.basicAt (1).asFloatOop ().floatValue ())));
+    return (
+        (Oop)FloatOop (exp (args->basicAt (1).asFloatOop ().floatValue ())));
 }
 
 /*
@@ -853,9 +854,9 @@ Oop primIntegerPart (ExecState & es, ArrayOop args)
     double temp;
     int i;
     int j;
-    ArrayOop returnedObject = memMgr.objNil ().asArrayOop ();
+    ArrayOop returnedObject = Oop::nil ()->asArrayOop ();
 #define ndif 12
-    temp = frexp (args.basicAt (1).asFloatOop ().floatValue (), &i);
+    temp = frexp (args->basicAt (1).asFloatOop ().floatValue (), &i);
     if ((i >= 0) && (i <= ndif))
     {
         temp = ldexp (temp, i);
@@ -867,21 +868,21 @@ Oop primIntegerPart (ExecState & es, ArrayOop args)
         temp = ldexp (temp, ndif);
     }
     j = (int)temp;
-    returnedObject = ArrayOop::newWithSize (2);
-    returnedObject.basicatPut (1, SmiOop (j));
-    returnedObject.basicatPut (2, SmiOop (i));
+    returnedObject = ArrayOopDesc::newWithSize (2);
+    returnedObject->basicatPut (1, SmiOop (j));
+    returnedObject->basicatPut (2, SmiOop (i));
 #ifdef trynew
     /* if number is too big it can't be integer anyway */
-    if (args.basicAt (1).asFloatOop ().floatValue () > 2e9)
+    if (args->basicAt (1).asFloatOop ().floatValue () > 2e9)
         returnedObject = nilObj;
     else
     {
-        (void)modf (args.basicAt (1).asFloatOop ().floatValue (), &temp);
+        (void)modf (args->basicAt (1).asFloatOop ().floatValue (), &temp);
         ltemp = (long)temp;
         if (canEmbed (ltemp))
             returnedObject = encValueOf ((int)temp);
         else
-            returnedObject = FloatOop::fromDouble (temp);
+            returnedObject = FloatOop (temp);
     }
 #endif
     return ((Oop)returnedObject);
@@ -895,9 +896,9 @@ Called from Float>>+
 Oop primFloatAdd (ExecState & es, ArrayOop args)
 {
     double result;
-    result = args.basicAt (1).asFloatOop ().floatValue ();
-    result += args.basicAt (2).asFloatOop ().floatValue ();
-    return ((Oop)FloatOop::fromDouble (result));
+    result = args->basicAt (1).asFloatOop ().floatValue ();
+    result += args->basicAt (2).asFloatOop ().floatValue ();
+    return ((Oop)FloatOop (result));
 }
 
 /*
@@ -908,9 +909,9 @@ Called from Float>>-
 Oop primFloatSubtract (ExecState & es, ArrayOop args)
 {
     double result;
-    result = args.basicAt (1).asFloatOop ().floatValue ();
-    result -= args.basicAt (2).asFloatOop ().floatValue ();
-    return ((Oop)FloatOop::fromDouble (result));
+    result = args->basicAt (1).asFloatOop ().floatValue ();
+    result -= args->basicAt (2).asFloatOop ().floatValue ();
+    return ((Oop)FloatOop (result));
 }
 
 /*
@@ -920,11 +921,11 @@ Called from Float>><
 */
 Oop primFloatLessThan (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1).asFloatOop ().floatValue () <
-        args.basicAt (2).asFloatOop ().floatValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (args->basicAt (1).asFloatOop ().floatValue () <
+        args->basicAt (2).asFloatOop ().floatValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -934,11 +935,11 @@ Not called from the image.
 */
 Oop primFloatGreaterThan (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1).asFloatOop ().floatValue () >
-        args.basicAt (2).asFloatOop ().floatValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (args->basicAt (1).asFloatOop ().floatValue () >
+        args->basicAt (2).asFloatOop ().floatValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -948,11 +949,11 @@ Not called from the image.
 */
 Oop primFloatLessOrEqual (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1).asFloatOop ().floatValue () <=
-        args.basicAt (2).asFloatOop ().floatValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (args->basicAt (1).asFloatOop ().floatValue () <=
+        args->basicAt (2).asFloatOop ().floatValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -962,11 +963,11 @@ Not called from the image.
 */
 Oop primFloatGreaterOrEqual (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1).asFloatOop ().floatValue () >=
-        args.basicAt (2).asFloatOop ().floatValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (args->basicAt (1).asFloatOop ().floatValue () >=
+        args->basicAt (2).asFloatOop ().floatValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -976,11 +977,11 @@ Called from Float>>=
 */
 Oop primFloatEqual (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1).asFloatOop ().floatValue () ==
-        args.basicAt (2).asFloatOop ().floatValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (args->basicAt (1).asFloatOop ().floatValue () ==
+        args->basicAt (2).asFloatOop ().floatValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -990,11 +991,11 @@ Not called from the image.
 */
 Oop primFloatNotEqual (ExecState & es, ArrayOop args)
 {
-    if (args.basicAt (1).asFloatOop ().floatValue () !=
-        args.basicAt (2).asFloatOop ().floatValue ())
-        return ((Oop)memMgr.objTrue ());
+    if (args->basicAt (1).asFloatOop ().floatValue () !=
+        args->basicAt (2).asFloatOop ().floatValue ())
+        return ((Oop)MemoryManager::objTrue);
     else
-        return ((Oop)memMgr.objFalse ());
+        return ((Oop)MemoryManager::objFalse);
 }
 
 /*
@@ -1005,9 +1006,9 @@ Called from Float>>*
 Oop primFloatMultiply (ExecState & es, ArrayOop args)
 {
     double result;
-    result = args.basicAt (1).asFloatOop ().floatValue ();
-    result *= args.basicAt (2).asFloatOop ().floatValue ();
-    return ((Oop)FloatOop::fromDouble (result));
+    result = args->basicAt (1).asFloatOop ().floatValue ();
+    result *= args->basicAt (2).asFloatOop ().floatValue ();
+    return ((Oop)FloatOop (result));
 }
 
 /*
@@ -1018,9 +1019,9 @@ Called from Float>>/
 Oop primFloatDivide (ExecState & es, ArrayOop args)
 {
     double result;
-    result = args.basicAt (1).asFloatOop ().floatValue ();
-    result /= args.basicAt (2).asFloatOop ().floatValue ();
-    return ((Oop)FloatOop::fromDouble (result));
+    result = args->basicAt (1).asFloatOop ().floatValue ();
+    result /= args->basicAt (2).asFloatOop ().floatValue ();
+    return ((Oop)FloatOop (result));
 }
 
 #define MAXFILES 32
@@ -1036,8 +1037,8 @@ Called from File>>open
 */
 Oop primFileOpen (ExecState & es, ArrayOop args)
 {
-    int i = args.basicAt (1).asSmiOop ().intValue ();
-    char * p = (char *)args.basicAt (2).asStringOop ().vonNeumannSpace ();
+    int i = args->basicAt (1).asSmiOop ().intValue ();
+    char * p = (char *)args->basicAt (2)->asStringOop ()->vonNeumannSpace ();
     if (!strcmp (p, "stdin"))
         fp[i] = stdin;
     else if (!strcmp (p, "stdout"))
@@ -1046,14 +1047,15 @@ Oop primFileOpen (ExecState & es, ArrayOop args)
         fp[i] = stderr;
     else
     {
-        char * q = (char *)args.basicAt (3).asStringOop ().vonNeumannSpace ();
+        char * q =
+            (char *)args->basicAt (2)->asStringOop ()->vonNeumannSpace ();
         char * r = strchr (q, 'b');
         ByteOop s;
         if (r == NULL)
         {
             int t = strlen (q);
             s = memMgr.allocateByteObj (t + 2);
-            r = (char *)s.vonNeumannSpace ();
+            r = (char *)s->vonNeumannSpace ();
             memcpy (r, q, t);
             *(r + t) = 'b';
             q = r;
@@ -1063,7 +1065,7 @@ Oop primFileOpen (ExecState & es, ArrayOop args)
             isVolatilePut (s, false);*/
     }
     if (fp[i] == NULL)
-        return (memMgr.objNil ());
+        return (Oop::nil ());
     else
         return (SmiOop (i));
 }
@@ -1075,11 +1077,11 @@ Called from File>>close
 */
 Oop primFileClose (ExecState & es, ArrayOop args)
 {
-    int i = args.basicAt (1).asSmiOop ().intValue ();
+    int i = args->basicAt (1).asSmiOop ().intValue ();
     if (fp[i])
         (void)fclose (fp[i]);
     fp[i] = NULL;
-    return (memMgr.objNil ());
+    return (Oop::nil ());
 }
 
 // void coldFileIn (encVal tagRef);
@@ -1094,10 +1096,10 @@ used only in connection with building an initial image.
 */
 Oop primFileIn (ExecState & es, ArrayOop args)
 {
-    /*int i = args.basicAt (1).asSmiOop ().intValue ();
+    /*int i = args->basicAt (1).asSmiOop ().intValue ();
     if (fp[i])
-        coldFileIn (args.basicAt (1).val);
-    return (memMgr.objNil ());*/
+        coldFileIn (args->basicAt (1)->val);
+    return (Oop::nil ());*/
 }
 
 /*
@@ -1115,11 +1117,11 @@ Called from File>>getString
 */
 Oop primGetString (ExecState & es, ArrayOop args)
 {
-    int i = args.basicAt (1).asSmiOop ().intValue ();
+    int i = args->basicAt (1).asSmiOop ().intValue ();
     int j;
     char buffer[4096];
     if (!fp[i])
-        return (memMgr.objNil ());
+        return (Oop::nil ());
     j = 0;
     buffer[j] = '\0';
     while (1)
@@ -1128,7 +1130,7 @@ Oop primGetString (ExecState & es, ArrayOop args)
         {
             if (fp[i] == stdin)
                 (void)fputc ('\n', stdout);
-            return (memMgr.objNil ()); /* end of file */
+            return (Oop::nil ()); /* end of file */
         }
         if (fp[i] == stdin)
         {
@@ -1142,7 +1144,7 @@ Oop primGetString (ExecState & es, ArrayOop args)
             break;
         /* else we loop again */
     }
-    return ((Oop)StringOop::fromString (buffer));
+    return ((Oop)StringOopDesc::fromString (buffer));
 }
 
 /*
@@ -1153,12 +1155,13 @@ Called from File>>printNoReturn:
 */
 Oop primPrintWithoutNL (ExecState & es, ArrayOop args)
 {
-    int i = args.basicAt (1).asSmiOop ().intValue (); // intValueOf
-                                                      // (arg[0].val);
+    int i = args->basicAt (1).asSmiOop ().intValue (); // intValueOf
+                                                       // (arg[0].val);
     if (!fp[i])
         return (Oop ());
-    (void)fputs ((char *)args.basicAt (2).asByteArrayOop ().vonNeumannSpace (),
-                 fp[i]);
+    (void)fputs (
+        (char *)args->basicAt (2)->asByteArrayOop ()->vonNeumannSpace (),
+        fp[i]);
     (void)fflush (fp[i]);
     return (Oop ());
 }
@@ -1171,61 +1174,68 @@ Called from File>>print:
 */
 Oop primPrintWithNL (ExecState & es, ArrayOop args)
 {
-    int i = args.basicAt (1).asSmiOop ().intValue ();
+    int i = args->basicAt (1).asSmiOop ().intValue ();
     if (!fp[i])
         return (Oop ());
-    (void)fputs ((char *)args.basicAt (2).asByteArrayOop ().vonNeumannSpace (),
-                 fp[i]);
+    (void)fputs (
+        (char *)args->basicAt (2)->asByteArrayOop ()->vonNeumannSpace (),
+        fp[i]);
     (void)fputc ('\n', fp[i]);
     return (Oop ());
 }
 
 Oop primExecBlock (ExecState & es, ArrayOop args)
 {
-    ContextOop ctx = ContextOop::newWithBlock (args.basicAt (1).asBlockOop ());
-    for (int i = 2; i <= args.size (); i++)
+    ContextOop ctx =
+        ContextOopDesc::newWithBlock (args->basicAt (1)->asBlockOop ());
+    for (int i = 2; i <= args->asMemOop ()->size (); i++)
     {
         printf ("add argument %d\n", i - 1);
-        ctx.arguments ().basicatPut (i - 1, args.basicAt (i));
+        ctx->arguments ()->basicatPut (i - 1, args->basicAt (i));
     }
 
-    ctx.setPreviousContext (es.proc.context ().previousContext ());
-    es.proc.setContext (ctx);
+    ctx->setPreviousContext (es.proc->context ()->previousContext ());
+    es.proc->setContext (ctx);
     printf ("=> Entering block\n");
     return Oop ();
 }
 
 Oop primDumpVariable (ExecState & es, ArrayOop args)
 {
-    ContextOop ctx = es.proc.context ();
-    printf ("\n\n\n\n!!!!!!!!!!!!!!!!!!!!\n%d\n", args.basicAt (1));
+    ContextOop ctx = es.proc->context ();
+    printf ("\n\n\n\n!!!!!!!!!!!!!!!!!!!!\n%d\n", args->basicAt (1));
 
-    args.basicAt (1).print (20);
-    args.basicAt (1).isa ().print (20);
+    args->basicAt (1)->print (20);
+    args->basicAt (1).isa ()->print (20);
     printf ("!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n");
-    while ((ctx = ctx.previousContext ()) != memMgr.objNil ())
+    printf (
+        "          --> %s>>%s\n",
+        ctx->receiver ().isa ()->name ()->asCStr (),
+        ctx->isBlockContext ()
+            ? "<block>"
+            : ctx->methodOrBlock ()->asMethodOop ()->selector ()->asCStr ());
+    while ((ctx = ctx->previousContext ()) != Oop::nil ())
         printf ("          --> %s>>%s\n",
-                ctx.receiver ().isa ().name ().asString ().c_str (),
-                ctx.isBlockContext () ? "<block>"
-                                      : ctx.methodOrBlock ()
-                                            .asMethodOop ()
-                                            .selector ()
-                                            .asString ()
-                                            .c_str ());
+                ctx->receiver ().isa ()->name ()->asCStr (),
+                ctx->isBlockContext () ? "<block>"
+                                       : ctx->methodOrBlock ()
+                                             ->asMethodOop ()
+                                             ->selector ()
+                                             ->asCStr ());
     return Oop ();
 }
 
 Oop primMsg (ExecState & es, ArrayOop args)
 {
     printf ("!!\n\nMessage: '%s'\n\n\n!!\n\n",
-            args.basicAt (1).asStringOop ().asString ().c_str ());
+            args->basicAt (1)->asStringOop ()->asCStr ());
     return Oop ();
 }
 
 Oop primFatal (ExecState & es, ArrayOop args)
 {
     printf ("!!\n\nFatal error: '%s'\n\n\n!!\n\n",
-            args.basicAt (1).asStringOop ().asString ().c_str ());
+            args->basicAt (1)->asStringOop ()->asCStr ());
     abort ();
     return Oop ();
 }

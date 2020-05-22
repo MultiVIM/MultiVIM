@@ -48,7 +48,7 @@ Number subclass: Integer
 				  b negative
 					ifTrue: [ t <- t negated.
 						  b <- b negated ].
-				  (b = 1) ifTrue: [ ^ t ].
+				  (b = 1) ifTrue: [ <161 'Return T'> . ^ t ].
 				  ^ Fraction top: t bottom: b ]
 			ifFalse: [ ^ super / value ]
 	]

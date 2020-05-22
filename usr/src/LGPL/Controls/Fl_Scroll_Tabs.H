@@ -28,20 +28,20 @@
   The Fl_Scroll_Tabs widget is the "file card tabs"
   interface that allows you to put lots and lots of buttons and
   switches in a panel, as popularized by many toolkits.
-  
+
   \image html  tabs.png
   \image latex tabs.png "Fl_Scroll_Tabs" width=8cm
-  
+
   Clicking the tab makes a child visible() by calling
   show() on it, and all other children are made invisible
   by calling hide() on them. Usually the children are Fl_Group widgets
   containing several widgets themselves.
-  
+
   Each child makes a card, and its label() is printed
   on the card tab, including the label font and style.  The
   selection color of that child is used to color the tab, while
   the color of the child determines the background color of the pane.
-  
+
   The size of the tabs is controlled by the bounding box of the
   children (there should be some space between the children and
   the edge of the Fl_Scroll_Tabs), and the tabs may be placed
@@ -50,34 +50,51 @@
   fluid browser to select each child group and resize them until
   the tabs look the way you want them to.
 */
-class FL_EXPORT Fl_Scroll_Tabs : public Fl_Group {
-  Fl_Widget *value_;
-  Fl_Widget *push_;
-	int _minw,_maxw;
-	int bar_x,bar_w,tab_w,tab_skip,max_skip;
-  int tab_positions();	// calculate tab positions
-  int tab_height();
-  void draw_buttons(int H);
-  void draw_tab(int X, int W, int H, Fl_Widget* o, int sel=0);
-	void show_tab(int i);
-protected:
-  void redraw_tabs();
-  void draw();
+class FL_EXPORT Fl_Scroll_Tabs : public Fl_Group
+{
+    Fl_Widget * value_;
+    Fl_Widget * push_;
+    int _minw, _maxw;
+    int bar_x, bar_w, tab_w, tab_skip, max_skip;
+    int tab_positions (); // calculate tab positions
+    int tab_height ();
+    void draw_buttons (int H);
+    void draw_tab (int X, int W, int H, Fl_Widget * o, int sel = 0);
+    void show_tab (int i);
 
-public:
-  int handle(int);
-  Fl_Widget *value();
-  int value(Fl_Widget *);
-  Fl_Widget *push() const {return push_;}
-  int push(Fl_Widget *);
-	int minw()const{return _minw;}
-	void minw(int n){_minw=n;}
-	int maxw()const{return _maxw;}
-	void maxw(int n){_maxw=n;}
-  Fl_Scroll_Tabs(int,int,int,int,const char * = 0);
-  Fl_Widget *which(int event_x, int event_y);
-  ~Fl_Scroll_Tabs();
-  void client_area(int &rx, int &ry, int &rw, int &rh, int tabh=0);
+  protected:
+    void redraw_tabs ();
+    void draw ();
+
+  public:
+    int handle (int);
+    Fl_Widget * value ();
+    int value (Fl_Widget *);
+    Fl_Widget * push () const
+    {
+        return push_;
+    }
+    int push (Fl_Widget *);
+    int minw () const
+    {
+        return _minw;
+    }
+    void minw (int n)
+    {
+        _minw = n;
+    }
+    int maxw () const
+    {
+        return _maxw;
+    }
+    void maxw (int n)
+    {
+        _maxw = n;
+    }
+    Fl_Scroll_Tabs (int, int, int, int, const char * = 0);
+    Fl_Widget * which (int event_x, int event_y);
+    ~Fl_Scroll_Tabs ();
+    void client_area (int & rx, int & ry, int & rw, int & rh, int tabh = 0);
 };
 
 #endif

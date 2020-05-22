@@ -122,7 +122,8 @@ void IntExprNode::generateOn (CodeGen & gen)
 
 void CharExprNode::generateOn (CodeGen & gen)
 {
-    gen.genPushLiteralObject (memMgr.objNil ());
+    printf ("CHAR: %c\n", khar[0]);
+    gen.genPushLiteralObject (CharOopDesc::newWith (khar[0]));
     /*int litNum = gen.genLiteral ((objRef)newChar (khar[0]));
     if (!gen.inLiteralArray ())
         gen.genInstruction (PushLiteral, litNum);*/
@@ -130,7 +131,7 @@ void CharExprNode::generateOn (CodeGen & gen)
 
 void SymbolExprNode::generateOn (CodeGen & gen)
 {
-    gen.genPushLiteralObject (SymbolOop::fromString (sym));
+    gen.genPushLiteralObject (SymbolOopDesc::fromString (sym));
     /*int litNum = gen.genLiteral ((objRef)newSymbol (sym.c_str ()));
     if (!gen.inLiteralArray ())
         gen.genInstruction (PushLiteral, litNum);*/
@@ -138,7 +139,7 @@ void SymbolExprNode::generateOn (CodeGen & gen)
 
 void StringExprNode::generateOn (CodeGen & gen)
 {
-    gen.genPushLiteralObject (StringOop::fromString (str));
+    gen.genPushLiteralObject (StringOopDesc::fromString (str));
     /*int litNum = gen.genLiteral ((objRef)newString (str.c_str ()));
     if (!gen.inLiteralArray ())
         gen.genInstruction (PushLiteral, litNum);*/
@@ -146,7 +147,7 @@ void StringExprNode::generateOn (CodeGen & gen)
 
 void FloatExprNode::generateOn (CodeGen & gen)
 {
-    gen.genPushLiteralObject (memMgr.objNil ());
+    gen.genPushLiteralObject (Oop::nil ());
     /*int litNum = gen.genLiteral ((objRef)newFloat (num));
     if (!gen.inLiteralArray ())
         gen.genInstruction (PushLiteral, litNum);*/
@@ -154,7 +155,7 @@ void FloatExprNode::generateOn (CodeGen & gen)
 
 void ArrayExprNode::generateOn (CodeGen & gen)
 {
-    gen.genPushLiteralObject (memMgr.objNil ());
+    gen.genPushLiteralObject (Oop::nil ());
     /*int litNum;
 
     gen.beginLiteralArray ();
@@ -244,7 +245,7 @@ void BlockExprNode::generateReturnPreludeOn (CodeGen & gen)
 
 void BlockExprNode::generateOn (CodeGen & gen)
 {
-    BlockOop block = BlockOop::allocate ();
+    BlockOop block = BlockOopDesc::allocate ();
     CodeGen blockGen (true);
 
     blockGen.pushCurrentScope (scope);
@@ -259,24 +260,24 @@ void BlockExprNode::generateOn (CodeGen & gen)
             blockGen.genPop ();
         else if (!dynamic_cast<ReturnStmtNode *> (s))
         {
-            generateReturnPreludeOn (gen);
+            generateReturnPreludeOn (blockGen);
             blockGen.genReturn ();
         }
     }
 
     if (stmts.empty ())
     {
-        generateReturnPreludeOn (gen);
+        generateReturnPreludeOn (blockGen);
         blockGen.genPushNil ();
         blockGen.genReturn ();
     }
 
-    block.setBytecode (ByteArrayOop::fromVector (blockGen.bytecode ()));
-    block.setLiterals (ArrayOop::fromVector (blockGen.literals ()));
-    block.setArgumentCount (SmiOop (args.size ()));
-    block.setTemporarySize (SmiOop (0));
-    block.setHeapVarsSize (SmiOop (scope->myHeapVars.size ()));
-    block.setStackSize (blockGen.maxStackSize ());
+    block->setBytecode (ByteArrayOopDesc::fromVector (blockGen.bytecode ()));
+    block->setLiterals (ArrayOopDesc::fromVector (blockGen.literals ()));
+    block->setArgumentCount (SmiOop (args.size ()));
+    block->setTemporarySize (SmiOop ((intptr_t)0));
+    block->setHeapVarsSize (SmiOop (scope->myHeapVars.size ()));
+    block->setStackSize (SmiOop (blockGen.maxStackSize ()));
 
     // gen.popCurrentScope ();
 
@@ -306,7 +307,7 @@ void ReturnStmtNode::generateOn (CodeGen & gen)
 MethodOop MethodNode::generate ()
 {
     bool finalIsReturn;
-    MethodOop meth = MethodOop::allocate ();
+    MethodOop meth = MethodOopDesc::allocate ();
     CodeGen gen;
 
     gen.pushCurrentScope (scope);
@@ -328,15 +329,15 @@ MethodOop MethodNode::generate ()
         gen.genReturn ();
     }
 
-    meth.setSelector (SymbolOop::fromString (sel));
-    meth.setBytecode (ByteArrayOop::fromVector (gen.bytecode ()));
-    meth.setLiterals (ArrayOop::fromVector (gen.literals ()));
-    meth.setArgumentCount (args.size ());
-    meth.setTemporarySize (locals.size ());
-    meth.setHeapVarsSize (scope->myHeapVars.size ());
-    meth.setStackSize (gen.maxStackSize ());
+    meth->setSelector (SymbolOopDesc::fromString (sel));
+    meth->setBytecode (ByteArrayOopDesc::fromVector (gen.bytecode ()));
+    meth->setLiterals (ArrayOopDesc::fromVector (gen.literals ()));
+    meth->setArgumentCount (args.size ());
+    meth->setTemporarySize (locals.size ());
+    meth->setHeapVarsSize (scope->myHeapVars.size ());
+    meth->setStackSize (gen.maxStackSize ());
 
-    //   meth.print (2);
+    // meth->print (2);
 
     gen.popCurrentScope ();
 
@@ -349,12 +350,12 @@ void ClassNode::generate ()
 {
     printf ("CLASS %s\n", name.c_str ());
     for (auto m : cMethods)
-        cls.addClassMethod (m->generate ());
+        cls->addClassMethod (m->generate ());
 
     for (auto m : cMethods)
-        cls.addClassMethod (m->generate ());
+        cls->addClassMethod (m->generate ());
     for (auto m : iMethods)
-        cls.addMethod (m->generate ());
+        cls->addMethod (m->generate ());
 }
 
 void ProgramNode::generate ()

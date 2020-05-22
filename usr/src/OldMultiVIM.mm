@@ -23,7 +23,7 @@ static struct option options[] = {
 }
 @end
 
-// OF_APPLICATION_DELEGATE (MultiVIM)
+OF_APPLICATION_DELEGATE (MultiVIM)
 
 @implementation MultiVIM
 

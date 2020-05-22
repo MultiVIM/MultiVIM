@@ -492,7 +492,7 @@ keyword(K) ::= SUBCLASSCOLON. { K = "subclass:"; }
 %type binChar { std::string }
 
 binOp(B) ::= binChar(c). { B = c; }
-binOp(B) ::= binOp(b) binChar(c). { B = b; b += c; }
+binOp(B) ::= binOp(b) binChar(c). { B = b; B += c; }
 
 binChar(B) ::= BINARY(b). { B = b.stringValue; }
 binChar(B) ::= LCARET. { B = std::string("<"); }

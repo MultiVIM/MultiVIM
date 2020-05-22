@@ -69,11 +69,14 @@ LemonCXXComp(Compiler/Parser.y)
 add_executable(MultiVIM
     GUI/Controls/MVMDIWorkspace.cxx GUI/Controls/MVMDIWindow.mm
     GUI/Presenters/MVAppPresenter.mm GUI/Presenters/MVGridPresenter.mm
-    GUI/Views/MVMainWindowView.mm GUI/Views/MVTextView.mm
+    GUI/Views/MVMainWindowView.mm GUI/Views/MVTextView.mm GUI/Views/MVWebView.cxx
 
     LGPL/EFLTK.cxx
     LGPL/Controls/Flw_Split.cxx LGPL/Controls/Fl_Scroll_Tabs.cxx
     LGPL/Controls/Fl_Drag_Tabs.cxx
+
+	LGPL/Controls/Fl_Html_Formatter.cxx LGPL/Controls/Fl_Html_Object.cxx
+	LGPL/Controls/Fl_Html_Parser.cxx LGPL/Controls/Fl_Html_View.cxx
 
     Lowlevel/MVLog.m
     "ObjFW Categories/OFMutableData+MV.m"
@@ -95,13 +98,16 @@ add_executable(MultiVIM
     ${CMAKE_CURRENT_BINARY_DIR}/Parser.tab.cxx
 
 
-    MultiVIM.cxx OldMultiVIM.mm NeoVIMClient.mm)
+    OldMultiVIM.mm
+    #testmainhtmlview.cxx
+
+    OldMultiVIM.mm NeoVIMClient.mm)
 
 target_include_directories(MultiVIM PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/../closed)
 target_include_directories(MultiVIM SYSTEM BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/../closed/fltk
     ${CMAKE_BINARY_DIR}/closed/fltk)
-target_link_libraries(MultiVIM BoehmGC::BoehmGC PkgConfig::Cairo
+target_link_libraries(MultiVIM PkgConfig::Cairo BoehmGC::BoehmGC
     PkgConfig::Pango fltk fltk_cairo fltk_images stdc++fs)
 
 set_target_properties(MultiVIM PROPERTIES

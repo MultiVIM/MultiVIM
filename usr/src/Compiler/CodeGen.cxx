@@ -92,8 +92,8 @@ void CodeGen::genPushArgument (uint8_t index)
 
 void CodeGen::genPushGlobal (std::string name)
 {
-    genPushLiteralObject (memMgr.objGlobals ());
-    genPushLiteralObject ((SymbolOop::fromString (name)));
+    genPushLiteralObject (MemoryManager::objGlobals);
+    genPushLiteralObject ((SymbolOopDesc::fromString (name)));
     genMessage (false, 1, "at:");
 }
 
@@ -167,7 +167,7 @@ void CodeGen::genStoreInstanceVar (uint8_t index)
 void CodeGen::genStoreGlobal (std::string name)
 {
     genInstruction (Opcode::kStoreGlobal,
-                    genLiteral (SymbolOop::fromString (name)));
+                    genLiteral (SymbolOopDesc::fromString (name)));
 }
 
 void CodeGen::genStoreLocal (uint8_t index)
@@ -187,7 +187,7 @@ void CodeGen::genStoreMyHeapVar (uint8_t index)
 
 void CodeGen::genMessage (bool isSuper, size_t numArgs, std::string selector)
 {
-    SymbolOop messagesym = SymbolOop::fromString (selector);
+    SymbolOop messagesym = SymbolOopDesc::fromString (selector);
 
     if (!isSuper)
     {

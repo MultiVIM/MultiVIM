@@ -3,24 +3,24 @@
 #include "Lowlevel/MVPrinting.hxx"
 #include "Oops.hxx"
 
-void DictionaryOop::insert (int hash, Oop key, Oop value)
+void DictionaryOopDesc::insert (int hash, Oop key, Oop value)
 {
     ArrayOop table;
     LinkOop link, nwLink, nextLink;
     Oop tablentry;
 
     /* first get the hash table */
-    table = basicAt (1).asArrayOop ();
+    table = basicAt (1)->asArrayOop ();
 
-    if (table.size () < 3)
+    if (table->size () < 3)
     {
         perror ("attempt to insert into too small name table");
     }
     else
     {
-        hash = 3 * (hash % (table.size () / 3));
-        assert (hash <= table.size () - 3);
-        tablentry = table.basicAt (hash + 1);
+        hash = 3 * (hash % (table->size () / 3));
+        assert (hash <= table->size () - 3);
+        tablentry = table->basicAt (hash + 1);
 
         /* FIXME: I adapted this from the PDST C sources, and this doesn't
          * appear to handle anything other than symbols (because of
@@ -30,30 +30,30 @@ void DictionaryOop::insert (int hash, Oop key, Oop value)
          */
         if (tablentry.isNil () || (tablentry == key))
         {
-            table.basicatPut (hash + 1, key);
-            table.basicatPut (hash + 2, value);
+            table->basicatPut (hash + 1, key);
+            table->basicatPut (hash + 2, value);
         }
         else
         {
-            nwLink = LinkOop::newWith (key, value);
-            link = table.basicAt (hash + 3).asLinkOop ();
+            nwLink = LinkOopDesc::newWith (key, value);
+            link = table->basicAt (hash + 3)->asLinkOop ();
             if (link.isNil ())
             {
-                table.basicatPut (hash + 3, nwLink);
+                table->basicatPut (hash + 3, nwLink);
             }
             else
                 while (1)
                     /* ptrEq (orefOf (link, 1), (objRef)key)) */
-                    if (link.one () == key)
+                    if (link->one () == key)
                     {
                         /* get rid of unwanted Link */
                         // isVolatilePut (nwLink, false);
-                        link.setTwo (value);
+                        link->setTwo (value);
                         break;
                     }
-                    else if ((nextLink = link.nextLink ()).isNil ())
+                    else if ((nextLink = link->nextLink ()).isNil ())
                     {
-                        link.nextLink () = nwLink;
+                        link->setNextLink (nwLink);
                         break;
                     }
                     else
@@ -62,17 +62,17 @@ void DictionaryOop::insert (int hash, Oop key, Oop value)
     }
 }
 
-DictionaryOop DictionaryOop::newWithSize (size_t numBuckets)
+DictionaryOop DictionaryOopDesc::newWithSize (size_t numBuckets)
 {
-    DictionaryOop dict = memMgr.allocateOopObj (1).asDictionaryOop ();
-    dict.setIsa (memMgr.clsDictionary ());
-    dict.basicatPut (1, ArrayOop::newWithSize (numBuckets * 3));
+    DictionaryOop dict = memMgr.allocateOopObj (1)->asDictionaryOop ();
+    dict.setIsa (MemoryManager::clsDictionary);
+    dict->basicatPut (1, ArrayOopDesc::newWithSize (numBuckets * 3));
     return dict;
 }
 
-void DictionaryOop::print (int in)
+void DictionaryOopDesc::print (int in)
 {
-    ArrayOop table = basicAt (1).asArrayOop ();
+    ArrayOop table = basicAt (1)->asArrayOop ();
     Oop key, value;
     LinkOop link;
     Oop * hp;
@@ -81,34 +81,34 @@ void DictionaryOop::print (int in)
     std::cout << blanks (in) + "Dictionary {\n";
 
     /* now see if table is valid */
-    if ((tablesize = table.size ()) < 3)
+    if ((tablesize = table->size ()) < 3)
     {
         printf ("In Print: Table Size: %d\n", tablesize);
         perror ("system error lookup on null table");
     }
-    for (int i = 1; i <= table.size (); i += 3)
+    for (int i = 1; i <= table->size (); i += 3)
     {
-        hp = (Oop *)table.vonNeumannSpace () + (i - 1);
+        hp = (Oop *)table->vonNeumannSpace () + (i - 1);
         printf (" --> bucket: %d\n",
                 i - 1); //(3 * (i % (tablesize / 3))) - 1);
         key = *hp++;    /* table at: hash */
         value = *hp++;  /* table at: hash + 1 */
 
         std::cout << blanks (in + 1) + "{ Key:\n";
-        key.print (in + 2);
+        key->print (in + 2);
         std::cout << blanks (in + 1) + " Value:\n";
-        value.print (in + 2);
+        value->print (in + 2);
         std::cout << blanks (in + 1) + "}\n";
 
         for (link = *(LinkOop *)hp; !link.isNil (); link = *(LinkOop *)hp)
         {
-            hp = (Oop *)link.vonNeumannSpace ();
+            hp = (Oop *)link->vonNeumannSpace ();
             key = *hp++;   /* link at: 1 */
             value = *hp++; /* link at: 2 */
             std::cout << blanks (in + 2) + "{ Key:\n";
-            key.print (in + 2);
+            key->print (in + 2);
             std::cout << blanks (in + 2) + " Value:\n";
-            value.print (in + 2);
+            value->print (in + 2);
             std::cout << blanks (in + 2) + "}\n";
         }
     }

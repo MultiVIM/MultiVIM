@@ -30,10 +30,9 @@ void MVMDIWorkspace::addWindow (MVMDIWindow & win)
     win.didFocus ();
 }
 
-MVMDIWindow * MVMDIWorkspace::createBigWindow ()
+MVMDIWindow * MVMDIWorkspace::createBigWindow (const char * l)
 {
-    MVMDIWindow * win =
-        new MVMDIWindow (x (), y (), w () - 10, h () - 10, "TextView");
+    MVMDIWindow * win = new MVMDIWindow (x (), y (), w () - 10, h () - 10, l);
     addWindow (*win);
     win->end ();
     return win;

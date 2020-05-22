@@ -192,21 +192,21 @@ MethodNode * MethodNode::synthInClassScope (ClassScope * clsScope)
 static void classOopAddIvarsToScopeStartingFrom (ClassOop aClass,
                                                  ClassScope * scope)
 {
-    ClassOop superClass = aClass.superClass ();
+    ClassOop superClass = aClass->superClass ();
 
     if (!superClass.isNil ())
         classOopAddIvarsToScopeStartingFrom (superClass, scope);
 
-    for (int i = 1; i <= aClass.nstVars ().size (); i++)
+    for (int i = 1; i <= aClass->nstVars ()->size (); i++)
         scope->addIvar (
-            aClass.nstVars ().basicAt (i).asSymbolOop ().asString ());
+            aClass->nstVars ()->basicAt (i)->asSymbolOop ()->asString ());
 }
 
 void ClassNode::synth ()
 {
     int index = 0;
     scope = new ClassScope;
-    ClassOop superCls = memMgr.objNil ().asClassOop ();
+    ClassOop superCls = Oop::nil ()->asClassOop ();
 
     if (superName != "nil")
     {
@@ -215,11 +215,11 @@ void ClassNode::synth ()
     }
 
     cls = memMgr.findOrCreateClass (superCls, name);
-    cls.setNstVars (ArrayOop::symbolArrayFromStringVector (iVars));
+    cls->setNstVars (ArrayOopDesc::symbolArrayFromStringVector (iVars));
 
     classOopAddIvarsToScopeStartingFrom (cls, scope);
-    cls.setNstSize (SmiOop (scope->iVars.size ()));
-    memMgr.objGlobals ().symbolInsert (cls.name (), cls);
+    cls->setNstSize (SmiOop (scope->iVars.size ()));
+    MemoryManager::objGlobals->symbolInsert (cls->name (), cls);
 
     for (auto meth : cMethods)
         meth->synthInClassScope (scope);

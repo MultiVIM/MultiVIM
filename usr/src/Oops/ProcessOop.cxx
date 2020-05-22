@@ -1,8 +1,8 @@
 #include "Oops.hxx"
 
-ProcessOop ProcessOop::allocate ()
+ProcessOop ProcessOopDesc::allocate ()
 {
-    ProcessOop newProc = memMgr.allocateOopObj (clsNstLength).asProcessOop ();
-    newProc.setIsa (memMgr.clsProcess ());
+    ProcessOop newProc = memMgr.allocateOopObj (clsNstLength)->asProcessOop ();
+    newProc.setIsa (MemoryManager::clsProcess);
     return newProc;
 }

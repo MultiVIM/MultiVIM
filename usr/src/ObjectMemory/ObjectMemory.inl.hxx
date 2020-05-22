@@ -5,117 +5,120 @@
 
 #include "ObjectMemory.hxx"
 
-inline bool Oop::operator!= (const Oop & anOop)
+/*template <typename T> bool OopRef<T>::isNil ()
+{
+    return dat == 0 || this == MemoryManager::objNil;
+}
+
+template <typename T> bool OopRef<T>::isInteger ()
+{
+    return TagPtr (dat).i.tag == tagPtr::kInt;
+}*/
+
+template <typename T> inline ClassOop OopRef<T>::isa ()
+{
+    if (isInteger ())
+        return MemoryManager::clsInteger;
+    else if (isNil ())
+        return MemoryManager::clsUndefinedObject;
+    return dat->_isa;
+}
+
+template <typename T> inline ClassOop OopRef<T>::setIsa (ClassOop val)
+{
+    assert (!isInteger ());
+    return (dat->_isa = val);
+}
+
+template <typename T> SmiOop OopRef<T>::asSmiOop ()
+{
+    if (TagPtr (dat).i.tag == TagPtr::kInt)
+        return SmiOop (TagPtr (dat).i.num);
+    else
+        return SmiOop ((intptr_t)dat);
+}
+
+template <typename T> FloatOop OopRef<T>::asFloatOop ()
+{
+    if (TagPtr (dat).f.tag == TagPtr::kFloat)
+        return FloatOop (TagPtr (dat).f.flo);
+    else
+        return FloatOop ((intptr_t)dat);
+}
+
+inline bool OopDesc::operator!= (const OopDesc * anOop)
 {
     return !operator== (anOop);
 }
 
-inline bool Oop::operator== (const Oop & anOop)
+inline bool OopDesc::operator== (const OopDesc * anOop)
 {
-    return (isIntegerFlag == anOop.isIntegerFlag) && (value == anOop.value);
+    return this == anOop;
 }
 
-inline bool Oop::isNil ()
+template <typename T> bool OopRef<T>::isNil ()
 {
-    return !isIntegerFlag && !value;
+    return dat == NULL;
 }
 
-inline size_t Oop::index ()
+template <typename T> bool OopRef<T>::isInteger ()
 {
-    assert (!isIntegerFlag);
-    return value;
+    return TagPtr (dat).i.tag == TagPtr::kInt;
 }
 
-inline bool Oop::isInteger ()
+inline size_t MemOopDesc::size ()
 {
-    return isIntegerFlag;
+    return _size;
 }
 
-inline SmiOop & Oop::asSmiOop ()
+inline intptr_t SmiOop::intValue ()
 {
-    // assert (isIntegerFlag);
-    return *static_cast<SmiOop *> (this);
+    return TagPtr (dat).i.num;
 }
 
-inline ActualObject * MemoryManager::actualObjectForOop (Oop anOop)
+inline float FloatOop::floatValue ()
 {
-    assert (!anOop.isInteger ());
-    return _table[anOop.index ()].obj;
+    return TagPtr (dat).f.flo;
 }
 
-inline ActualObject * Oop::actualObject ()
+inline SmiOop SmiOop::increment ()
 {
-    return memMgr.actualObjectForOop (*this);
+    return SmiOop (intValue () + 1);
 }
 
-inline size_t Oop::size ()
+inline SmiOop OopRef<SmiOopDesc>::decrement ()
 {
-    return actualObject ()->size;
+    return SmiOop (intValue () - 1);
 }
 
-inline int SmiOop::postInc ()
+inline Oop * OopOopDesc::vonNeumannSpace ()
 {
-    return value++;
+    return _vonNeumannSpace.oops;
 }
 
-inline int SmiOop::preInc ()
+inline Oop & OopOopDesc::basicAt (size_t index)
 {
-    return ++value;
+    return _vonNeumannSpace.oops[index - 1];
 }
 
-inline int SmiOop::postDec ()
+inline Oop & OopOopDesc::basicatPut (size_t index, Oop value)
 {
-    return value--;
+    return _vonNeumannSpace.oops[index - 1] = value;
 }
 
-inline int SmiOop::preDec ()
+inline uint8_t * ByteOopDesc::vonNeumannSpace ()
 {
-    return --value;
+    return _vonNeumannSpace.bytes;
 }
 
-inline Oop * OopOop::vonNeumannSpace ()
+inline uint8_t & ByteOopDesc::basicAt (size_t index)
 {
-    return actualObject ()->vonNeumannSpace.oops;
+    return _vonNeumannSpace.bytes[index - 1];
 }
 
-inline Oop & OopOop::basicAt (size_t index)
+inline uint8_t & ByteOopDesc::basicatPut (size_t index, uint8_t value)
 {
-    return actualObject ()->vonNeumannSpace.oops[index - 1];
-}
-
-inline Oop & OopOop::basicatPut (size_t index, Oop value)
-{
-    return memMgr.actualObjectForOop (*this)->vonNeumannSpace.oops[index - 1] =
-               value;
-}
-
-inline uint8_t * ByteOop::vonNeumannSpace ()
-{
-    return memMgr.actualObjectForOop (*this)->vonNeumannSpace.bytes;
-}
-
-inline uint8_t & ByteOop::basicAt (size_t index)
-{
-    return memMgr.actualObjectForOop (*this)->vonNeumannSpace.bytes[index - 1];
-}
-
-inline uint8_t & ByteOop::basicatPut (size_t index, uint8_t value)
-{
-    return memMgr.actualObjectForOop (*this)->vonNeumannSpace.bytes[index - 1] =
-               value;
-}
-
-inline ClassOop Oop::isa ()
-{
-    if (isIntegerFlag)
-        return memMgr.clsInteger ();
-    return memMgr.actualObjectForOop (*this)->isa;
-}
-
-inline ClassOop Oop::setIsa (ClassOop val)
-{
-    assert (!isIntegerFlag);
-    return (memMgr.actualObjectForOop (*this)->isa = val);
+    return _vonNeumannSpace.bytes[index - 1] = value;
 }
 
 #endif

@@ -32,9 +32,17 @@ void MVAppPresenter::runMainLoop ()
                                      view.mainAreaHeight () - 24,
                                      NULL,
                                      "NvimTextView");
+    MVWebView * wView = new MVWebView (0,
+                                       view.mainAreaY () + 24,
+                                       view.w (),
+                                       view.mainAreaHeight () - 24,
+                                       "Welcome to MultiVIM");
     printf ("TextView: %p\n", tView);
     view.addTopLevelTextView (tView);
+    view.addTopLevelWebView (wView);
     printf ("TextView: %p\n", tView);
+
+    wView->load ("test.html", true);
 
     gridPresenters[1] = new MVGridPresenter (
         *this, 1, tView, tView->rowCount, tView->columnCount);

@@ -1,3 +1,4 @@
+#include <gc/gc.h>
 #include <getopt.h>
 
 #include "Compiler/AST/AST.hxx"
@@ -11,6 +12,9 @@ static struct option options[] = {{"source", optional_argument, NULL, 's'},
 int main (int argc, char * argv[])
 {
     int c;
+
+    GC_init ();
+
     memMgr.setupInitialObjects ();
 
     while ((c = getopt_long (argc, argv, "s:", options, NULL)) >= 0)
