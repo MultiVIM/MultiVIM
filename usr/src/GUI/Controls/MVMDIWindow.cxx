@@ -165,7 +165,7 @@ int MVMDITitle::minY ()
 
 MVMDIWindow::MVMDIWindow (int x, int y, int w, int h, const char * label)
     : Fl_Group (x, y, w, h, 0), titleBar (2, 2, w, 18, label),
-      contents (nullptr)
+      contents (nullptr), dragState (kNotDragging)
 {
     box (FL_SHADOW_BOX);
     resize (x, y, w, h);
@@ -326,6 +326,24 @@ void MVMDIWindow::handleDragEvent (bool begin)
     redraw ();
 }
 
+void MVMDIWindow::setCursorForDragState ()
+{
+    if (dragState != kNotDragging)
+    {
+#define SetCursorForDragState(cursor, dS)                                      \
+    if (dragState == dS)                                                       \
+    // fl_cursor (cursor, 0, 255)
+        SetCursorForDragState (FL_CURSOR_WE, kLeft);
+        SetCursorForDragState (FL_CURSOR_NS, kTop);
+        SetCursorForDragState (FL_CURSOR_WE, kRight);
+        SetCursorForDragState (FL_CURSOR_NS, kBottom);
+        SetCursorForDragState (FL_CURSOR_NWSE, kTopLeft);
+        SetCursorForDragState (FL_CURSOR_NESW, kTopRight);
+        SetCursorForDragState (FL_CURSOR_NESW, kBottomLeft);
+        SetCursorForDragState (FL_CURSOR_NWSE, kBottomRight);
+    }
+}
+
 int MVMDIWindow::handle (int event)
 {
     static bool dragging = false;
@@ -352,7 +370,6 @@ int MVMDIWindow::handle (int event)
         HandleForArea (topRightDragArea, FL_CURSOR_NESW, kTopRight);
         HandleForArea (bottomLeftDragArea, FL_CURSOR_NESW, kBottomLeft);
         HandleForArea (bottomRightDragArea, FL_CURSOR_NWSE, kBottomRight);
-
         break;
     }
 
@@ -361,34 +378,45 @@ int MVMDIWindow::handle (int event)
             break;
         if (dragState != kNotDragging)
             handleDragEvent (false);
+        setCursorForDragState ();
         return 1;
 
     case FL_RELEASE:
         dragState = kNotDragging;
+        // fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
         return 1;
 
     case FL_LEAVE:
-        fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
+        // fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
         break;
 
     case FL_MOVE:
     {
+
 #define CursorForArea(cursor, area)                                            \
     if (Point (Fl::event_x (), Fl::event_y ()).isInRect (area))                \
     {                                                                          \
         fl_cursor (cursor);                                                    \
         return 1;                                                              \
     }
-        CursorForArea (FL_CURSOR_WE, leftDragArea);
-        CursorForArea (FL_CURSOR_WE, rightDragArea);
-        CursorForArea (FL_CURSOR_NS, leftDragArea);
-        CursorForArea (FL_CURSOR_NS, topDragArea);
-        CursorForArea (FL_CURSOR_NWSE, bottomLeftDragArea);
-        CursorForArea (FL_CURSOR_NESW, topRightDragArea);
-        CursorForArea (FL_CURSOR_NESW, bottomLeftDragArea);
-        CursorForArea (FL_CURSOR_NWSE, bottomRightDragArea);
 
-        fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
+        if (dragState == kNotDragging)
+        {
+            CursorForArea (FL_CURSOR_WE, leftDragArea);
+            CursorForArea (FL_CURSOR_WE, rightDragArea);
+            CursorForArea (FL_CURSOR_NS, bottomDragArea);
+            CursorForArea (FL_CURSOR_NS, topDragArea);
+            CursorForArea (FL_CURSOR_NWSE, bottomLeftDragArea);
+            CursorForArea (FL_CURSOR_NESW, topRightDragArea);
+            CursorForArea (FL_CURSOR_NESW, bottomLeftDragArea);
+            CursorForArea (FL_CURSOR_NWSE, bottomRightDragArea);
+        }
+        else
+        {
+            // setCursorForDragState ();
+        }
+
+        // else fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
         break;
     }
     }
@@ -429,7 +457,8 @@ void MVMDIWindow::resize (int X, int Y, int W, int H)
     leftDragArea = {X, Y + (dragH * 2), dragW, H - (dragH * 4)};
     topDragArea = {X + (dragW * 2), Y, W - (dragW * 4), dragH};
     rightDragArea = {X + W - dragW, Y + (dragH * 2), dragW, H - (dragH * 4)};
-    bottomDragArea = {X + (dragW * 2), Y + H - dragH, W - (dragW * 4), dragH};
+    bottomDragArea = {
+        X + (dragW * 2), Y + H - (dragH * 2), W - (dragW * 4), dragH * 2};
 
     topLeftDragArea = {X, Y, dragW * 2, dragH * 2};
     topRightDragArea = {X + W - (dragW * 2), Y, dragW * 2, dragH * 2};

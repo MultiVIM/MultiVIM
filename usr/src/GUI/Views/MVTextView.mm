@@ -28,7 +28,7 @@ static void getLayoutWidthHeight (PangoLayout * layout, int * width,
     *height /= PANGO_SCALE;
 }
 
-static void draw_cb (Fl_Cairo_Window * cw, cairo_t * cr)
+static void draw_cb (Fl_Group * cw, cairo_t * cr)
 {
     TextView * text = static_cast<TextView *> (cw);
     text->cairoDraw (cr);
@@ -36,7 +36,7 @@ static void draw_cb (Fl_Cairo_Window * cw, cairo_t * cr)
 
 TextView::TextView (int x, int y, int w, int h, MVGridPresenter * presenter,
                     const char * l)
-    : Fl_Cairo_Window (x, y, w, h, l), presenter (presenter)
+    : Fl_Group (x, y, w, h, l), presenter (presenter)
 {
     PangoLayout * layout;
     cairo_t * ctxLayout;
@@ -62,7 +62,7 @@ TextView::TextView (int x, int y, int w, int h, MVGridPresenter * presenter,
 
     box (FL_FLAT_BOX);
     color (FL_BLACK);
-    set_draw_cb (draw_cb);
+    // set_draw_cb (draw_cb);
 
     resize (x, y, w, h);
 }
@@ -121,7 +121,8 @@ void TextView::cairoDraw (cairo_t * cr)
 
 void TextView::draw ()
 {
-    Fl_Cairo_Window::draw ();
+    // Fl_Group::draw ();
+    cairoDraw (Fl::cairo_make_current (window ()));
 }
 
 void TextView::resize (int X, int Y, int W, int H)
@@ -163,7 +164,7 @@ void TextView::resize (int X, int Y, int W, int H)
         presenter->viewDidResizeToRowsColumns (rowCount, columnCount);
     }
 
-    Fl_Cairo_Window::resize (X, Y, W, H);
+    Fl_Group::resize (X, Y, W, H);
 }
 
 void TextView::clearRowText (int row)
@@ -247,6 +248,6 @@ int TextView::handle (int event)
                 Fl::event_length (),
                 Fl::event_text ());*/
     }
-    Fl_Cairo_Window::handle (event);
+    // Fl_Group::handle (event);
     return 1;
 }

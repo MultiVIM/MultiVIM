@@ -7,7 +7,7 @@ MVMainWindowView::MVMainWindowView (int w, int h, __weak id presenter)
 {
     begin ();
 
-    // Fl::cairo_autolink_context (true);
+    Fl::cairo_autolink_context (true);
 
     mainArea.end ();
 

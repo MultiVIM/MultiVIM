@@ -736,13 +736,13 @@ unsigned Fl_Html_Tokenizer::float_value (const char * src, double & value,
         }
         if (!len2 && divider == 1) // no digits before or after decimal point
             return 0;
-        vv = double(val) + double(val2) / double(divider);
+        vv = double (val) + double (val2) / double (divider);
     }
     else
     {
         if (!len2)
             return 0; // no digits
-        vv = double(val);
+        vv = double (val);
     }
 
     long long e_value;

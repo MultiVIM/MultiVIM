@@ -2196,7 +2196,7 @@ unsigned Fl_Html_Object::extract_title (Fl_Html_Object * o, char * title,
             Html_Word * w = (Html_Word *)o;
             const char * val = w->value ();
             int length = strlen (val);
-            if (length < int(len))
+            if (length < int (len))
             {
                 strncpy (title, val, len);
                 title += length;

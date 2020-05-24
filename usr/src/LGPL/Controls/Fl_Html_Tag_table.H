@@ -580,8 +580,8 @@ void draw (Fl_Html_Drawing_Device_ * d)
     }
     */
 
-    dx = int(dx * d->zoom () + 0.5);
-    dy = int(dy * d->zoom () + 0.5);
+    dx = int (dx * d->zoom () + 0.5);
+    dy = int (dy * d->zoom () + 0.5);
     d->translate (dx, dy);
     draw_children (d /*, false */);
     /*
@@ -1509,7 +1509,7 @@ void format (Fl_Html_Formatter * s)
     // calculating new widths
 
     float * cur_col_positions = new float[no_columns];
-    float coef = float(w - minimum_width ());
+    float coef = float (w - minimum_width ());
     int denom =
         col_positions_max[no_columns - 1] - col_positions_min[no_columns - 1];
 
@@ -1707,8 +1707,8 @@ void draw (Fl_Html_Drawing_Device_ * d)
         d->color (old_color);
     }
     float z = d->zoom ();
-    int dx = int(x * z + 0.5);
-    int dy = int(y * z + 0.5);
+    int dx = int (x * z + 0.5);
+    int dy = int (y * z + 0.5);
     /*
     bool sw = d->selection_valid();
     if(sw)

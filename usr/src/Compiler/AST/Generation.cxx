@@ -2,7 +2,6 @@
 
 #include "../CodeGen.hxx"
 #include "LiteralExpr.hxx"
-#include "OldVM/Bytecode.hxx"
 #include "Scope.hxx"
 #include "VM/Bytecode.hxx"
 

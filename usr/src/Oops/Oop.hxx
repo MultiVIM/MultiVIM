@@ -214,7 +214,8 @@ class MemOopDesc : public OopDesc
         kByte,
     } kind : 2;
     /* Space for the object's fields. */
-    union {
+    union
+    {
         uint8_t bytes[0];
         Oop oops[0];
     } _vonNeumannSpace;
@@ -261,7 +262,8 @@ class ByteOopDesc : public MemOopDesc
     uint8_t & basicatPut (size_t index, uint8_t value);
 };
 
-union TagPtr {
+union TagPtr
+{
     enum Kind
     {
         kOop = 0,

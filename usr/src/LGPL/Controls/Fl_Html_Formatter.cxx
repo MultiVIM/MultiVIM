@@ -88,7 +88,7 @@ void Fl_Html_Formatter::finish_line (int paragraph_dy)
                 }
                 tot_sum_spaces = sum_spaces;
                 if (tot_sum_spaces)
-                    shift_add = float(x_shift) / tot_sum_spaces;
+                    shift_add = float (x_shift) / tot_sum_spaces;
             }
             x_shift = 0;
         }
@@ -111,14 +111,14 @@ void Fl_Html_Formatter::finish_line (int paragraph_dy)
                     line_objects_p_end =
                         line_objects_[i]->x + line_objects_[i]->w;
                     line_objects_[i]->y += collision;
-                    line_objects_[i]->x += int(x_shift + cx + 0.5);
+                    line_objects_[i]->x += int (x_shift + cx + 0.5);
                 }
             }
             else
                 for (int i = 0; i < no_line_objects_; i++)
                 {
                     line_objects_[i]->y += collision;
-                    line_objects_[i]->x += int(x_shift + 0.5);
+                    line_objects_[i]->x += int (x_shift + 0.5);
                 }
             start_y_ += collision;
         }

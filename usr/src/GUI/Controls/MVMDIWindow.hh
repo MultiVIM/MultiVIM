@@ -83,6 +83,7 @@ class MVMDIWindow : public Fl_Group, public MVWExtras
     {
         return titleBar.active ();
     }
+    void setCursorForDragState ();
 
   public:
     MVMDIWindow (int x, int y, int w, int h, const char * l = 0);

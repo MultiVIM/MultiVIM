@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "OldVM/VM.hxx"
 #include "Oops/Oops.hxx"
 #include "lemon/lemon_base.h"
 
@@ -92,90 +91,6 @@ class ClassNode;
 struct NameScope;
 class VarNode;
 class GlobalVarNode;
-
-struct CompiledMethod
-{
-    std::vector<byte> code;
-};
-
-class GenerationContext
-{
-    std::vector<NameScope *> scopes;
-    /* On beginning array generation, the size of the literals vector is pushed
-     * here. After completing array generation the new literals added are
-     * converted into an array. */
-    std::stack<std::vector<objRef>> literalArrayStack;
-    int blockDepth;
-    int highestLocal;
-    CompiledMethod meth;
-
-  public:
-    GenerationContext () : highestLocal (0), blockDepth (0)
-    {
-    }
-
-    GlobalVarNode * addClass (ClassNode * aClass);
-    void addIvar (int index, std::string name);
-    void addArg (int index, std::string name);
-    void addLocal (int index, std::string name);
-    void pushScope (NameScope * scope);
-    void popScope ();
-    GlobalVarNode * lookupClass (std::string name);
-    VarNode * lookup (std::string name);
-
-    void beginMethod ();
-    /* code, literals */
-    std::pair<std::vector<byte>, std::vector<objRef>> endMethod ();
-
-    int localTop ()
-    {
-        return highestLocal;
-    }
-
-    int codeTop ()
-    {
-        return meth.code.size ();
-    }
-
-    void setCodeTo (int index, int val)
-    {
-        meth.code[index] = val;
-    }
-
-    void restoreOldTop (int oldTop);
-
-    void generateClasses ();
-
-    /* What are we doing here? Do we want to keep this state in this big class
-     * or make new ClassBuilders and whatever else we need instead? */
-    encPtr defClass (GlobalVarNode * classVar, std::string name,
-                     std::list<std::string> iVars, size_t size);
-
-    void addMethodToClass (encPtr aClass, encPtr aMethod);
-    void addMethodToMetaclassOf (encPtr aClass, encPtr aMethod);
-
-    /* returns fixLocation */
-    int pushBlock (int argCount, int tempLoc);
-    bool inBlock ()
-    {
-        return blockDepth;
-    }
-    void popBlock (int fixLocation, int tempLoc);
-
-    void beginLiteralArray ();
-    bool inLiteralArray ()
-    {
-        return literalArrayStack.size () > 1;
-    }
-    int endLiteralArray ();
-
-    void genCode (int value);
-    void genInstruction (int high, int low);
-    int genLiteral (objRef aLiteral);
-    void genInteger (int val);
-    void genMessage (bool isSuper, int argumentCount, std::string selector);
-};
-
 class ProgramNode;
 
 class MVST_Parser : public lemon_base<Token>

@@ -19,6 +19,7 @@ set(MV_SMALLTALK_DIR ${MV_SRC}/Smalltalk)
 #
 find_package(PkgConfig REQUIRED)
 find_package(BoehmGC REQUIRED)
+pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-3.0)
 
 pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
 pkg_check_modules(Pango REQUIRED IMPORTED_TARGET pangocairo)
@@ -67,7 +68,7 @@ FlexCXXComp(Compiler/Lexer.l)
 LemonCXXComp(Compiler/Parser.y)
 
 add_executable(MultiVIM
-    GUI/Controls/MVMDIWorkspace.cxx GUI/Controls/MVMDIWindow.mm
+    GUI/Controls/MVMDIWorkspace.cxx GUI/Controls/MVMDIWindow.cxx
     GUI/Presenters/MVAppPresenter.mm GUI/Presenters/MVGridPresenter.mm
     GUI/Views/MVMainWindowView.mm GUI/Views/MVTextView.mm GUI/Views/MVWebView.cxx
 
@@ -93,7 +94,6 @@ add_executable(MultiVIM
 
     "VM/Interpreter.cxx" "VM/Primitive.cxx"
 
-    "OldVM/VM.cxx" "OldVM/Memory.cxx" "OldVM/Compiler.cxx"
     ${CMAKE_CURRENT_BINARY_DIR}/Lexer.l.cxx
     ${CMAKE_CURRENT_BINARY_DIR}/Parser.tab.cxx
 
@@ -107,7 +107,7 @@ target_include_directories(MultiVIM PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_SOURCE
 target_include_directories(MultiVIM SYSTEM BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/../closed/fltk
     ${CMAKE_BINARY_DIR}/closed/fltk)
-target_link_libraries(MultiVIM PkgConfig::Cairo BoehmGC::BoehmGC
+target_link_libraries(MultiVIM PkgConfig::Cairo BoehmGC::BoehmGC PkgConfig::GTKMM
     PkgConfig::Pango fltk fltk_cairo fltk_images stdc++fs)
 
 set_target_properties(MultiVIM PROPERTIES

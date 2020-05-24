@@ -6,7 +6,6 @@
 
 #include "../Compiler.hxx"
 #include "Lowlevel/MVPrinting.hxx"
-#include "OldVM/VM.hxx"
 
 class CodeGen;
 class CompilationContext;
@@ -109,7 +108,6 @@ struct ClassNode : DeclNode
     void addMethods (std::vector<MethodNode *> meths);
 
     void synth ();
-    int addIVarsToContextStartingFrom (GenerationContext * aContext, int index);
     void generate ();
 
     void print (int in);

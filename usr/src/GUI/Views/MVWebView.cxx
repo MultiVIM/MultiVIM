@@ -11,3 +11,13 @@ MVWebView::MVWebView (int x, int y, int w, int h, const char * l)
 {
     labeltype (FL_NO_LABEL);
 }
+
+int MVWebView::handle (int event)
+{
+    if (event == FL_PUSH)
+    {
+        Fl::focus (this);
+    }
+
+    return Fl_Html_View::handle (event);
+}

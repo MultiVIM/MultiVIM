@@ -10,6 +10,8 @@ class MVWebView : public Fl_Html_View
 {
   public:
     MVWebView (int x, int y, int w, int h, const char * l = nullptr);
+
+    int handle (int);
 };
 
 #endif

@@ -15,7 +15,7 @@
 
 class MVGridPresenter;
 
-class TextView : public Fl_Cairo_Window
+class TextView : public Fl_Group
 {
     int rowToY (int row)
     {

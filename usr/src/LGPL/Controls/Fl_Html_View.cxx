@@ -70,7 +70,7 @@ class Fl_Html_Drawing_Device : public Fl_Html_Drawing_Device_
                     measure_set = 2;
                     fl_font ((Fl_Font)fltk_font_, int_font_size_);
                 }
-                descent_ = ceil (float(fl_descent ()) / zoom_);
+                descent_ = ceil (float (fl_descent ()) / zoom_);
             }
             else
             {
@@ -102,7 +102,7 @@ class Fl_Html_Drawing_Device : public Fl_Html_Drawing_Device_
                     measure_set = 2;
                     fl_font ((Fl_Font)fltk_font_, int_font_size_);
                 }
-                space_ = ceil (float(fl_width (" ")) / zoom_);
+                space_ = ceil (float (fl_width (" ")) / zoom_);
             }
             else
             {
@@ -127,7 +127,7 @@ class Fl_Html_Drawing_Device : public Fl_Html_Drawing_Device_
         int new_size;
         if (zoomed_font_measurement_)
         {
-            new_size = int(size * zoom_);
+            new_size = int (size * zoom_);
         }
         else
         {
@@ -157,10 +157,10 @@ class Fl_Html_Drawing_Device : public Fl_Html_Drawing_Device_
                 iz &= ~1;
                 if (iz < 1)
                     iz = 1;
-                float zz = float(iz) / float(size);
+                float zz = float (iz) / float (size);
                 fl_font (face, iz);
                 float w2 = fl_width (measure_string);
-                font_zoom_coef_ = (float(w1 * (zz - 1))) / (float(w2 - w1));
+                font_zoom_coef_ = (float (w1 * (zz - 1))) / (float (w2 - w1));
                 measure_set = 0;
                 height_ = -1; // int(fl_height()*z + 0.5);
                 descent_ = -1;
@@ -609,7 +609,7 @@ void Fl_Html_View::first_drawable ()
     if (!first_drawable_)
     {
         ((Fl_Html_Object::Iterator *)it)->reset ();
-        int y = floor ((float(topline_ - margin_) / zoom_) + 0.5);
+        int y = floor ((float (topline_ - margin_) / zoom_) + 0.5);
         first_drawable_ = Fl_Html_Object::first_drawable (
             (Fl_Html_Object::Iterator *)it, html_, y);
 
@@ -722,8 +722,8 @@ void Fl_Html_View::transform_to_document (int & xx, int & yy)
 {
     xx -= drawn_x;
     yy -= drawn_y;
-    xx = floor (float(xx) / zoom_ + 0.5);
-    yy = floor (float(yy) / zoom_ + 0.5);
+    xx = floor (float (xx) / zoom_ + 0.5);
+    yy = floor (float (yy) / zoom_ + 0.5);
 }
 
 bool Fl_Html_View::point_within ()
@@ -1077,12 +1077,12 @@ void Fl_Html_View::follow_link (Fl_Html_Object * o)
 
 int Fl_Html_View::yToLine (int yPos)
 {
-    return int(ceil (yPos * zoom_)) + 2 * margin_;
+    return int (ceil (yPos * zoom_)) + 2 * margin_;
 }
 
 int Fl_Html_View::xToCol (int xPos)
 {
-    return int(ceil (xPos * zoom_)) + 2 * margin_;
+    return int (ceil (xPos * zoom_)) + 2 * margin_;
 }
 
 extern "C" int usleep (int);
@@ -1167,7 +1167,7 @@ void Fl_Html_View::reformat ()
         ww = w () - 2 * margin_ - Fl::box_dw (b);
         // if(scrollbar_.visible())
         ww -= scrollbar_size_ ? scrollbar_size_ : Fl::scrollbar_size ();
-        ww = int(float(ww) / zoom_);
+        ww = int (float (ww) / zoom_);
         if (ww < 0)
             ww = 0;
         if (!width_ && ww < min_width)
@@ -1330,7 +1330,7 @@ int Fl_Html_View::hScrollbarSize ()
 int Fl_Html_View::numLinesTotal ()
 {
     int scr = scrollbar_size_ ? scrollbar_size_ : Fl::scrollbar_size ();
-    return int(ceil (html_height_ * zoom_)) + 2 * margin_ + scr -
+    return int (ceil (html_height_ * zoom_)) + 2 * margin_ + scr -
            hScrollbarSize ();
 }
 
@@ -1370,7 +1370,7 @@ int Fl_Html_View::wScrollbarSize ()
 
 int Fl_Html_View::numColsTotal ()
 {
-    return int(ceil (html_width_ * zoom_)) + 2 * margin_;
+    return int (ceil (html_width_ * zoom_)) + 2 * margin_;
 }
 
 int Fl_Html_View::numColsVisible ()
@@ -1611,9 +1611,9 @@ void Fl_Html_View::topline (const char * anchor)
     Fl_Html_Object * o = Fl_Html_Object::find_anchor (anchor, html_);
     if (o)
     {
-        topline (int(zoom_ * o->y));
+        topline (int (zoom_ * o->y));
         int lz = leftline_;
-        int oz = int(o->x * zoom_);
+        int oz = int (o->x * zoom_);
         int over = oz - leftline_ - box_w;
         if (over > 0)
             lz += over;
@@ -1781,7 +1781,7 @@ void Fl_Html_View::hscrollbar_timeout (void * d)
 void Fl_Html_View::scrollbar_callback (Fl_Widget * s, void *)
 {
     ((Fl_Html_View *)(s->parent ()))
-        ->topline (int(((Fl_Scrollbar *)s)->value ()));
+        ->topline (int (((Fl_Scrollbar *)s)->value ()));
     ((Fl_Html_View *)(s->parent ()))->first_drawable_ = 0;
     ((Fl_Html_View *)(s->parent ()))->original_leftline_ = -1;
     ((Fl_Html_View *)(s->parent ()))->update_selection ();
@@ -1790,7 +1790,7 @@ void Fl_Html_View::scrollbar_callback (Fl_Widget * s, void *)
 void Fl_Html_View::hscrollbar_callback (Fl_Widget * s, void *)
 {
     ((Fl_Html_View *)(s->parent ()))
-        ->leftline (int(((Fl_Scrollbar *)s)->value ()));
+        ->leftline (int (((Fl_Scrollbar *)s)->value ()));
     ((Fl_Html_View *)(s->parent ()))->original_leftline_ = -1;
     ((Fl_Html_View *)(s->parent ()))->first_drawable_ = 0;
     ((Fl_Html_View *)(s->parent ()))->update_selection ();
