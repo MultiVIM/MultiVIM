@@ -19,6 +19,7 @@ set(MV_SMALLTALK_DIR ${MV_SRC}/Smalltalk)
 #
 find_package(PkgConfig REQUIRED)
 find_package(BoehmGC REQUIRED)
+find_package(CURL REQUIRED)
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-3.0)
 
 pkg_check_modules(Cairo REQUIRED IMPORTED_TARGET cairo)
@@ -36,6 +37,7 @@ add_subdirectory(${MV_CLOSED}/fltk closed/fltk)
 # Other subbuilds
 #
 
+add_subdirectory(${MV_CLOSED}/litehtml closed/litehtml)
 add_subdirectory(${MV_CLOSED}/lemon closed/lemon)
 
 #
@@ -94,6 +96,9 @@ add_executable(MultiVIM
 
     "VM/Interpreter.cxx" "VM/Primitive.cxx"
 
+    "BSD/WebView/http_loader.cxx"
+    "WebView/container_linux.cxx" "WebView/MVWebView.cxx"
+
     ${CMAKE_CURRENT_BINARY_DIR}/Lexer.l.cxx
     ${CMAKE_CURRENT_BINARY_DIR}/Parser.tab.cxx
 
@@ -108,7 +113,8 @@ target_include_directories(MultiVIM SYSTEM BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/../closed/fltk
     ${CMAKE_BINARY_DIR}/closed/fltk)
 target_link_libraries(MultiVIM PkgConfig::Cairo BoehmGC::BoehmGC PkgConfig::GTKMM
-    PkgConfig::Pango fltk fltk_cairo fltk_images stdc++fs)
+    CURL::libcurl PocoFoundation
+    PkgConfig::Pango fltk fltk_cairo fltk_images stdc++fs litehtml)
 
 set_target_properties(MultiVIM PROPERTIES
     CXX_STANDARD 17)
@@ -121,3 +127,20 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/systemImage
     COMMAND $<TARGET_FILE:MultiVIM> -c ${MV_SMALLTALK_DIR}/Base/Image.st
     DEPENDS ${MV_SMALLTALK_DIR}/Base/Image.st)
 add_custom_target(systemImage ALL DEPENDS ${MV_SMALLTALK_DIR}/Base/Image.st)
+
+
+#
+# Resources
+#
+set (HTMLDIR ${CMAKE_SOURCE_DIR}/Resources/HTML)
+set (STYLEDIR ${HTMLDIR}/Less)
+set (STYLECSS ${HTMLDIR}/Style.css)
+set (STYLELESS ${STYLEDIR}/Style.less)
+add_custom_command(OUTPUT ${STYLECSS}
+    COMMAND lessc ${STYLELESS} > ${STYLECSS} 
+    DEPENDS ${STYLELESS}
+      ${STYLEDIR}/forms.less ${STYLEDIR}/patterns.less
+      ${STYLEDIR}/preboot.less ${STYLEDIR}/reset.less
+      ${STYLEDIR}/scaffolding.less ${STYLEDIR}/tables.less
+      ${STYLEDIR}/type.less)
+add_custom_target(css ALL DEPENDS ${STYLECSS})

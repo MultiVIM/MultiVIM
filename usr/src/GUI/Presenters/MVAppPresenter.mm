@@ -1,3 +1,4 @@
+#include "WebView/MVWebView.hxx"
 #include <assert.h>
 
 #import "../Views/MVMainWindowView.hh"
@@ -31,18 +32,18 @@ void MVAppPresenter::runMainLoop ()
                                      view.w (),
                                      view.mainAreaHeight () - 24,
                                      NULL,
-                                     "NvimTextView");
-    MVWebView * wView = new MVWebView (0,
-                                       view.mainAreaY () + 24,
-                                       view.w (),
-                                       view.mainAreaHeight () - 24,
-                                       "Welcome to MultiVIM");
+                                     "Buffer 1 [Text]");
+    MVNewWebView * wView = new MVNewWebView (0,
+                                             view.mainAreaY () + 24,
+                                             view.w (),
+                                             view.mainAreaHeight () - 24,
+                                             "Buffer 1 [WebView]");
     printf ("TextView: %p\n", tView);
     view.addTopLevelTextView (tView);
-    view.addTopLevelWebView (wView);
+    view.addTopLevelNewWebView (wView);
     printf ("TextView: %p\n", tView);
 
-    wView->load ("test.html", true);
+    // wView->load ("test.html", true);
 
     gridPresenters[1] = new MVGridPresenter (
         *this, 1, tView, tView->rowCount, tView->columnCount);

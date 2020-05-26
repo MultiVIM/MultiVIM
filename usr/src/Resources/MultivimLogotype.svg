@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1480"
+   height="544.8642"
+   version="1.1"
+   id="svg4720"
+   sodipodi:docname="MultivimLogotype.svg"
+   inkscape:version="0.91 r13725"
+   inkscape:export-filename="C:\Users\me\Downloads\MultiVimLogotype.png"
+   inkscape:export-xdpi="60.81081"
+   inkscape:export-ydpi="60.81081">
+  <defs
+     id="defs4724">
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Color Shift"
+       id="filter3075">
+      <feColorMatrix
+         type="hueRotate"
+         values="78"
+         result="color1"
+         id="feColorMatrix3071" />
+      <feColorMatrix
+         type="saturate"
+         values="0.8125"
+         result="color2"
+         id="feColorMatrix3073" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Color Shift"
+       id="filter3081">
+      <feColorMatrix
+         type="hueRotate"
+         values="78"
+         result="color1"
+         id="feColorMatrix3077" />
+      <feColorMatrix
+         type="saturate"
+         values="0.8125"
+         result="color2"
+         id="feColorMatrix3079" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Color Shift"
+       id="filter3087">
+      <feColorMatrix
+         type="hueRotate"
+         values="78"
+         result="color1"
+         id="feColorMatrix3083" />
+      <feColorMatrix
+         type="saturate"
+         values="0.8125"
+         result="color2"
+         id="feColorMatrix3085" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Color Shift"
+       id="filter3093">
+      <feColorMatrix
+         type="hueRotate"
+         values="78"
+         result="color1"
+         id="feColorMatrix3089" />
+      <feColorMatrix
+         type="saturate"
+         values="0.8125"
+         result="color2"
+         id="feColorMatrix3091" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Color Shift"
+       id="filter3099">
+      <feColorMatrix
+         type="hueRotate"
+         values="78"
+         result="color1"
+         id="feColorMatrix3095" />
+      <feColorMatrix
+         type="saturate"
+         values="0.8125"
+         result="color2"
+         id="feColorMatrix3097" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Color Shift"
+       id="filter3105">
+      <feColorMatrix
+         type="hueRotate"
+         values="78"
+         result="color1"
+         id="feColorMatrix3101" />
+      <feColorMatrix
+         type="saturate"
+         values="0.8125"
+         result="color2"
+         id="feColorMatrix3103" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Drop Shadow"
+       id="filter4571">
+      <feFlood
+         flood-opacity="0.498039"
+         flood-color="rgb(21,21,21)"
+         result="flood"
+         id="feFlood4573" />
+      <feComposite
+         in="flood"
+         in2="SourceGraphic"
+         operator="in"
+         result="composite1"
+         id="feComposite4575" />
+      <feGaussianBlur
+         in="composite1"
+         stdDeviation="4"
+         result="blur"
+         id="feGaussianBlur4577" />
+      <feOffset
+         dx="6"
+         dy="6"
+         result="offset"
+         id="feOffset4579" />
+      <feComposite
+         in="SourceGraphic"
+         in2="offset"
+         operator="over"
+         result="composite2"
+         id="feComposite4581" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1366"
+     inkscape:window-height="705"
+     id="namedview4722"
+     showgrid="false"
+     inkscape:zoom="0.55419333"
+     inkscape:cx="305.79901"
+     inkscape:cy="98.582543"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showguides="false" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     transform="translate(-69.980994,-160.33288)">
+    <path
+       inkscape:connector-curvature="0"
+       style="fill:#019833;fill-opacity:1;stroke:#000000;stroke-width:1.38220108px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter3105)"
+       d="M 344.28634,196.15103 107.49666,433.25896 343.29973,669.37895 580.08939,432.27102 Z"
+       id="path2836"
+       inkscape:export-xdpi="62.030209"
+       inkscape:export-ydpi="62.030209" />
+    <path
+       inkscape:connector-curvature="0"
+       style="fill:#66fe98;fill-opacity:1;stroke:#000000;stroke-width:1.38220108px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter3099)"
+       d="M 343.29973,197.13899 V 176.39205 L 85.790952,434.24691 h 21.705708 z"
+       id="path2838"
+       inkscape:export-xdpi="62.030209"
+       inkscape:export-ydpi="62.030209" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path2840"
+       d="M 342.70775,197.13899 V 176.39205 L 600.21651,434.24691 H 578.5108 Z"
+       style="fill:#45fe02;fill-opacity:1;stroke:#000000;stroke-width:1.38220108px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter3093)"
+       inkscape:export-xdpi="62.030209"
+       inkscape:export-ydpi="62.030209" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path2842"
+       d="m 343.29973,670.76207 v 20.74695 L 85.790952,433.65415 h 21.705708 z"
+       style="fill:#017d17;fill-opacity:1;stroke:#000000;stroke-width:1.38220108px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter3087)"
+       inkscape:export-xdpi="62.030209"
+       inkscape:export-ydpi="62.030209" />
+    <path
+       inkscape:connector-curvature="0"
+       style="fill:#005d04;fill-opacity:1;stroke:#000000;stroke-width:1.38220108px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter3081)"
+       d="m 342.70775,670.76207 v 20.74695 L 600.21651,433.65415 H 578.5108 Z"
+       id="path2844"
+       inkscape:export-xdpi="62.030209"
+       inkscape:export-ydpi="62.030209" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path2846"
+       d="M 342.60491,174.47948 84.127597,433.3042 341.52793,691.0505 600.00526,432.22577 Z"
+       style="fill:none;stroke:#000000;stroke-width:8.29320621;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter3075)"
+       inkscape:export-xdpi="62.030209"
+       inkscape:export-ydpi="62.030209" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:466.66665649px;line-height:125%;font-family:Crillee;-inkscape-font-specification:Crillee;letter-spacing:0px;word-spacing:0px;fill:#cccccc;fill-opacity:1;stroke:#000000;stroke-width:10.39999962;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter4571)"
+       x="121.84715"
+       y="613.77344"
+       id="text836"
+       inkscape:export-xdpi="62.030209"
+       inkscape:export-ydpi="62.030209"><tspan
+         sodipodi:role="line"
+         id="tspan834"
+         x="121.84715"
+         y="613.77344"
+         style="fill:#cccccc;fill-opacity:1;stroke:#000000;stroke-width:10.39999962;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">M</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:466.66665649px;line-height:125%;font-family:Crillee;-inkscape-font-specification:Crillee;letter-spacing:0px;word-spacing:0px;fill:#cccccc;fill-opacity:1;stroke:#000000;stroke-width:8.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       x="582.06647"
+       y="614.08221"
+       id="text1113"><tspan
+         sodipodi:role="line"
+         id="tspan1111"
+         x="582.06647"
+         y="614.08221"
+         style="font-size:266.66665649px;fill:#cccccc;fill-opacity:1;stroke:#000000;stroke-width:8.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">ultiVIM</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64px;line-height:125%;font-family:Crillee;-inkscape-font-specification:Crillee;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="461.21347"
+       y="677.23572"
+       id="text1117"><tspan
+         sodipodi:role="line"
+         id="tspan1115"
+         x="461.21347"
+         y="677.23572"
+         style="font-size:64px">Neovim Frontend for Power Users</tspan></text>
+  </g>
+</svg>

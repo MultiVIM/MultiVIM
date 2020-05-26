@@ -41,7 +41,7 @@ MVMDIWindow * MVMDIWorkspace::createBigWindow (const char * l)
 int MVMDIWorkspace::handle (int event)
 {
     if (event == FL_PUSH)
-        for (int i = children (); i != -1; --i)
+        for (int i = children () - 1; i != -1; --i)
         {
             MVMDIWindow * w = dynamic_cast<MVMDIWindow *> (child (i));
             if (!w)

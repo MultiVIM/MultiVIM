@@ -1,4 +1,6 @@
 
+#include "WebView/MVWebView.hxx"
+
 #include "MVMainWindowView.hh"
 
 MVMainWindowView::MVMainWindowView (int w, int h, __weak id presenter)
@@ -43,10 +45,10 @@ MVMainWindowView::MVMainWindowView (int w, int h, __weak id presenter)
     // msgBar->end ();
 
     Statusbar * sbar = new Statusbar (0, statusBarY (), w, statusBarHeight);
-    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "Line: 2"));
-    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "Col: 37"));
-    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "Mode: command"));
-    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "NVim"));
+    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "Line: 1"));
+    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "Col: 1"));
+    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "Mode: browse"));
+    sbar->addEntry (new StatusbarEntry (0, 0, 0, 0, "Buffer 1 [WebView]"));
     resizable (mainArea);
 
     // set_draw_cb (draw_cb);
@@ -60,4 +62,10 @@ static void cb (Fl_Widget * caller, void * v)
 void MVMainWindowView::draw ()
 {
     Fl_Cairo_Window::draw ();
+}
+
+void MVMainWindowView::addTopLevelNewWebView (MVNewWebView * aView)
+{
+    MVMDIWindow * win = mainArea.createBigWindow ("Welcome");
+    win->addFullSizeChild (aView);
 }

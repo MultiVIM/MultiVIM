@@ -62,6 +62,7 @@ TextView::TextView (int x, int y, int w, int h, MVGridPresenter * presenter,
 
     box (FL_FLAT_BOX);
     color (FL_BLACK);
+    labeltype (FL_NO_LABEL);
     // set_draw_cb (draw_cb);
 
     resize (x, y, w, h);

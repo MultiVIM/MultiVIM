@@ -19,6 +19,8 @@
 #include "MVTextView.hh"
 #include "MVWebView.hxx"
 
+class MVNewWebView;
+
 class MVMainWindowView : public Fl_Cairo_Window
 {
     const int menuBarHeight = 20;
@@ -70,6 +72,8 @@ class MVMainWindowView : public Fl_Cairo_Window
         MVMDIWindow * win = mainArea.createBigWindow ("Welcome");
         win->addFullSizeChild (aView);
     }
+
+    void addTopLevelNewWebView (MVNewWebView * aView);
 
     void addTopLevelTextView (TextView * aView)
     {

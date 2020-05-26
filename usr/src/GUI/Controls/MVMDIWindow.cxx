@@ -192,6 +192,8 @@ static void boxInset (Fl_Boxtype box, int & x, int & y, int & w, int & h)
 void MVMDIWindow::addFullSizeChild (Fl_Group * widget)
 {
     contents = widget;
+    titleBar.label (contents->label ());
+    printf ("Child label: %s. mine: %s\n", contents->label (), label ());
     add (widget);
     resize (x (), y (), w (), h ());
 }
@@ -332,7 +334,7 @@ void MVMDIWindow::setCursorForDragState ()
     {
 #define SetCursorForDragState(cursor, dS)                                      \
     if (dragState == dS)                                                       \
-    // fl_cursor (cursor, 0, 255)
+    fl_cursor (cursor, 0, 255)
         SetCursorForDragState (FL_CURSOR_WE, kLeft);
         SetCursorForDragState (FL_CURSOR_NS, kTop);
         SetCursorForDragState (FL_CURSOR_WE, kRight);
@@ -360,6 +362,7 @@ int MVMDIWindow::handle (int event)
         fl_cursor (cursor, 0, 255);                                            \
         dragState = dS;                                                        \
         handleDragEvent (true);                                                \
+        setCursorForDragState ();                                              \
         return 1;                                                              \
     }
         HandleForArea (leftDragArea, FL_CURSOR_WE, kLeft);
@@ -377,17 +380,22 @@ int MVMDIWindow::handle (int event)
         if (Fl::event_button () != FL_LEFT_MOUSE)
             break;
         if (dragState != kNotDragging)
+        {
             handleDragEvent (false);
-        setCursorForDragState ();
+            setCursorForDragState ();
+        }
         return 1;
 
     case FL_RELEASE:
         dragState = kNotDragging;
-        // fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
+        fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
         return 1;
 
     case FL_LEAVE:
-        // fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
+        if (dragState == kNotDragging)
+            fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
+        else
+            return 1;
         break;
 
     case FL_MOVE:
@@ -402,6 +410,7 @@ int MVMDIWindow::handle (int event)
 
         if (dragState == kNotDragging)
         {
+            fl_cursor (FL_CURSOR_DEFAULT);
             CursorForArea (FL_CURSOR_WE, leftDragArea);
             CursorForArea (FL_CURSOR_WE, rightDragArea);
             CursorForArea (FL_CURSOR_NS, bottomDragArea);
@@ -412,17 +421,13 @@ int MVMDIWindow::handle (int event)
             CursorForArea (FL_CURSOR_NWSE, bottomRightDragArea);
         }
         else
-        {
-            // setCursorForDragState ();
-        }
+            setCursorForDragState ();
 
-        // else fl_cursor (FL_CURSOR_DEFAULT, 0, 255);
         break;
     }
     }
 
-    if (!Fl_Group::handle (event) && !contents->handle (event) &&
-        !Fl::event_inside (this))
+    if (!Fl_Group::handle (event) && !contents->handle (event))
         return 0;
     return 1;
 }
