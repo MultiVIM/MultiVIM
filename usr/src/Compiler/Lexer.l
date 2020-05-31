@@ -52,6 +52,8 @@ COMMENT \"(\\.|[^"])*\"
 
 "class>>"                           { p(CLASSRR); }
 "subclass:"                         { p(SUBCLASSCOLON); }
+"Namespace"                         { p(NAMESPACE); }
+"current:"                          { p(CURRENTCOLON); }
 
 ["][^"]*["]                            { /* ignore comment */ }
 
@@ -63,9 +65,10 @@ $[^ \t\n.()\[]                      { ps(CHAR); }
 [0-9]+(\.[0-9]+)?(e[-+]?[0-9]+)?                    {  pf(FLOAT);  }
 :(:?{LTR})(:?{LTR}|{DIGIT}|::)*     { ps(COLONVAR); }
 (:?{LTR})(:?{LTR}|{DIGIT}|::)*:     { ps(KEYWORD); }
-{IDENT}"."{IDENT}                   { ps(NAMESPACENAME); }
+{IDENT}":"{IDENT}                   { ps(NAMESPACENAME); }
 (:?{LTR})(:?{LTR}|{DIGIT}|::)*      { ps(IDENTIFIER); }
-['][^']*[']                         { ps(STRING); }
+'''(.*)'''                   { ps(STRING); }
+[']([^']|\\.)*[']                         { ps(STRING); }
 
 "<"[0-9]+                       { yyextra->parse(TOK_PRIMNUM, atoi(yytext + 1)); }
 

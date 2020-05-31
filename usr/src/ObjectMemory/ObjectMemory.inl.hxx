@@ -5,16 +5,6 @@
 
 #include "ObjectMemory.hxx"
 
-/*template <typename T> bool OopRef<T>::isNil ()
-{
-    return dat == 0 || this == MemoryManager::objNil;
-}
-
-template <typename T> bool OopRef<T>::isInteger ()
-{
-    return TagPtr (dat).i.tag == tagPtr::kInt;
-}*/
-
 template <typename T> inline ClassOop OopRef<T>::isa ()
 {
     if (isInteger ())
@@ -27,23 +17,23 @@ template <typename T> inline ClassOop OopRef<T>::isa ()
 template <typename T> inline ClassOop OopRef<T>::setIsa (ClassOop val)
 {
     assert (!isInteger ());
-    return (dat->_isa = val);
+    return ClassOop (dat->_isa = (VT_Oop)val);
 }
 
-template <typename T> SmiOop OopRef<T>::asSmiOop ()
+template <typename T> inline SmiOop OopRef<T>::asSmiOop ()
 {
-    if (TagPtr (dat).i.tag == TagPtr::kInt)
-        return SmiOop (TagPtr (dat).i.num);
-    else
+    if (!isInteger ())
         return SmiOop ((intptr_t)dat);
+    else
+        return *reinterpret_cast<SmiOop *> (this);
 }
 
-template <typename T> FloatOop OopRef<T>::asFloatOop ()
+template <typename T> inline FloatOop OopRef<T>::asFloatOop ()
 {
-    if (TagPtr (dat).f.tag == TagPtr::kFloat)
-        return FloatOop (TagPtr (dat).f.flo);
-    else
-        return FloatOop ((intptr_t)dat);
+    /*   if (TagPtr (dat).f.tag == TagPtr::kFloat)
+           return FloatOop (TagPtr (dat).f.flo);
+       else*/
+    return FloatOop ((intptr_t)dat);
 }
 
 inline bool OopDesc::operator!= (const OopDesc * anOop)
@@ -56,14 +46,14 @@ inline bool OopDesc::operator== (const OopDesc * anOop)
     return this == anOop;
 }
 
-template <typename T> bool OopRef<T>::isNil ()
+template <typename T> inline bool OopRef<T>::isNil ()
 {
     return dat == NULL;
 }
 
-template <typename T> bool OopRef<T>::isInteger ()
+template <typename T> inline bool OopRef<T>::isInteger ()
 {
-    return TagPtr (dat).i.tag == TagPtr::kInt;
+    return VT_isSmallInteger (dat);
 }
 
 inline size_t MemOopDesc::size ()
@@ -73,12 +63,12 @@ inline size_t MemOopDesc::size ()
 
 inline intptr_t SmiOop::intValue ()
 {
-    return TagPtr (dat).i.num;
+    return Oop_intValue (dat);
 }
 
 inline float FloatOop::floatValue ()
 {
-    return TagPtr (dat).f.flo;
+    return 0; /// TagPtr (dat).f.flo;
 }
 
 inline SmiOop SmiOop::increment ()
@@ -90,20 +80,19 @@ inline SmiOop OopRef<SmiOopDesc>::decrement ()
 {
     return SmiOop (intValue () - 1);
 }
-
 inline Oop * OopOopDesc::vonNeumannSpace ()
 {
-    return _vonNeumannSpace.oops;
+    return (Oop *)_vonNeumannSpace.oops;
 }
 
 inline Oop & OopOopDesc::basicAt (size_t index)
 {
-    return _vonNeumannSpace.oops[index - 1];
+    return (Oop &)_vonNeumannSpace.oops[index - 1];
 }
 
 inline Oop & OopOopDesc::basicatPut (size_t index, Oop value)
 {
-    return _vonNeumannSpace.oops[index - 1] = value;
+    return (Oop &)_vonNeumannSpace.oops[index - 1] = value;
 }
 
 inline uint8_t * ByteOopDesc::vonNeumannSpace ()
@@ -119,6 +108,16 @@ inline uint8_t & ByteOopDesc::basicAt (size_t index)
 inline uint8_t & ByteOopDesc::basicatPut (size_t index, uint8_t value)
 {
     return _vonNeumannSpace.bytes[index - 1] = value;
+}
+
+inline ClassOop ClassOopDesc::isa ()
+{
+    return ClassOop (_isa);
+}
+
+inline ClassOop ClassOopDesc::setIsa (ClassOop val)
+{
+    return ClassOop (_isa = val);
 }
 
 #endif

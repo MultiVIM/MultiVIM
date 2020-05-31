@@ -64,9 +64,8 @@ ProgramNode * MVST_Parser::parseFile (std::string fName)
 
     parser = MVST_Parser::create(fName, src);
     if (1)//0)
-       // parser->trace(stdout, "<parser>: ");
+        //parser->trace(stdout, "<parser>: ");
 
-	parser->program = new ProgramNode();
     parser->path =  fPath.parent_path();
 
     mvstlex_init_extra(parser, &scanner);
@@ -76,6 +75,7 @@ ProgramNode * MVST_Parser::parseFile (std::string fName)
     while (mvstlex(scanner))
         ;
     parser->parse(TOK_EOF);
+	parser->parse(0);
 
 	return parser->program;
 }
@@ -90,11 +90,9 @@ MethodNode * MVST_Parser::parseText (std::string src)
     if (1)//0)
         //parser->trace(stdout, "<parser>: ");
 
-	parser->program = new ProgramNode();
-
     mvstlex_init_extra(parser, &scanner);
 
-	printf("Src: (%s)\n", src.c_str());
+	printf("Compiling immediate method: [ %s ]\n", src.c_str());
     /* Now we need to scan our string into the buffer. */
     yyb = mvst_scan_string(src.c_str(), scanner);
 
@@ -102,6 +100,7 @@ MethodNode * MVST_Parser::parseText (std::string src)
     while (mvstlex(scanner))
         ;
     parser->parse(TOK_EOF);
+	parser->parse(0);
 
 	return parser->meth;
 }
@@ -145,16 +144,16 @@ Position MVST_Parser::pos()
 		if (yyact != YY_ERROR_ACTION && yyact != YY_NO_ACTION)
 			std::cerr << "\t" << yyTokenName[i] << "\n";
 	}
-
 }
+
+prog ::= file.
 
 file ::= directMeth EOF.
 
 
 file ::= lDecl(l) EOF.
 	{
-		for (auto d: l)
-			printf("ADecl\n");
+		program = new ProgramNode(l);
 	}
 
 directMeth ::= DIRECTMETH oIvarDefs(locals)
@@ -166,6 +165,7 @@ directMeth ::= DIRECTMETH oIvarDefs(locals)
 
 %type lDecl { std::vector<DeclNode *> }
 %type decl { DeclNode * }
+%type clsDecl { DeclNode * }
 
 lDecl(L) ::= decl(d). { L = {d}; }
 lDecl(L) ::= lDecl(l) decl(d).
@@ -174,14 +174,19 @@ lDecl(L) ::= lDecl(l) decl(d).
 		L.push_back(d);
 	}
 
-decl ::= ATinclude STRING(name).
+decl(D) ::= ATinclude STRING(name).
 	{
-		ProgramNode *aNode = parseFile(path + "/" + removeFirstAndLastChar(name));
-		if (aNode)
-			program->mergeProgram(aNode);
+		D = parseFile(path + "/" + removeFirstAndLastChar(name));
 	}
+decl(D) ::= NAMESPACE CURRENTCOLON identifier(name) SQB_OPEN lDecl(l) SQB_CLOSE.
+	{
+		printf("new namespace node %s\n", name.stringValue.c_str());
+		D = new NamespaceNode(name, l);
+	}
+decl ::= clsDecl.
 
-decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
+
+clsDecl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
 	SQB_OPEN
 		oCAndIvarDefs(iVars)
 		olMethDecl(iMeths)
@@ -190,7 +195,6 @@ decl(D) ::= identifier(super) SUBCLASSCOLON identifier(name)
 		ClassNode * cls = new ClassNode(name, super, {}, iVars);
 		cls->addMethods(iMeths);
 		D = cls;
-		program->addClass(cls);
 	}
 
 %type oCAndIvarDefs { std::vector<std::string>}
@@ -482,11 +486,13 @@ binary_decl(B) ::= binOp(b) identifier(s). {
 
 identifier(I) ::= IDENTIFIER(i). { I = i; }
 identifier(I) ::= NAMESPACENAME(i). { I = i; }
+identifier(I) ::= NAMESPACE. { I = Token("Namespace"); }
 
 %type keyword { std::string }
 
 keyword(K) ::= KEYWORD(k). { K = k.stringValue; }
 keyword(K) ::= SUBCLASSCOLON. { K = "subclass:"; }
+keyword(K) ::= CURRENTCOLON. { K = "current:"; }
 
 %type binOp { std::string }
 %type binChar { std::string }

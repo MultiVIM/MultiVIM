@@ -3,7 +3,7 @@
 #include "Lowlevel/MVPrinting.hxx"
 #include "Oops.hxx"
 
-void DictionaryOopDesc::insert (int hash, Oop key, Oop value)
+void DictionaryOopDesc::insert (intptr_t hash, Oop key, Oop value)
 {
     ArrayOop table;
     LinkOop link, nwLink, nextLink;
@@ -62,6 +62,65 @@ void DictionaryOopDesc::insert (int hash, Oop key, Oop value)
     }
 }
 
+ClassOop DictionaryOopDesc::findOrCreateClass (ClassOop superClass,
+                                               std::string name)
+{
+    ClassOop result = symbolLookup (name)->asClassOop ();
+
+    if (result.isNil ())
+    {
+        printf ("Nil - allocating new class %s\n", name.c_str ());
+        result = ClassOopDesc::allocate (superClass, name);
+    }
+    else
+        result->setupClass (superClass, name);
+
+    return result;
+}
+
+DictionaryOop DictionaryOopDesc::subNamespaceNamed (std::string name)
+{
+    size_t ind = name.find (':');
+    if (ind == std::string::npos)
+    {
+        SymbolOop sym = SymbolOopDesc::fromString (name);
+        /* no more colons nested */
+        DictionaryOop ns = symbolLookup (sym)->asDictionaryOop ();
+        if (ns.isNil ())
+        {
+            printf ("no such namespace %s, creating\n", name.c_str ());
+            ns = DictionaryOopDesc::newWithSize (5);
+            symbolInsert (sym, ns);
+            ns->symbolInsert (SymbolOopDesc::fromString ("Super"), this);
+        }
+        return ns;
+    }
+}
+
+Oop DictionaryOopDesc::symbolLookupNamespaced (std::string name)
+{
+    size_t ind = name.find (':');
+    std::string first = ind != std::string::npos ? name.substr (0, ind) : name;
+    SymbolOop sym = SymbolOopDesc::fromString (name);
+    Oop res = symbolLookup (first);
+
+    printf ("Lookup %s/%s\n",
+            first.c_str (),
+            ind != std::string::npos ? name.substr (ind + 1).c_str () : "");
+
+    if (res.isNil ())
+    {
+        DictionaryOop super = symbolLookup ("Super")->asDictionaryOop ();
+        if (!super.isNil ())
+            res = super->symbolLookupNamespaced (name);
+    }
+
+    if (ind != std::string::npos && !res.isNil ())
+        return res->asDictionaryOop ()->symbolLookupNamespaced (
+            name.substr (ind + 1));
+    return res;
+}
+
 DictionaryOop DictionaryOopDesc::newWithSize (size_t numBuckets)
 {
     DictionaryOop dict = memMgr.allocateOopObj (1)->asDictionaryOop ();
@@ -89,15 +148,20 @@ void DictionaryOopDesc::print (int in)
     for (int i = 1; i <= table->size (); i += 3)
     {
         hp = (Oop *)table->vonNeumannSpace () + (i - 1);
-        printf (" --> bucket: %d\n",
-                i - 1); //(3 * (i % (tablesize / 3))) - 1);
-        key = *hp++;    /* table at: hash */
-        value = *hp++;  /* table at: hash + 1 */
+        // printf (" --> bucket: %d\n",
+        //        i - 1); //(3 * (i % (tablesize / 3))) - 1);
+        key = *hp++;   /* table at: hash */
+        value = *hp++; /* table at: hash + 1 */
 
         std::cout << blanks (in + 1) + "{ Key:\n";
         key->print (in + 2);
         std::cout << blanks (in + 1) + " Value:\n";
-        value->print (in + 2);
+        if (!(key.isa () == memMgr.clsSymbol &&
+              key->asSymbolOop ()->strEquals ("Super")))
+            value->print (in + 2);
+        else
+            std::cout << blanks (in + 2) << "<Super-entry>\n";
+
         std::cout << blanks (in + 1) + "}\n";
 
         for (link = *(LinkOop *)hp; !link.isNil (); link = *(LinkOop *)hp)
@@ -105,11 +169,11 @@ void DictionaryOopDesc::print (int in)
             hp = (Oop *)link->vonNeumannSpace ();
             key = *hp++;   /* link at: 1 */
             value = *hp++; /* link at: 2 */
-            std::cout << blanks (in + 2) + "{ Key:\n";
+            std::cout << blanks (in + 1) + "{ Key:\n";
             key->print (in + 2);
-            std::cout << blanks (in + 2) + " Value:\n";
+            std::cout << blanks (in + 1) + " Value:\n";
             value->print (in + 2);
-            std::cout << blanks (in + 2) + "}\n";
+            std::cout << blanks (in + 1) + "}\n";
         }
     }
 

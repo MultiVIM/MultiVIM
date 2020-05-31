@@ -39,6 +39,7 @@ add_subdirectory(${MV_CLOSED}/fltk closed/fltk)
 
 add_subdirectory(${MV_CLOSED}/litehtml closed/litehtml)
 add_subdirectory(${MV_CLOSED}/lemon closed/lemon)
+add_subdirectory(${MV_CLOSED}/libtcc-cmake closed/libtcc-cmake)
 
 #
 # Misc targets
@@ -55,13 +56,18 @@ add_custom_target(format
 
 add_compile_definitions(FLTK_HAVE_CAIRO)
 
-set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS} -fobjc-arc -fobjc-arc-exceptions -fexceptions -fobjc-exceptions \
+SET(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -funroll-loops")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -funroll-loops")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Ofast -funroll-loops")
+SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Ofast -funroll-loops")
+
+set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS}  -fexceptions -fobjc-exceptions \
     -funwind-tables -fconstant-string-class=OFConstantString -Xclang \
     -fno-constant-cfstrings -Xclang -fobjc-runtime=objfw -Xclang -fblocks \
     -Wno-nullability-completeness")
 set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} ${CMAKE_OBJC_FLAGS}")
 set(CMAKE_OBJC_LINK_FLAGS "${CMAKE_OBJC_LINK_FLAGS} -L/usr/local/lib -lobjfw \
-    -lobjfwrt  -lm -ldl -lpthread -fexceptions -fobjc-arc -fobjc-arc-exceptions")
+    -lobjfwrt  -lm -ldl -lpthread -fexceptions ")
 set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${CMAKE_OBJC_LINK_FLAGS}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-attribute-packed-for-bitfield")
@@ -103,42 +109,54 @@ add_executable(MultiVIM
     ${CMAKE_CURRENT_BINARY_DIR}/Parser.tab.cxx
 
 
-    OldMultiVIM.mm
+    #OldMultiVIM.mm
     #testmainhtmlview.cxx
+    MultiVIM.cxx
 
-    OldMultiVIM.mm NeoVIMClient.mm)
+    NeoVIMClient.mm)
 
-target_include_directories(MultiVIM PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/../closed)
+target_compile_options(MultiVIM PUBLIC -march=native -Ofast -funroll-loops -ggdb -pg)
+target_link_options(MultiVIM PUBLIC  -march=native -Ofast -funroll-loops -ggdb -pg)
+
+target_include_directories(MultiVIM PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR}/../closed)
 target_include_directories(MultiVIM SYSTEM BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/../closed/fltk
     ${CMAKE_BINARY_DIR}/closed/fltk)
 target_link_libraries(MultiVIM PkgConfig::Cairo BoehmGC::BoehmGC PkgConfig::GTKMM
-    CURL::libcurl PocoFoundation
+    CURL::libcurl PocoFoundation libtcc
     PkgConfig::Pango fltk fltk_cairo fltk_images stdc++fs litehtml)
 
 set_target_properties(MultiVIM PROPERTIES
     CXX_STANDARD 17)
 
 #
-# Smalltalk
+# JIT prelude
 #
 
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/systemImage
-    COMMAND $<TARGET_FILE:MultiVIM> -c ${MV_SMALLTALK_DIR}/Base/Image.st
-    DEPENDS ${MV_SMALLTALK_DIR}/Base/Image.st)
-add_custom_target(systemImage ALL DEPENDS ${MV_SMALLTALK_DIR}/Base/Image.st)
+add_executable(ResComp ${MV_TOOLS_DIR}/ResComp.c)
 
+set (JIT_PRELUDE_SRC ${MV_SRC}/JIT/Prelude.h)
+set (JIT_PRELUDE_RES ${CMAKE_BINARY_DIR}/JITPrelude.rh)
+add_custom_command(OUTPUT ${JIT_PRELUDE_RES}
+    COMMAND $<TARGET_FILE:ResComp>
+    ARGS JITPrelude ${JIT_PRELUDE_SRC}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    DEPENDS ${JIT_PRELUDE_SRC})
+add_custom_target(jit_prelude ALL DEPENDS ${JIT_PRELUDE_RES})
 
 #
 # Resources
 #
+
 set (HTMLDIR ${CMAKE_SOURCE_DIR}/Resources/HTML)
 set (STYLEDIR ${HTMLDIR}/Less)
 set (STYLECSS ${HTMLDIR}/Style.css)
 set (STYLELESS ${STYLEDIR}/Style.less)
 add_custom_command(OUTPUT ${STYLECSS}
     COMMAND lessc ${STYLELESS} > ${STYLECSS} 
-    DEPENDS ${STYLELESS}
+    DEPENDS ${STYLELESS} ${STYLEDIR}/buttons.less ${STYLEDIR}/dropdowns.less
+      ${STYLEDIR}/button-groups.less
       ${STYLEDIR}/forms.less ${STYLEDIR}/patterns.less
       ${STYLEDIR}/preboot.less ${STYLEDIR}/reset.less
       ${STYLEDIR}/scaffolding.less ${STYLEDIR}/tables.less

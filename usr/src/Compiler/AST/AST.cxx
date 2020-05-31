@@ -19,14 +19,3 @@ void ClassNode::addMethods (std::vector<MethodNode *> meths)
         else
             iMethods.push_back (m);
 }
-
-void ProgramNode::addClass (ClassNode * aClass)
-{
-    classes.push_back (aClass);
-}
-
-void ProgramNode::mergeProgram (ProgramNode * aNode)
-{
-    for (auto c : aNode->classes)
-        classes.push_back (c);
-}

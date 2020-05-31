@@ -4,6 +4,54 @@
 <head>
     <title>MultiVIM</title>
     <link rel="stylesheet" href="Style.css">
+    <style>
+        .sidebar {
+            height: 100%;
+            width: 160px;
+            position: fixed;
+            z-index: 1;
+            top: 45px;
+            left: 20px;
+            overflow-x: hidden;
+            padding-top: 20px;
+        }
+
+        .mainbar {
+            margin-left: 180px;
+            padding: 15px 10px;
+        }
+
+        .sidebox {
+            position: relative;
+            padding: 30px 0px 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .sidebox.recent {
+            padding-bottom: 40px;
+        }
+
+        .sidebox.recent .bottom {
+            position: absolute;
+            bottom: -10px;
+            padding: 5px 5px 0px;
+        }
+
+        .sidebox .label {
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            padding: 3px 7px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            color: #9da0a4;
+            border-radius: 4px 0 4px 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -14,64 +62,60 @@
                     <span>MultiVIM</span>
                 </a></h3>
             <ul>
-                <li class="active"><a href="#masthead">Welcome</a></li>
+                <li class="active"><a href="#masthead">Start Here</a></li>
                 <li><a href="#layouts">VMTop</a></li>
                 <li><a href="#typography">About</a></li>
             </ul>
         </div>
     </div>
 
-    <div class="container-fluid">
-        <div class="row-fluid">
-            <div class="span2">
-                <div class="well">
-                    <h5>Sidebar</h5>
-                    <ul>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                    </ul>
-                    <h5>Sidebar</h5>
-                    <ul>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                    </ul>
-                    <h5>Sidebar</h5>
-                    <ul>
-                        <li><a href="#">Link</a></li>
-                        <li><a href="#">Link</a></li>
-                    </ul>
-                </div>
+
+    <div class="sidebar">
+        <div class="sidebox recent">
+            <div class="label">Recent Files</div>
+            <ul>
+                <li><a href="#">~/test.txt</a></li>
+                <li><a href="#">/etc/passwd</a></li>
+            </ul>
+            <div class="bottom">
+                <ul class="unstyled">
+                    <li><a href="#">New File...</a></li>
+                    <li><a href="#">Open File...</a></li>
+                </ul>
             </div>
-            <div class="span5">
-                <!-- Main hero unit for a primary marketing message or call to action -->
-                <h1>Hello, world!</h1>
-                <p>Vestibulum id ligula porta felis euismod semper. Integer posuere erat a ante venenatis
-                    dapibus
-                    posuere velit aliquet. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget
-                    lacinia
-                    odio sem nec elit.</p>
-                <p><a class="btn primary large">Learn more &raquo;</a></p>
-            </div>
-            <div class="span5">
-                <!-- Main hero unit for a primary marketing message or call to action -->
-                <div class="hero-unit">
-                    <h1>Hello, world!</h1>
-                    <p>Vestibulum id ligula porta felis euismod semper. Integer posuere erat a ante venenatis
-                        dapibus
-                        posuere velit aliquet. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget
-                        lacinia
-                        odio sem nec elit.</p>
-                    <p><a class="btn primary large">Learn more &raquo;</a></p>
+        </div>
+        <br>
+        <div class="sidebox">
+            <div class="label">Get Started</div>
+            <ul>
+                <li><a href="#">Learn the Vim Way</a></li>
+                <li><a href="#">Smalltalk Tutorial</a></li>
+                <li><a href="#">Find Plugins</a></li>
+                <li><a href="#">Online Help</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="mainbar">
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span12">
+                    <ul class="tabs">
+                        <li class="active"><a href="">Changelog</a></li>
+                        <li><a href="">News</a></li>
+                        <li><a href="">Popular Plugins</a></li>
+                        <li><a href="">MyVIM Account</a></li>
+                    </ul>
+                    <div class="tabs-content">
+                        <div class="page-header" id="pagesea">
+                            <h1>Version 0.1</h1>
+                        </div>
+                        <p>Welcome to the first release of MultiVIM. It hasn't been released yet, so you should not be
+                            using it.</p>
+                    </div>
                 </div>
             </div>
         </div>
-
+    </div>
 </body>
 
 </html>

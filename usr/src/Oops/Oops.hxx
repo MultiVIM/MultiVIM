@@ -8,6 +8,20 @@ int strHash (std::string str);
 int strTest (Oop key, std::string aString);
 int identityTest (Oop key, Oop match);
 
+class NativeCodeOopDesc : public OopOopDesc
+{
+  public:
+    typedef void (*Fun) (void *);
+
+    DeclareAccessorPair (ByteArrayOop, data, setData);
+    /* Pointer to function code area */
+    uint8_t * funCode ();
+    /* Pointer to function pointer */
+    DeclareAccessorPair (Fun, fun, setFun);
+
+    static NativeCodeOop newWithSize (size_t codeSize);
+};
+
 class CharOopDesc : public OopOopDesc
 {
   public:
@@ -42,7 +56,7 @@ class DictionaryOopDesc : public OopOopDesc
     /**
      * Inserts /a value under /a key under the hash /a hash.
      */
-    void insert (int hash, Oop key, Oop value);
+    void insert (intptr_t hash, Oop key, Oop value);
 
     /**
      * Looks for a key-value pair by searching for the given hash, then running
@@ -51,7 +65,7 @@ class DictionaryOopDesc : public OopOopDesc
      * /a fun returns true, that key-value pair is returned.
      */
     template <typename ExtraType>
-    std::pair<Oop, Oop> findPairByFun (int hash, ExtraType extraVal,
+    std::pair<Oop, Oop> findPairByFun (intptr_t hash, ExtraType extraVal,
                                        int (*fun) (Oop, ExtraType));
 
 #pragma mark symbol table functions
@@ -71,6 +85,16 @@ class DictionaryOopDesc : public OopOopDesc
      * aString.
      */
     Oop symbolLookup (std::string aString);
+
+    /*
+     * Namespace functions.
+     */
+    ClassOop findOrCreateClass (ClassOop superClass, std::string name);
+    /* Create or find a subnamespace with the given name. Name may be colonised.
+     */
+    DictionaryOop subNamespaceNamed (std::string name);
+    /* Look up a symbol, searching superspaces if necessary. */
+    Oop symbolLookupNamespaced (std::string aString);
 
 #pragma mark creation
 

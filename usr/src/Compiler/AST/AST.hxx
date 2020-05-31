@@ -61,9 +61,11 @@ struct ReturnStmtNode : StmtNode
 
 struct DeclNode : Node
 {
+    virtual void synthInNamespace (DictionaryOop ns) = 0;
+    virtual void generate () = 0;
 };
 
-struct MethodNode : DeclNode
+struct MethodNode : public Node
 {
     MethodScope * scope;
 
@@ -87,7 +89,7 @@ struct MethodNode : DeclNode
     void print (int in);
 };
 
-struct ClassNode : DeclNode
+struct ClassNode : public DeclNode
 {
     ClassScope * scope;
     ClassOop cls;
@@ -107,19 +109,40 @@ struct ClassNode : DeclNode
 
     void addMethods (std::vector<MethodNode *> meths);
 
-    void synth ();
+    void synthInNamespace (DictionaryOop ns);
     void generate ();
 
     void print (int in);
 };
 
-struct ProgramNode : DeclNode
+struct NamespaceNode : public DeclNode
 {
-    std::vector<ClassNode *> classes;
+    std::string name;
+    // std::vector<std:
+    std::vector<DeclNode *> decls;
 
-    void addClass (ClassNode * aClass);
-    void mergeProgram (ProgramNode * aNode);
-    void synth ();
+    NamespaceNode (std::string name, std::vector<DeclNode *> decls)
+        : name (name), decls (decls)
+    {
+    }
+
+    void synthInNamespace (DictionaryOop ns);
+    void generate ();
+};
+
+struct ProgramNode : public DeclNode
+{
+    std::vector<DeclNode *> decls;
+
+    ProgramNode (std::vector<DeclNode *> decls) : decls (decls)
+    {
+    }
+
+    void synthInNamespace (DictionaryOop ns);
+    void synth ()
+    {
+        synthInNamespace (memMgr.objGlobals);
+    }
     void generate ();
 
     void print (int in);

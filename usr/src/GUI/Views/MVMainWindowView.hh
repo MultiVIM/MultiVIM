@@ -44,7 +44,7 @@ class MVMainWindowView : public Fl_Cairo_Window
     }
 
   public:
-    MVMainWindowView (int w, int h, __weak id presenter);
+    MVMainWindowView (int w, int h, id presenter);
 
     void draw ();
     inline void textViewCairoDraw (cairo_t * cr)
@@ -83,7 +83,7 @@ class MVMainWindowView : public Fl_Cairo_Window
         // mainArea->addTab (textView);
     }
 
-    __weak id presenter;
+    id presenter;
     MVMDIWorkspace mainArea;
     // TabContainer * mainArea;
     Fl_Menu_Bar * menuBar;

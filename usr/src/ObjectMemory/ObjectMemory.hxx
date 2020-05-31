@@ -15,13 +15,17 @@ class ClassOopDesc : public OopOopDesc
      * For a system class (i.e. one that can't be altered by the running
      * Smalltalk image), defines the size of one of its instances.
      */
-    static const int clsInstLength = 5;
+    static const int clsInstLength = 6;
 
     DeclareAccessorPair (SymbolOop, name, setName);
     DeclareAccessorPair (ClassOop, superClass, setSuperClass);
     DeclareAccessorPair (DictionaryOop, methods, setMethods);
     DeclareAccessorPair (SmiOop, nstSize, setNstSize);
     DeclareAccessorPair (ArrayOop, nstVars, setNstVars);
+    DeclareAccessorPair (DictionaryOop, dictionary, setDictionary);
+
+    inline ClassOop isa ();
+    inline ClassOop setIsa (ClassOop val);
 
     /**
      * Adds an instance method to the class. Creates the method dictionary if
@@ -95,6 +99,9 @@ class MemoryManager
     static ClassOop clsFloat;
     static ClassOop clsVM;
     static ClassOop clsChar;
+    static ClassOop clsProcessor;
+    static ClassOop clsNativeCode;
+    static ClassOop clsNativePointer;
 
 #pragma mark memory
 
@@ -129,6 +136,8 @@ class MemoryManager
 #include "Lowlevel/MVEndPackStruct.h"
 
 extern MemoryManager memMgr;
+extern SymbolOop symIfTrueIfFalse;
+extern SymbolOop symValue;
 
 #include "ObjectMemory.inl.hxx"
 

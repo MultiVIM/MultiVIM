@@ -92,9 +92,12 @@ void CodeGen::genPushArgument (uint8_t index)
 
 void CodeGen::genPushGlobal (std::string name)
 {
-    genPushLiteralObject (MemoryManager::objGlobals);
-    genPushLiteralObject ((SymbolOopDesc::fromString (name)));
-    genMessage (false, 1, "at:");
+    SymbolOop sym = SymbolOopDesc::fromString (name);
+    /*genPushLiteralObject (MemoryManager::objGlobals);
+    genPushLiteralObject (());
+    genMessage (false, 1, "at:");*/
+    willPush ();
+    genInstruction (Opcode::kPushGlobal, genLiteral (sym));
 }
 
 void CodeGen::genPushLocal (uint8_t index)
@@ -185,6 +188,13 @@ void CodeGen::genStoreMyHeapVar (uint8_t index)
     genInstruction (Opcode::kStoreMyHeapVar, index);
 }
 
+void CodeGen::genIfTrueIfFalse ()
+{
+    /* We use 2 for ifTrue:ifFalse. */
+    genInstruction (Opcode::kIfTrueIfFalse, 2);
+    willPop (2);
+}
+
 void CodeGen::genMessage (bool isSuper, size_t numArgs, std::string selector)
 {
     SymbolOop messagesym = SymbolOopDesc::fromString (selector);
@@ -192,7 +202,7 @@ void CodeGen::genMessage (bool isSuper, size_t numArgs, std::string selector)
     if (!isSuper)
     {
         int sym;
-        if ((sym = Processor::optimisedBinopSym (messagesym)) != -1)
+        if ((sym = ProcessorOopDesc::optimisedBinopSym (messagesym)) != -1)
         {
             willPop (numArgs);
             genInstruction (Opcode::kBinOp, sym);
@@ -224,6 +234,7 @@ void CodeGen::genPushLiteralObject (Oop obj)
 
 void CodeGen::genBlockReturn ()
 {
+    _blockHasBlockReturn = true;
     genInstruction (Opcode::kBlockReturn);
     willPop ();
 }

@@ -43,8 +43,6 @@ ParentsHeapVarNode * AbstractCodeScope::promote (VarNode * aNode)
 {
     HeapVarNode * newVar =
         new HeapVarNode (myHeapVars.size () + 1, aNode->name);
-    // printf ("Promoting\n");
-    // aNode->print (5);
     aNode->promoted = true;
     aNode->promotedIndex = newVar->index;
     myHeapVars.push_back ({newVar, aNode});
@@ -202,24 +200,35 @@ static void classOopAddIvarsToScopeStartingFrom (ClassOop aClass,
             aClass->nstVars ()->basicAt (i)->asSymbolOop ()->asString ());
 }
 
-void ClassNode::synth ()
+std::string & SSS (const char * s)
+{
+    return *(new std::string (s));
+}
+
+extern "C" int sleep (int);
+
+void ClassNode::synthInNamespace (DictionaryOop ns)
 {
     int index = 0;
     scope = new ClassScope;
-    ClassOop superCls = Oop::nil ()->asClassOop ();
+    ClassOop superCls = Oop::nilObj ()->asClassOop ();
 
     if (superName != "nil")
     {
-        superCls = memMgr.lookupClass (superName);
+        superCls = ns->symbolLookupNamespaced (superName)->asClassOop ();
+        if (superCls.isNil ())
+        {
+            memMgr.objGlobals->print (5);
+        }
         assert (!superCls.isNil ());
     }
 
-    cls = memMgr.findOrCreateClass (superCls, name);
+    cls = ns->findOrCreateClass (superCls, name);
     cls->setNstVars (ArrayOopDesc::symbolArrayFromStringVector (iVars));
-
     classOopAddIvarsToScopeStartingFrom (cls, scope);
     cls->setNstSize (SmiOop (scope->iVars.size ()));
-    MemoryManager::objGlobals->symbolInsert (cls->name (), cls);
+    cls->setDictionary (ns);
+    ns->symbolInsert (cls->name (), cls);
 
     for (auto meth : cMethods)
         meth->synthInClassScope (scope);
@@ -230,8 +239,15 @@ void ClassNode::synth ()
     }
 }
 
-void ProgramNode::synth ()
+void NamespaceNode::synthInNamespace (DictionaryOop ns)
 {
-    for (auto & c : classes)
-        c->synth ();
+    DictionaryOop newNs = ns->subNamespaceNamed (name);
+    for (auto d : decls)
+        d->synthInNamespace (newNs);
+}
+
+void ProgramNode::synthInNamespace (DictionaryOop ns)
+{
+    for (auto d : decls)
+        d->synthInNamespace (ns);
 }

@@ -1,5 +1,7 @@
 #include <FL/Enumerations.H>
 #include <FL/Fl_Group.H>
+#include <FL/Fl_Window.H>
+#include <FL/fl_draw.H>
 #include <cairo.h>
 #include <fstream>
 #include <sstream>
@@ -35,6 +37,7 @@ MVNewWebView::MVNewWebView (int x, int y, int w, int h, const char * l)
 {
     std::ifstream in ("/ws/MultiVIM/usr/closed/litehtml/include/master.css");
     std::ostringstream contents;
+    litehtml::element::ptr el;
     contents << in.rdbuf ();
     in.close ();
     new Gtk::Main;
@@ -48,8 +51,9 @@ MVNewWebView::MVNewWebView (int x, int y, int w, int h, const char * l)
         "<H1>Loading...</H1>", this, &htmlContext);
 
     resize (x, y, w, h);
-    printf ("W: %d\n", w);
     navigateTo ("file:///ws/MultiVIM/usr/src/Resources/HTML/Welcome.html");
+    //   printf ("aP width: %d/%s\n");
+    //.    el->parse_attributes ();
 }
 
 void MVNewWebView::get_client_rect (litehtml::position & client) const
@@ -94,7 +98,6 @@ MVNewWebView::get_image (const litehtml::tchar_t * url, bool redraw_on_ready)
 {
     Glib::RefPtr<Gio::InputStream> stream = httpLoader.load_file (url);
     Glib::RefPtr<Gdk::Pixbuf> ptr = Gdk::Pixbuf::create_from_stream (stream);
-    printf ("trying to load image. Filename: %s\n", url);
     return ptr;
 }
 
@@ -113,31 +116,39 @@ void MVNewWebView::cairoDraw (cairo_t * cr)
 {
     litehtml::position pos;
     double xStart, yStart, xEnd, yEnd;
+    cairo_matrix_t mat;
     cairo_t * temp = createOffscreen (w (), h ());
-    // printf ("draw\n");
+
+    int clipY = y () + h (), clipH = h ();
+    if (clipY > window ()->h () - 48)
+        clipY = window ()->h () - 48;
+    clipH = clipY - y ();
 
     cairo_move_to (cr, x (), y ());
     cairo_set_source_rgba (cr, 1, 1, 1, 1);
-    cairo_rectangle (cr, x (), y (), w (), h ());
+    cairo_rectangle (cr, x (), y (), w (), clipH);
+    cairo_clip (cr);
     cairo_fill (cr);
     cairo_clip_extents (cr, &xStart, &yStart, &xEnd, &yEnd);
+
+    /* to do a crude scale of the content: */
+    // cairo_matrix_init_scale (&mat, 1.5, 1.5);
+    // cairo_transform (temp, &mat);
 
     pos.width = xEnd - xStart;
     pos.height = yEnd - yStart;
     pos.x = 0; // x (); // xStart;
     pos.y = 0; // y (); // yStart;
     doc->draw ((litehtml::uint_ptr)temp, 0, 0, &pos);
+
     cairo_set_source_surface (cr, cairo_get_target (temp), x (), y ());
-    // cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint (cr);
     cairo_surface_destroy (cairo_get_target (temp));
     cairo_destroy (temp);
-    // printf ("DRawing %d@%d %d@%d\n", pos.x, pos.y, pos.width, pos.height);
 }
 
 void MVNewWebView::draw ()
 {
-    // Fl_Group::draw ();
     cairoDraw (Fl::cairo_make_current (window ()));
 }
 
@@ -164,8 +175,6 @@ void MVNewWebView::toLiteHTMLCoords (int & nx, int & ny, int & cX, int & cY)
 
 int MVNewWebView::handle (int event)
 {
-    // printf ("View got event %d\n", event);
-
     if (event == FL_DRAG)
     {
         int x, y, cX, cY;
@@ -214,5 +223,4 @@ int MVNewWebView::handle (int event)
     }
 
     return Fl_Group::handle (event);
-    //   return 1;
 }

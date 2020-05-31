@@ -3,7 +3,7 @@
 
 #include "MVMainWindowView.hh"
 
-MVMainWindowView::MVMainWindowView (int w, int h, __weak id presenter)
+MVMainWindowView::MVMainWindowView (int w, int h, id presenter)
     : Fl_Cairo_Window (w, h, "MultiVIM"), presenter (presenter),
       mainArea (mainAreaX (), mainAreaY (), w, mainAreaHeight ())
 {

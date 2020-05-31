@@ -4,6 +4,20 @@
 #include "Lowlevel/MVPrinting.hxx"
 #include "Oops.hxx"
 
+extern "C"
+{
+    void * GC_find_header (void *);
+    void * GC_base (void *);
+}
+
+NativeCodeOop NativeCodeOopDesc::newWithSize (size_t codeSize)
+{
+    NativeCodeOop oop = memMgr.allocateOopObj (1)->asNativeCodeOop ();
+    oop.setIsa (memMgr.clsNativeCode);
+    oop->setData (ByteArrayOopDesc::newWithSize (sizeof (Fun) + codeSize));
+    return oop;
+}
+
 void LinkOopDesc::print (int in)
 {
     if (!this)
@@ -24,7 +38,7 @@ void LinkOopDesc::print (int in)
 
 template <typename ExtraType>
 std::pair<Oop, Oop>
-DictionaryOopDesc::findPairByFun (int hash, ExtraType extraVal,
+DictionaryOopDesc::findPairByFun (intptr_t hash, ExtraType extraVal,
                                   int (*fun) (Oop, ExtraType))
 {
     ArrayOop table = basicAt (1)->asArrayOop ();
@@ -206,28 +220,27 @@ void ClassOopDesc::addMethod (MethodOop method)
 
 void ClassOopDesc::addClassMethod (MethodOop method)
 {
-    _isa->addMethod (method);
+    isa ()->addMethod (method);
 }
 
 void ClassOopDesc::setupClass (ClassOop superClass, std::string name)
 {
-    if (_isa.isNil ())
-        _isa = ClassOopDesc::allocateRawClass ();
+    if (isa ().isNil ())
+        setIsa (ClassOopDesc::allocateRawClass ());
 
-    _isa.setIsa (MemoryManager::clsObjectMeta);
+    isa ().setIsa (MemoryManager::clsObjectMeta);
 
-    _isa->setName (SymbolOopDesc::fromString (name + "Meta"));
+    isa ()->setName (SymbolOopDesc::fromString (name + "Meta"));
     setName (SymbolOopDesc::fromString (name));
-    printf ("\n\nset up class %s, %p, %l\n\n\n", name.c_str (), this, this);
 
     if (!superClass.isNil ())
     {
-        _isa->setSuperClass (superClass.isa ());
+        isa ()->setSuperClass (superClass.isa ());
         setSuperClass (superClass);
     }
     else /* root object */
     {
-        _isa->setSuperClass (this);
+        isa ()->setSuperClass (this);
         /* class of Object is the terminal class for both the metaclass and
          * class hierarchy */
     }

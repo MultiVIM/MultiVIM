@@ -4,3 +4,6 @@
 [submodule "usr/closed/litehtml"]
 	path = usr/closed/litehtml
 	url = https://github.com/litehtml/litehtml.git
+[submodule "usr/closed/libtcc-cmake"]
+	path = usr/closed/libtcc-cmake
+	url = https://github.com/Alex2804/libtcc-cmake.git

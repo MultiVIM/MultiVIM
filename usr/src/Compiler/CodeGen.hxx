@@ -13,13 +13,16 @@ class CodeGen
     int _curStackHeight, _highestStackHeight;
     std::vector<uint8_t> _bytecode;
     std::vector<Oop> _literals;
-    bool _isBlock;
     std::stack<AbstractScope *> _currentScope;
+    bool _isBlock;
+    /* If a block scope, is there a block return statement herein? */
 
     void willPush (int n = 1);
     void willPop (int n = 1);
 
   public:
+    bool _blockHasBlockReturn = false;
+
     bool isBlock ()
     {
         return _isBlock;
@@ -85,6 +88,7 @@ class CodeGen
     void genPushLiteral (uint8_t num);
     void genPushLiteralObject (Oop anObj);
     void genPushInteger (int val);
+    void genPushBlock (BlockOop block);
     void genPushBlockCopy (BlockOop block);
 
     void genPop ();
@@ -97,6 +101,7 @@ class CodeGen
     void genStoreParentHeapVar (uint8_t index);
     void genStoreMyHeapVar (uint8_t index);
 
+    void genIfTrueIfFalse ();
     void genMessage (bool isSuper, size_t numArgs, std::string selector);
 
     void genBlockReturn ();

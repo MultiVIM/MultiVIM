@@ -13,6 +13,7 @@
 // Grays
 @black:             #000;
 @grayDark:          lighten(@black, 25%);
+@grayDarker:      #222;
 @gray:              lighten(@black, 50%);
 @grayLight:         lighten(@black, 75%);
 @grayLighter:       lighten(@black, 90%);
@@ -50,6 +51,51 @@
 @analog1:           spin(@baseColor, 22);   // Analogs colors
 @analog2:           spin(@baseColor, -22);
 
+
+/* From Bootstrap 2: */
+@zindexDropdown:          1000;
+@zindexPopover:           1010;
+@zindexTooltip:           1020;
+@zindexFixedNavbar:       1030;
+@zindexModalBackdrop:     1040;
+@zindexModal:             1050;
+
+@baseFontSize:          13px;
+@baseLineHeight: 18px;
+
+// Buttons
+// -------------------------
+@btnBackground:                     @white;
+@btnBackgroundHighlight:            darken(@white, 10%);
+@btnBorder:                         #ccc;
+
+@btnPrimaryBackground:              @linkColor;
+@btnPrimaryBackgroundHighlight:     spin(@btnPrimaryBackground, 15%);
+
+@btnInfoBackground:                 #5bc0de;
+@btnInfoBackgroundHighlight:        #2f96b4;
+
+@btnSuccessBackground:              #62c462;
+@btnSuccessBackgroundHighlight:     #51a351;
+
+@btnWarningBackground:              lighten(@orange, 15%);
+@btnWarningBackgroundHighlight:     @orange;
+
+@btnDangerBackground:               #ee5f5b;
+@btnDangerBackgroundHighlight:      #bd362f;
+
+@btnInverseBackground:              @gray;
+@btnInverseBackgroundHighlight:     @grayDarker;
+
+// Dropdowns
+// -------------------------
+@dropdownBackground:            @white;
+@dropdownBorder:                rgba(0,0,0,.2);
+@dropdownLinkColor:             @grayDark;
+@dropdownLinkColorHover:        @white;
+@dropdownLinkBackgroundHover:   @linkColor;
+@dropdownDividerTop:            #e5e5e5;
+@dropdownDividerBottom:         @white;
 
 // MIXINS
 // ------
@@ -165,7 +211,8 @@
 // Buttons
 .button(@color: #fff, @padding: 4px 14px, @textColor: #333, @textShadow: 0 1px 1px rgba(255,255,255,.75), @fontSize: 13px, @borderColor: rgba(0,0,0,.1), @borderRadius: 4px) {
   display: inline-block;
-  #gradient > .vertical-three-colors(@color, @color, 0.25, darken(@color, 10%));
+  #gradient > .vertical(@color, darken(@color, 10%));
+  //#gradient > .vertical-three-colors(@color, @color, 0.25, darken(@color, 10%));
   padding: @padding;
   text-shadow: @textShadow;
   color: @textColor;
@@ -179,6 +226,7 @@
   &:hover {
     background-position: 0 -15px;
     color: @textColor;
+    #gradient > .vertical(darken(@color, 10%), darken(@color, 15%));
     text-decoration: none;
   }
 }

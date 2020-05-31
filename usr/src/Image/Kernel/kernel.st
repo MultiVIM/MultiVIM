@@ -14,3 +14,4 @@
 @include 'Magnitude.st'
 @include 'Char.st'
 @include 'Link.st'
+@include 'NativeCode.st'

@@ -14,8 +14,8 @@
 		},
 		"files.associations": {
 			"*.y": "lemon",
-			"*.H": "cpp",
 			"*.h": "objective-c",
+			"*.H": "cpp",
 			"*.hh": "objective-cpp",
 			"array": "cpp",
 			"atomic": "cpp",
@@ -73,7 +73,9 @@
 			"set": "cpp",
 			"mutex": "cpp",
 			"thread": "cpp",
-			"forward_list": "cpp"
+			"forward_list": "cpp",
+			"hash_map": "cpp",
+			"variant": "cpp"
 		}
 	}
 }

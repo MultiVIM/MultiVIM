@@ -21,8 +21,10 @@ CastFun (DictionaryOop);
 CastFun (LinkOop);
 CastFun (MemOop);
 CastFun (MethodOop);
+CastFun (NativeCodeOop);
 CastFun (OopOop);
 CastFun (ProcessOop);
+CastFun (ProcessorOop);
 CastFun (StringOop);
 CastFun (SymbolOop);
 
@@ -46,6 +48,27 @@ CastFun (SymbolOop);
         return basicatPut (Index, value)->as##Type ();                         \
     }
 
+#define accessorsFor NativeCodeOopDesc
+
+AccessorDef (ByteArrayOop, 1, data, setData);
+
+inline uint8_t * NativeCodeOopDesc::funCode ()
+{
+    return data ()->vonNeumannSpace () + sizeof (Fun);
+}
+
+inline NativeCodeOopDesc::Fun NativeCodeOopDesc::fun ()
+{
+    return *(Fun *)data ()->vonNeumannSpace ();
+}
+
+inline NativeCodeOopDesc::Fun NativeCodeOopDesc::setFun (Fun fun)
+{
+    return (*(Fun *)data ()->vonNeumannSpace ()) = fun;
+}
+
+#undef accessorsFor
+
 #define accessorsFor CharOopDesc
 SmiAccessorDef (1, value, setValue);
 #undef accessorsFor
@@ -64,6 +87,7 @@ AccessorDef (ClassOop, 2, superClass, setSuperClass);
 AccessorDef (DictionaryOop, 3, methods, setMethods);
 SmiAccessorDef (4, nstSize, setNstSize);
 AccessorDef (ArrayOop, 5, nstVars, setNstVars);
+AccessorDef (DictionaryOop, 6, dictionary, setDictionary);
 #undef accessorsFor
 
 #define accessorsFor LinkOopDesc

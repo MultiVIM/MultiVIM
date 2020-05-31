@@ -20,6 +20,37 @@
             margin-left: 180px;
             padding: 15px 10px;
         }
+
+        .sidebox {
+            position: relative;
+            padding: 30px 0px 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .sidebox.recent {
+            padding-bottom: 40px;
+        }
+
+        .sidebox.recent .bottom {
+            position: absolute;
+            bottom: -10px;
+            padding: 5px 5px 0px;
+        }
+
+        .sidebox .label {
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            padding: 3px 7px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            color: #9da0a4;
+            border-radius: 4px 0 4px 0;
+        }
     </style>
 </head>
 
@@ -31,38 +62,94 @@
                     <span>MultiVIM</span>
                 </a></h3>
             <ul>
-                <li class="active"><a href="#masthead">Welcome</a></li>
+                <li class="active"><a href="#masthead">Start Here</a></li>
                 <li><a href="#layouts">VMTop</a></li>
                 <li><a href="#typography">About</a></li>
+            </ul>
+            <ul class="nav secondary-nav">
+                <li class="menu">
+                    <a href="#" class="menu">Dropdown &darr;</a>
+                    <ul class="menu-dropdown">
+                        <li><a href="">Something else here</a></li>
+                        <li><a href="">Something else here</a></li>
+                        <li class="divider"></li>
+                        <li><a href="">Another link</a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
 
 
     <div class="sidebar">
-        <div class="well">
-            <h5>Sidebar</h5>
+        <div class="sidebox recent">
+            <div class="label">Recent Files</div>
             <ul>
-                <li><a href="#">Link</a></li>
-                <li><a href="#">Link</a></li>
-                <li><a href="#">Link</a></li>
-                <li><a href="#">Link</a></li>
+                <li><a href="#">~/test.txt</a></li>
+                <li><a href="#">/etc/passwd</a></li>
+            </ul>
+            <div class="bottom">
+                <ul class="unstyled">
+                    <li><a href="#">New File...</a></li>
+                    <li><a href="#">Open File...</a></li>
+                </ul>
+            </div>
+        </div>
+        <br>
+        <div class="sidebox">
+            <div class="label">Get Started</div>
+            <ul>
+                <li><a href="#">Learn the Vim Way</a></li>
+                <li><a href="#">Smalltalk Tutorial</a></li>
+                <li><a href="#">Find Plugins</a></li>
+                <li><a href="#">Online Help</a></li>
             </ul>
         </div>
     </div>
     <div class="mainbar">
         <div class="container-fluid">
             <div class="row-fluid">
-                <div class="span3">
-                    <h1> HELLO WORLD</h1>
-                </div>
-                <div class="span6">
-                    <h1>lorem ipsum dorko apsd nisuadb gdbjk kasd0nas udsaij hioup jdsa ip sdaju ipsa jisdapd jasip jipa
-                        sdjipad
-                        jiposad ajipoads jiap</h1>
-                </div>
-                <div class="span3">
-                    <H2>HELLO WORAUIDA</H2>
+                <div class="span12">
+                    <ul class="tabs">
+                        <li class="active"><a href="">Changelog</a></li>
+                        <li><a href="">News</a></li>
+                        <li><a href="">Popular Plugins</a></li>
+                        <li><a href="">MyVIM Account</a></li>
+                    </ul>
+                    <div class="tabs-content">
+                        <div class="page-header" id="aP">
+                            <h1>Version 0.1</h1>
+                        </div>
+                        <p>Welcome to the first release of MultiVIM. It hasn't been released yet, so you should not be
+                            using it.</p>
+
+                        <div class="btn-group">
+                            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                                Action
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <!-- dropdown menu links -->
+                            </ul>
+                        </div>
+
+                        <div class="btn-group">
+                            <a class="btn" href="#">Action</a>
+                            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <!-- dropdown menu links -->
+                            </ul>
+                        </div>
+
+                        <a class="btn btn-danger" href="#">Danger</a>
+
+                        <div class="actions">
+                            <button type="submit" class="obtn primary">Save Changes</button>
+                            <button type="reset" class="obtn">Cancel</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

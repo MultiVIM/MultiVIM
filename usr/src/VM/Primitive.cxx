@@ -3,9 +3,9 @@
 
 #include "Interpreter.hxx"
 
-Oop unsupportedPrim (ExecState & es, ArrayOop args)
+Oop unsupportedPrim (ProcessOop proc, ArrayOop args)
 {
-    return (Oop::nil ());
+    return (Oop::nilObj ());
 }
 
 /*
@@ -13,10 +13,10 @@ Prints the number of available object table entries.
 Always fails.
 Called from Scheduler>>initialize
 */
-Oop primAvailCount (ExecState & es, ArrayOop args)
+Oop primAvailCount (ProcessOop proc, ArrayOop args)
 {
     // fprintf (stderr, "free: %d\n", availCount ());
-    return (Oop::nil ());
+    return (Oop::nilObj ());
 }
 
 /*
@@ -25,7 +25,7 @@ Called from
   Random>>next
   Random>>randInteger:
 */
-Oop primRandom (ExecState & es, ArrayOop args)
+Oop primRandom (ProcessOop proc, ArrayOop args)
 {
     short i;
     /* this is hacked because of the representation */
@@ -44,7 +44,7 @@ not "watchWith:" messages are sent to Methods during execution.
 Returns the Boolean representation of the switch value after the invert.
 Called from Smalltalk>>watch
 */
-Oop primFlipWatching (ExecState & es, ArrayOop args)
+Oop primFlipWatching (ProcessOop proc, ArrayOop args)
 {
     /* fixme */
     bool watching = !watching;
@@ -57,7 +57,7 @@ Terminates the interpreter.
 Never returns.
 Not called from the image.
 */
-Oop primExit (ExecState & es, ArrayOop args)
+Oop primExit (ProcessOop proc, ArrayOop args)
 {
     exit (0);
 }
@@ -66,7 +66,7 @@ Oop primExit (ExecState & es, ArrayOop args)
 Returns the class of which the receiver is an instance.
 Called from Object>>class
 */
-Oop primClass (ExecState & es, ArrayOop args)
+Oop primClass (ProcessOop proc, ArrayOop args)
 {
     return (args->basicAt (1).isa ());
 }
@@ -75,7 +75,7 @@ Oop primClass (ExecState & es, ArrayOop args)
 Returns the field count of the von Neumann space of the receiver.
 Called from Object>>basicSize
 */
-Oop primSize (ExecState & es, ArrayOop args)
+Oop primSize (ProcessOop proc, ArrayOop args)
 {
     int i;
     if (args->basicAt (1).isInteger ())
@@ -89,7 +89,7 @@ Oop primSize (ExecState & es, ArrayOop args)
 Returns a hashed representation of the receiver.
 Called from Object>>hash
 */
-Oop primHash (ExecState & es, ArrayOop args)
+Oop primHash (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1).isInteger ())
         return (args->basicAt (1));
@@ -110,7 +110,7 @@ discarded when it returns, exposing the value to be returned from the
 context which invokes this primitive.  Only then is the process stack
 change effective.
 */
-Oop primBlockReturn (ExecState & es, ArrayOop args)
+Oop primBlockReturn (ProcessOop proc, ArrayOop args)
 {
     int i;
     int j;
@@ -147,7 +147,7 @@ Executes the receiver until its time slice is ended or terminated.
 Returns true in the former case; false in the latter.
 Called from Process>>execute
 */
-Oop primExecute (ExecState & es, ArrayOop args)
+Oop primExecute (ProcessOop proc, ArrayOop args)
 {
     /*encPtr saveProcessStack;
     int saveLinkPointer;
@@ -178,7 +178,7 @@ Returns true if the content of the receiver's Oop is equal to that
 of the first argument's; false otherwise.
 Called from Object>>==
 */
-Oop primIdent (ExecState & es, ArrayOop args)
+Oop primIdent (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1) == args->basicAt (2))
         return ((Oop)MemoryManager::objTrue);
@@ -195,7 +195,7 @@ Called from
   ByteArray>>size:
   Class>>new:
 */
-Oop primClassOfPut (ExecState & es, ArrayOop args)
+Oop primClassOfPut (ProcessOop proc, ArrayOop args)
 {
     fprintf (stderr,
              "Setting ClassOf %d to %d\n, ",
@@ -214,7 +214,7 @@ Called from
   String>>,
   Symbol>>asString
 */
-Oop primStringCat (ExecState & es, ArrayOop args)
+Oop primStringCat (ProcessOop proc, ArrayOop args)
 {
     uint8_t * src1 = args->basicAt (1)->asStringOop ()->vonNeumannSpace ();
     size_t len1 = strlen ((char *)src1);
@@ -232,31 +232,27 @@ Oop primStringCat (ExecState & es, ArrayOop args)
 Returns the Oop of the receiver denoted by the argument.
 Called from Object>>basicAt:
 */
-Oop primBasicAt (ExecState & es, ArrayOop args)
+Oop primBasicAt (ProcessOop proc, ArrayOop args)
 {
     int i;
     if (args->basicAt (1).isInteger ())
     {
-        printf ("*************\n\n\n\nARG 1 is an integer!\n\n\n\n******\n\n");
-        return (Oop::nil ());
+        printf ("integer receiver of basicAt:");
+        return (Oop::nilObj ());
     }
     /* if (!args->basicAt (1)->kind == OopsRefObj)
-        return (Oop::nil ()); */
+        return (Oop::nilObj ()); */
     if (!args->basicAt (2).isInteger ())
     {
-        printf ("*************\n\n\n\nARG 2 isn't integer!\n\n\n\n******\n\n");
-        return (Oop::nil ());
+        printf ("non-integer argument of basicAt:");
+        return (Oop::nilObj ());
     }
     i = args->basicAt (2).asSmiOop ().intValue ();
     if (i < 1 || i > args->basicAt (1)->asMemOop ()->size ())
     {
-        printf ("*************\n\n\n\nARG II (%d) out of "
-                "goose!!!\n\n\n\n******\n\n",
-                i);
-        return (Oop::nil ());
+        printf ("#basicAt: argument out of bounds (%d)", i);
+        return (Oop::nilObj ());
     }
-    printf ("*************\nBasicAt: %d\n******\n\n", i);
-    // args->basicAt (1)->asOopOop ()->basicAt (i)->print (10);
 
     return args->basicAt (1)->asOopOop ()->basicAt (i);
 }
@@ -266,7 +262,7 @@ Returns an encoded representation of the byte of the receiver denoted by
 the argument.
 Called from ByteArray>>basicAt:
 */
-Oop primByteAt (ExecState & es, ArrayOop args) /*fix*/
+Oop primByteAt (ProcessOop proc, ArrayOop args) /*fix*/
 {
     int i;
     if (!args->basicAt (2).isInteger ())
@@ -283,52 +279,11 @@ Defines the global value of the receiver to be the first argument.
 Returns the receiver.
 Called from Symbol>>assign:
 */
-Oop primSymbolAssign (ExecState & es, ArrayOop args) /*fix*/
+Oop primSymbolAssign (ProcessOop proc, ArrayOop args) /*fix*/
 {
     MemoryManager::objGlobals->symbolInsert (args->basicAt (1)->asSymbolOop (),
                                              args->basicAt (2));
     return (args->basicAt (1));
-}
-
-/*
-Changes the active process stack.  The change causes control to be
-returned in the method containing the block controlled by the receiver
-rather than the method which sent the message (e.g. Block>>value) which
-created the context which invoked this primitive.  Execution will resume
-at the location denoted by the first argument.
-Called from Context>>returnToBlock:
-N.B.:  The code involved here isn't quite as tricky as that involved
-in primBlockReturn (q.v.).
-*/
-Oop primBlockCall (ExecState & es, ArrayOop args) /*fix*/
-{
-    int i;
-    /* first get previous link */
-    // FIXME:  i = intValueOf (orefOf (processStack, linkPointer).val);
-    /* change context and byte pointer */
-    /// orefOfPut (processStack, i + 1, args->basicAt (1));
-    // orefOfPut (processStack, i + 4, args->basicAt (2));
-    return (args->basicAt (1));
-}
-
-/*
-Returns a modified copy of the receiver.  The receiver is a block.  The
-modification defines the controlling context of the clone to be the
-argument.  The argument is the current context and is the target of any
-"^" return eventually invoked by the receiver.
-This primitive is called by compiler-generated code.
-N.B.:  The code involved here isn't quite as tricky as that involved
-in primBlockReturn (q.v.).
-*/
-Oop primBlockClone (ExecState & es, ArrayOop args) /*fix*/
-{
-    Oop returnedObject;
-    // FIXME: returnedObject = (Oop)newBlock ();
-    // orefOfPut (returnedObject.ptr, 1, args->basicAt (2));
-    // orefOfPut (returnedObject.ptr, 2, orefOf (args->basicAt (1)->ptr, 2));
-    // orefOfPut (returnedObject.ptr, 3, orefOf (args->basicAt (1)->ptr, 3));
-    // orefOfPut (returnedObject.ptr, 4, orefOf (args->basicAt (1)->ptr, 4));
-    return (returnedObject);
 }
 
 /*
@@ -337,18 +292,16 @@ the second argument.
 Returns the receiver.
 Called from Object>>basicAt:put:
 */
-Oop primBasicAtPut (ExecState & es, ArrayOop args)
+Oop primBasicAtPut (ProcessOop proc, ArrayOop args)
 {
     int i;
     if (args->basicAt (1).isInteger ())
-        return (Oop::nil ());
-    /* if (!args->basicAt (1)->kind == OopsRefObj)
-        return (Oop::nil ()); */
+        return (Oop::nilObj ());
     if (!args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     i = args->basicAt (2).asSmiOop ().intValue ();
     if (i < 1 || i > args->basicAt (1)->asMemOop ()->size ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     args->basicAt (1)->asOopOop ()->basicatPut (i, args->basicAt (3));
     return args->basicAt (1);
 }
@@ -359,14 +312,13 @@ decoded representation of the second argument.
 Returns the receiver.
 Called from ByteArray>>basicAt:put:
 */
-Oop primByteAtPut (ExecState & es, ArrayOop args) /*fix*/
+Oop primByteAtPut (ProcessOop proc, ArrayOop args) /*fix*/
 {
     int i;
-    printf ("ByteAtPut %d %d\n", args->basicAt (2).asSmiOop ().intValue ());
     if (!args->basicAt (2).isInteger ())
-        perror ("non integer index byteAt:");
+        perror ("#byteAt: non integer index");
     if (!args->basicAt (3).isInteger ())
-        perror ("assigning non int to byte");
+        perror ("#byteAt: non integer assignee");
     args->basicAt (1)->asByteArrayOop ()->basicatPut (
         args->basicAt (2).asSmiOop ().intValue (),
         args->basicAt (3).asSmiOop ().intValue ());
@@ -391,10 +343,10 @@ length is less than one, none of it is used.
 Returns the new String.
 Called from String>>copyFrom:to:
 */
-Oop primCopyFromTo (ExecState & es, ArrayOop args) /*fix*/
+Oop primCopyFromTo (ProcessOop proc, ArrayOop args) /*fix*/
 {
     if ((!args->basicAt (2).isInteger () || (!args->basicAt (3).isInteger ())))
-        perror ("non integer index / copyFromTo");
+        perror ("#copyFromTo: non integer index");
     {
         uint8_t * src = args->basicAt (1)->asStringOop ()->vonNeumannSpace ();
         size_t len = strlen ((char *)src);
@@ -416,7 +368,7 @@ Oop primCopyFromTo (ExecState & es, ArrayOop args) /*fix*/
     }
 }
 
-Oop primParse (ExecState & es, ArrayOop args) /*del*/
+Oop primParse (ProcessOop proc, ArrayOop args) /*del*/
 {
     /*setInstanceVariables (args->basicAt(1)->ptr);
     if (parse (args->basicAt(2)->ptr, (char *)vonNeumannSpaceOf
@@ -434,10 +386,10 @@ Returns the equivalent of the receiver's value in a floating-point
 representation.
 Called from Integer>>asFloat
 */
-Oop primAsFloat (ExecState & es, ArrayOop args)
+Oop primAsFloat (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     return (args->basicAt (1)); // FIXME:(Oop)FloatOop((double)args->basicAt
                                 // (1).asSmiOop ().intValue ()));
 }
@@ -450,12 +402,12 @@ Called from
   Scheduler>>critical:
   Scheduler>>yield
 */
-Oop primSetTimeSlice (ExecState & es, ArrayOop args)
+Oop primSetTimeSlice (ProcessOop proc, ArrayOop args)
 {
     /*FIXME: if (!args->basicAt (1).isInteger ()))
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     *counterAddress = args->basicAt (1).asSmiOop ().intValue ();*/
-    return (Oop::nil ());
+    return (Oop::nilObj ());
 }
 
 /*
@@ -466,10 +418,10 @@ Called from
   BlockNode>>newBlock
   Class>>new:
 */
-Oop primAllocOrefObj (ExecState & es, ArrayOop args)
+Oop primAllocOrefObj (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     return (
         (Oop)memMgr.allocateOopObj (args->basicAt (1).asSmiOop ().intValue ()));
 }
@@ -481,10 +433,10 @@ receiver.
 Called from
   ByteArray>>size:
 */
-Oop primAllocByteObj (ExecState & es, ArrayOop args)
+Oop primAllocByteObj (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     return ((Oop)memMgr.allocateByteObj (
         args->basicAt (1).asSmiOop ().intValue ()));
 }
@@ -495,18 +447,18 @@ value.
 Called from Integer>>+
 Also called for SendBinary bytecodes.
 */
-Oop primAdd (ExecState & es, ArrayOop args)
+Oop primAdd (ProcessOop proc, ArrayOop args)
 {
     long longresult;
 
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     longresult += args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: bounds test SMI 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (Oop::nil ());
+        return (Oop::nilObj ());
 }
 
 /*
@@ -515,17 +467,17 @@ receiver's value.
 Called from Integer>>-
 Also called for SendBinary bytecodes.
 */
-Oop primSubtract (ExecState & es, ArrayOop args)
+Oop primSubtract (ProcessOop proc, ArrayOop args)
 {
     long longresult;
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     longresult -= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: smi boundcheck 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (Oop::nil ());
+        return (Oop::nilObj ());
 }
 
 /*
@@ -534,10 +486,10 @@ value; false otherwise.
 Called from Integer>><
 Also called for SendBinary bytecodes.
 */
-Oop primLessThan (ExecState & es, ArrayOop args)
+Oop primLessThan (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     if (args->basicAt (1).asSmiOop ().intValue () <
         args->basicAt (2).asSmiOop ().intValue ())
         return ((Oop)MemoryManager::objTrue);
@@ -551,10 +503,10 @@ value; false otherwise.
 Called from Integer>>>
 Also called for SendBinary bytecodes.
 */
-Oop primGreaterThan (ExecState & es, ArrayOop args)
+Oop primGreaterThan (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     if (args->basicAt (1).asSmiOop ().intValue () >
         args->basicAt (2).asSmiOop ().intValue ())
         return ((Oop)MemoryManager::objTrue);
@@ -567,10 +519,10 @@ Returns true if the receiver's value is less than or equal to the
 argument's value; false otherwise.
 Called for SendBinary bytecodes.
 */
-Oop primLessOrEqual (ExecState & es, ArrayOop args)
+Oop primLessOrEqual (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     if (args->basicAt (1).asSmiOop ().intValue () <=
         args->basicAt (2).asSmiOop ().intValue ())
         return ((Oop)MemoryManager::objTrue);
@@ -583,10 +535,10 @@ Returns true if the receiver's value is greater than or equal to the
 argument's value; false otherwise.
 Called for SendBinary bytecodes.
 */
-Oop primGreaterOrEqual (ExecState & es, ArrayOop args)
+Oop primGreaterOrEqual (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     if (args->basicAt (1).asSmiOop ().intValue () >=
         args->basicAt (2).asSmiOop ().intValue ())
         return ((Oop)MemoryManager::objTrue);
@@ -599,10 +551,10 @@ Returns true if the receiver's value is equal to the argument's value;
 false otherwise.
 Called for SendBinary bytecodes.
 */
-Oop primEqual (ExecState & es, ArrayOop args)
+Oop primEqual (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     if (args->basicAt (1).asSmiOop ().intValue () ==
         args->basicAt (2).asSmiOop ().intValue ())
         return ((Oop)MemoryManager::objTrue);
@@ -615,10 +567,10 @@ Returns true if the receiver's value is not equal to the argument's
 value; false otherwise.
 Called for SendBinary bytecodes.
 */
-Oop primNotEqual (ExecState & es, ArrayOop args)
+Oop primNotEqual (ProcessOop proc, ArrayOop args)
 {
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     if (args->basicAt (1).asSmiOop ().intValue () !=
         args->basicAt (2).asSmiOop ().intValue ())
         return ((Oop)MemoryManager::objTrue);
@@ -632,17 +584,17 @@ argument's value.
 Called from Integer>>*
 Also called for SendBinary bytecodes.
 */
-Oop primMultiply (ExecState & es, ArrayOop args)
+Oop primMultiply (ProcessOop proc, ArrayOop args)
 {
     long longresult;
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     longresult *= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: boundscheck 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (Oop::nil ());
+        return (Oop::nilObj ());
 }
 
 /*
@@ -651,20 +603,19 @@ the argument's value.
 Called from Integer>>quo:
 Also called for SendBinary bytecodes.
 */
-Oop primQuotient (ExecState & es, ArrayOop args)
+Oop primQuotient (ProcessOop proc, ArrayOop args)
 {
     long longresult;
-    printf ("PRIMQUO\n\n");
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     if (args->basicAt (2).asSmiOop ().intValue () == 0)
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     longresult /= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: boundscheck 1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (Oop::nil ());
+        return (Oop::nilObj ());
 }
 
 /*
@@ -672,30 +623,26 @@ Returns the remainder of the result of dividing the receiver's value by
 the argument's value.
 Called for SendBinary bytecodes.
 */
-Oop primRemainder (ExecState & es, ArrayOop args)
+Oop primRemainder (ProcessOop proc, ArrayOop args)
 {
     long longresult;
-    printf ("PRIMREM\n\n");
 
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
     {
-        printf ("Unacceptable! Args:\n");
-
-        // args->basicAt (1)->print (15);
-        // args->basicAt (2)->print (15);
-        return (Oop::nil ());
+        printf ("#primRem: receiver or arg not integer");
+        return (Oop::nilObj ());
     }
     if (args->basicAt (2).asSmiOop ().intValue () == 0)
     {
-        printf ("Unacceptable! Argsat 2 is 0.\n");
-        return (Oop::nil ());
+        printf ("#primRem: division by zero");
+        return (Oop::nilObj ());
     }
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     longresult %= args->basicAt (2).asSmiOop ().intValue ();
     if (1) // FIXME: boundscheck smi
         return (SmiOop (longresult));
     else
-        return (Oop::nil ());
+        return (Oop::nilObj ());
 }
 
 /*
@@ -704,11 +651,11 @@ value.
 Called from Integer>>bitAnd:
 Also called for SendBinary bytecodes.
 */
-Oop primBitAnd (ExecState & es, ArrayOop args)
+Oop primBitAnd (ProcessOop proc, ArrayOop args)
 {
     long longresult;
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     longresult &= args->basicAt (2).asSmiOop ().intValue ();
     return (SmiOop (longresult));
@@ -720,11 +667,11 @@ argument's value.
 Called from Integer>>bitXor:
 Also called for SendBinary bytecodes.
 */
-Oop primBitXor (ExecState & es, ArrayOop args)
+Oop primBitXor (ProcessOop proc, ArrayOop args)
 {
     long longresult;
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     longresult ^= args->basicAt (2).asSmiOop ().intValue ();
     return (SmiOop (longresult));
@@ -737,11 +684,11 @@ left shifts.  Negative arguments cause right shifts.  Note that the
 result is truncated to the range of embeddable values.
 Called from Integer>>bitXor:
 */
-Oop primBitShift (ExecState & es, ArrayOop args)
+Oop primBitShift (ProcessOop proc, ArrayOop args)
 {
     long longresult;
     if (!args->basicAt (1).isInteger () || !args->basicAt (2).isInteger ())
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     longresult = args->basicAt (1).asSmiOop ().intValue ();
     if (args->basicAt (2).asSmiOop ().intValue () < 0)
         longresult >>= -args->basicAt (2).asSmiOop ().intValue ();
@@ -755,7 +702,7 @@ Returns the field count of the von Neumann space of the receiver up to
 the left-most null.
 Called from String>>size
 */
-Oop primStringSize (ExecState & es, ArrayOop args)
+Oop primStringSize (ProcessOop proc, ArrayOop args)
 {
     return (SmiOop (strlen (
         (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ())));
@@ -768,7 +715,7 @@ Called from
   String>>hash
   Symbol>>stringHash
 */
-Oop primStringHash (ExecState & es, ArrayOop args)
+Oop primStringHash (ProcessOop proc, ArrayOop args)
 {
     return (SmiOop (strHash (
         (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ())));
@@ -781,24 +728,10 @@ either be found in or added to the global symbol table.  The returned
 object will refer to the copy.
 Called from String>>asSymbol
 */
-Oop primAsSymbol (ExecState & es, ArrayOop args)
+Oop primAsSymbol (ProcessOop proc, ArrayOop args)
 {
     return ((Oop)SymbolOopDesc::fromString (
         (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ()));
-}
-
-/*
-Returns the object associated with the receiver in the global symbol
-table.
-Called from Symbol>>value
-*/
-Oop primGlobalValue (ExecState & es, ArrayOop args)
-{
-    printf ("Requested global value of %s\n",
-            (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ());
-    return (Oop::nil ());
-    // FIXME: (Oop)globalValue ((char *)vonNeumannSpaceOf (args->basicAt
-    // (1)->ptr)));
 }
 
 /*
@@ -806,7 +739,7 @@ Passes the von Neumann space of the receiver to the host's "system"
 function.  Returns what that function returns.
 Called from String>>unixCommand
 */
-Oop primHostCommand (ExecState & es, ArrayOop args)
+Oop primHostCommand (ProcessOop proc, ArrayOop args)
 {
     return (SmiOop (system (
         (char *)args->basicAt (1)->asStringOop ()->vonNeumannSpace ())));
@@ -817,7 +750,7 @@ Returns the equivalent of the receiver's value in a printable character
 representation.
 Called from Float>>printString
 */
-Oop primAsString (ExecState & es, ArrayOop args)
+Oop primAsString (ProcessOop proc, ArrayOop args)
 {
     char buffer[32];
     (void)sprintf (buffer, "%g", args->basicAt (1).asFloatOop ().floatValue ());
@@ -828,7 +761,7 @@ Oop primAsString (ExecState & es, ArrayOop args)
 Returns the natural logarithm of the receiver's value.
 Called from Float>>ln
 */
-Oop primNaturalLog (ExecState & es, ArrayOop args)
+Oop primNaturalLog (ProcessOop proc, ArrayOop args)
 {
     return (
         (Oop)FloatOop (log (args->basicAt (1).asFloatOop ().floatValue ())));
@@ -838,7 +771,7 @@ Oop primNaturalLog (ExecState & es, ArrayOop args)
 Returns "e" raised to a power denoted by the receiver's value.
 Called from Float>>exp
 */
-Oop primERaisedTo (ExecState & es, ArrayOop args)
+Oop primERaisedTo (ProcessOop proc, ArrayOop args)
 {
     return (
         (Oop)FloatOop (exp (args->basicAt (1).asFloatOop ().floatValue ())));
@@ -849,12 +782,12 @@ Returns a new Array containing two integers n and m such that the
 receiver's value can be expressed as n * 2**m.
 Called from Float>>integerPart
 */
-Oop primIntegerPart (ExecState & es, ArrayOop args)
+Oop primIntegerPart (ProcessOop proc, ArrayOop args)
 {
     double temp;
     int i;
     int j;
-    ArrayOop returnedObject = Oop::nil ()->asArrayOop ();
+    ArrayOop returnedObject = Oop::nilObj ()->asArrayOop ();
 #define ndif 12
     temp = frexp (args->basicAt (1).asFloatOop ().floatValue (), &i);
     if ((i >= 0) && (i <= ndif))
@@ -893,7 +826,7 @@ Returns the result of adding the argument's value to the receiver's
 value.
 Called from Float>>+
 */
-Oop primFloatAdd (ExecState & es, ArrayOop args)
+Oop primFloatAdd (ProcessOop proc, ArrayOop args)
 {
     double result;
     result = args->basicAt (1).asFloatOop ().floatValue ();
@@ -906,7 +839,7 @@ Returns the result of subtracting the argument's value from the
 receiver's value.
 Called from Float>>-
 */
-Oop primFloatSubtract (ExecState & es, ArrayOop args)
+Oop primFloatSubtract (ProcessOop proc, ArrayOop args)
 {
     double result;
     result = args->basicAt (1).asFloatOop ().floatValue ();
@@ -919,7 +852,7 @@ Returns true if the receiver's value is less than the argument's
 value; false otherwise.
 Called from Float>><
 */
-Oop primFloatLessThan (ExecState & es, ArrayOop args)
+Oop primFloatLessThan (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1).asFloatOop ().floatValue () <
         args->basicAt (2).asFloatOop ().floatValue ())
@@ -933,7 +866,7 @@ Returns true if the receiver's value is greater than the argument's
 value; false otherwise.
 Not called from the image.
 */
-Oop primFloatGreaterThan (ExecState & es, ArrayOop args)
+Oop primFloatGreaterThan (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1).asFloatOop ().floatValue () >
         args->basicAt (2).asFloatOop ().floatValue ())
@@ -947,7 +880,7 @@ Returns true if the receiver's value is less than or equal to the
 argument's value; false otherwise.
 Not called from the image.
 */
-Oop primFloatLessOrEqual (ExecState & es, ArrayOop args)
+Oop primFloatLessOrEqual (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1).asFloatOop ().floatValue () <=
         args->basicAt (2).asFloatOop ().floatValue ())
@@ -961,7 +894,7 @@ Returns true if the receiver's value is greater than or equal to the
 argument's value; false otherwise.
 Not called from the image.
 */
-Oop primFloatGreaterOrEqual (ExecState & es, ArrayOop args)
+Oop primFloatGreaterOrEqual (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1).asFloatOop ().floatValue () >=
         args->basicAt (2).asFloatOop ().floatValue ())
@@ -975,7 +908,7 @@ Returns true if the receiver's value is equal to the argument's value;
 false otherwise.
 Called from Float>>=
 */
-Oop primFloatEqual (ExecState & es, ArrayOop args)
+Oop primFloatEqual (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1).asFloatOop ().floatValue () ==
         args->basicAt (2).asFloatOop ().floatValue ())
@@ -989,7 +922,7 @@ Returns true if the receiver's value is not equal to the argument's
 value; false otherwise.
 Not called from the image.
 */
-Oop primFloatNotEqual (ExecState & es, ArrayOop args)
+Oop primFloatNotEqual (ProcessOop proc, ArrayOop args)
 {
     if (args->basicAt (1).asFloatOop ().floatValue () !=
         args->basicAt (2).asFloatOop ().floatValue ())
@@ -1003,7 +936,7 @@ Returns the result of multiplying the receiver's value by the
 argument's value.
 Called from Float>>*
 */
-Oop primFloatMultiply (ExecState & es, ArrayOop args)
+Oop primFloatMultiply (ProcessOop proc, ArrayOop args)
 {
     double result;
     result = args->basicAt (1).asFloatOop ().floatValue ();
@@ -1016,7 +949,7 @@ Returns the result of dividing the receiver's value by the argument's
 value.
 Called from Float>>/
 */
-Oop primFloatDivide (ExecState & es, ArrayOop args)
+Oop primFloatDivide (ProcessOop proc, ArrayOop args)
 {
     double result;
     result = args->basicAt (1).asFloatOop ().floatValue ();
@@ -1035,7 +968,7 @@ denoted by the second argument.
 Returns non-nil if successful; nil otherwise.
 Called from File>>open
 */
-Oop primFileOpen (ExecState & es, ArrayOop args)
+Oop primFileOpen (ProcessOop proc, ArrayOop args)
 {
     int i = args->basicAt (1).asSmiOop ().intValue ();
     char * p = (char *)args->basicAt (2)->asStringOop ()->vonNeumannSpace ();
@@ -1065,7 +998,7 @@ Oop primFileOpen (ExecState & es, ArrayOop args)
             isVolatilePut (s, false);*/
     }
     if (fp[i] == NULL)
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     else
         return (SmiOop (i));
 }
@@ -1075,13 +1008,13 @@ Closes the file denoted by the receiver.
 Always fails.
 Called from File>>close
 */
-Oop primFileClose (ExecState & es, ArrayOop args)
+Oop primFileClose (ProcessOop proc, ArrayOop args)
 {
     int i = args->basicAt (1).asSmiOop ().intValue ();
     if (fp[i])
         (void)fclose (fp[i]);
     fp[i] = NULL;
-    return (Oop::nil ());
+    return (Oop::nilObj ());
 }
 
 // void coldFileIn (encVal tagRef);
@@ -1094,12 +1027,12 @@ Not called from the image.
 N.B.:  The built-in function uses the built-in compiler.  Both should be
 used only in connection with building an initial image.
 */
-Oop primFileIn (ExecState & es, ArrayOop args)
+Oop primFileIn (ProcessOop proc, ArrayOop args)
 {
     /*int i = args->basicAt (1).asSmiOop ().intValue ();
     if (fp[i])
         coldFileIn (args->basicAt (1)->val);
-    return (Oop::nil ());*/
+    return (Oop::nilObj ());*/
 }
 
 /*
@@ -1115,13 +1048,13 @@ null, only that portion up to the left-most null is used.
 Returns the new String if successful, nil otherwise.
 Called from File>>getString
 */
-Oop primGetString (ExecState & es, ArrayOop args)
+Oop primGetString (ProcessOop proc, ArrayOop args)
 {
     int i = args->basicAt (1).asSmiOop ().intValue ();
     int j;
     char buffer[4096];
     if (!fp[i])
-        return (Oop::nil ());
+        return (Oop::nilObj ());
     j = 0;
     buffer[j] = '\0';
     while (1)
@@ -1130,7 +1063,7 @@ Oop primGetString (ExecState & es, ArrayOop args)
         {
             if (fp[i] == stdin)
                 (void)fputc ('\n', stdout);
-            return (Oop::nil ()); /* end of file */
+            return (Oop::nilObj ()); /* end of file */
         }
         if (fp[i] == stdin)
         {
@@ -1153,7 +1086,7 @@ to the file denoted by the receiver.
 Always fails.
 Called from File>>printNoReturn:
 */
-Oop primPrintWithoutNL (ExecState & es, ArrayOop args)
+Oop primPrintWithoutNL (ProcessOop proc, ArrayOop args)
 {
     int i = args->basicAt (1).asSmiOop ().intValue (); // intValueOf
                                                        // (arg[0].val);
@@ -1172,7 +1105,7 @@ to the file denoted by the receiver and appends a newline.
 Always fails.
 Called from File>>print:
 */
-Oop primPrintWithNL (ExecState & es, ArrayOop args)
+Oop primPrintWithNL (ProcessOop proc, ArrayOop args)
 {
     int i = args->basicAt (1).asSmiOop ().intValue ();
     if (!fp[i])
@@ -1184,7 +1117,7 @@ Oop primPrintWithNL (ExecState & es, ArrayOop args)
     return (Oop ());
 }
 
-Oop primExecBlock (ExecState & es, ArrayOop args)
+Oop primExecBlock (ProcessOop proc, ArrayOop args)
 {
     ContextOop ctx =
         ContextOopDesc::newWithBlock (args->basicAt (1)->asBlockOop ());
@@ -1194,27 +1127,26 @@ Oop primExecBlock (ExecState & es, ArrayOop args)
         ctx->arguments ()->basicatPut (i - 1, args->basicAt (i));
     }
 
-    ctx->setPreviousContext (es.proc->context ()->previousContext ());
-    es.proc->setContext (ctx);
-    printf ("=> Entering block\n");
+    ctx->setPreviousContext (proc->context ()->previousContext ());
+    proc->setContext (ctx);
+    // printf ("=> Entering block\n");
     return Oop ();
 }
 
-Oop primDumpVariable (ExecState & es, ArrayOop args)
+Oop primDumpVariable (ProcessOop proc, ArrayOop args)
 {
-    ContextOop ctx = es.proc->context ();
-    printf ("\n\n\n\n!!!!!!!!!!!!!!!!!!!!\n%d\n", args->basicAt (1));
+    ContextOop ctx = proc->context ();
 
     args->basicAt (1)->print (20);
     args->basicAt (1).isa ()->print (20);
-    printf ("!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n");
+    printf ("Dump variable:\n");
     printf (
         "          --> %s>>%s\n",
         ctx->receiver ().isa ()->name ()->asCStr (),
         ctx->isBlockContext ()
             ? "<block>"
             : ctx->methodOrBlock ()->asMethodOop ()->selector ()->asCStr ());
-    while ((ctx = ctx->previousContext ()) != Oop::nil ())
+    while ((ctx = ctx->previousContext ()) != Oop::nilObj ())
         printf ("          --> %s>>%s\n",
                 ctx->receiver ().isa ()->name ()->asCStr (),
                 ctx->isBlockContext () ? "<block>"
@@ -1225,18 +1157,22 @@ Oop primDumpVariable (ExecState & es, ArrayOop args)
     return Oop ();
 }
 
-Oop primMsg (ExecState & es, ArrayOop args)
+Oop primMsg (ProcessOop proc, ArrayOop args)
 {
-    printf ("!!\n\nMessage: '%s'\n\n\n!!\n\n",
-            args->basicAt (1)->asStringOop ()->asCStr ());
+    printf ("Message: %s", args->basicAt (1)->asStringOop ()->asCStr ());
     return Oop ();
 }
 
-Oop primFatal (ExecState & es, ArrayOop args)
+Oop primFatal (ProcessOop proc, ArrayOop args)
 {
-    printf ("!!\n\nFatal error: '%s'\n\n\n!!\n\n",
-            args->basicAt (1)->asStringOop ()->asCStr ());
+    printf ("Fatal error: %s\n", args->basicAt (1)->asStringOop ()->asCStr ());
     abort ();
+    return Oop ();
+}
+
+Oop primExecuteNative (ProcessOop proc, ArrayOop args)
+{
+    args->basicAt (1)->asNativeCodeOop ()->fun () ((void *)proc.index ());
     return Oop ();
 }
 
@@ -1269,8 +1205,8 @@ PrimitiveMethod * primVec[255] = {
     /*025*/ &primBasicAt,
     /*026*/ &primByteAt,
     /*027*/ &primSymbolAssign,
-    /*028*/ &primBlockCall,
-    /*029*/ &primBlockClone,
+    /*028*/ &unsupportedPrim,
+    /*029*/ &unsupportedPrim,
     /*030*/ &unsupportedPrim,
     /*031*/ &primBasicAtPut,
     /*032*/ &primByteAtPut,
@@ -1328,7 +1264,7 @@ PrimitiveMethod * primVec[255] = {
     /*084*/ &unsupportedPrim,
     /*085*/ &unsupportedPrim,
     /*086*/ &unsupportedPrim,
-    /*087*/ &primGlobalValue,
+    /*087*/ &unsupportedPrim,
     /*088*/ &primHostCommand,
     /*089*/ &unsupportedPrim,
     /*090*/ &unsupportedPrim,
@@ -1405,4 +1341,5 @@ PrimitiveMethod * primVec[255] = {
     /*161*/ &primDumpVariable,
     /*162*/ &primMsg,
     /*163*/ &primFatal,
+    /*164*/ &primExecuteNative,
 };

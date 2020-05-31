@@ -40,3 +40,6 @@ _build
 *.out
 *.app
 *.core
+
+.vscode/*
+*.code-*

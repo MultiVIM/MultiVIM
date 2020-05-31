@@ -1,6 +1,10 @@
 #ifndef BYTECODE_HXX__
 #define BYTECODE_HXX__
 
+#include <stdint.h>
+
+#include "Oops/Oops.hxx"
+
 enum Opcode
 {
     kNone = 0,
@@ -20,6 +24,7 @@ enum Opcode
     kPushLiteral,
     kPushParentHeapVar,
     kPushMyHeapVar,
+    kPushGlobal,
     kPushBlockCopy,
 
     /* As above, storing top of stack into the location. (Globals are
@@ -30,6 +35,10 @@ enum Opcode
     kStoreMyHeapVar,
     kStoreGlobal,
 
+    /* TOS is 2nd arg, TOS -1 is 1st arg, arg is what kind of conditional.
+     * If 2, #ifTrue:ifFalse
+     */
+    kIfTrueIfFalse,
     /* Following bytecode is number of arguments (nA);
      * TOS is the selector. TOS - 1 is last arg, TOS -2 is 2nd-to-last arg, etc.
      * TOS - nArgs is receiver.

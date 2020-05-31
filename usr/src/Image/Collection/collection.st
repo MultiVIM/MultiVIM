@@ -4,3 +4,6 @@
 @include 'ByteArray.st'
 @include 'String.st'
 @include 'Dictionary.st'
+@include 'List.st'
+@include 'Set.st'
+@include 'Interval.st'

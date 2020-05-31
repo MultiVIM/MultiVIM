@@ -43,22 +43,30 @@ ClassOop MemoryManager::clsSystemDictionary;
 ClassOop MemoryManager::clsFloat;
 ClassOop MemoryManager::clsVM;
 ClassOop MemoryManager::clsChar;
+ClassOop MemoryManager::clsProcessor;
+ClassOop MemoryManager::clsNativeCode;
+ClassOop MemoryManager::clsNativePointer;
+SymbolOop symIfTrueIfFalse;
+SymbolOop symValue;
+
+//#define calloc(a, b) GC_debug_malloc ((b), __FILE__, __LINE__)
+#define calloc(a, b) GC_malloc (b)
 
 OopOop MemoryManager::allocateOopObj (size_t len)
 {
-    OopOopDesc * obj = (OopOopDesc *)GC_debug_malloc (
-        sizeof (OopOopDesc) + sizeof (Oop) * len, GC_EXTRAS);
+    OopOopDesc * obj =
+        (OopOopDesc *)calloc (1, sizeof (OopOopDesc) + sizeof (Oop) * len);
     obj->_size = len;
-    obj->kind = MemOopDesc::kOop;
+    obj->_kind = VT_Mem_kOop;
     return OopOop (obj);
 }
 
 ByteOop MemoryManager::allocateByteObj (size_t len)
 {
-    ByteOopDesc * obj = (ByteOopDesc *)GC_debug_malloc (
-        sizeof (ByteOopDesc) + sizeof (uint8_t) * len, GC_EXTRAS);
+    ByteOopDesc * obj = (ByteOopDesc *)calloc (
+        1, sizeof (ByteOopDesc) + sizeof (uint8_t) * len);
     obj->_size = len;
-    obj->kind = MemOopDesc::kByte;
+    obj->_kind = VT_Mem_kByte;
     return ByteOop (obj);
 }
 
@@ -66,7 +74,7 @@ Oop MemoryManager::copyObj (Oop oldObj)
 {
     MemOop obj = oldObj->asMemOop ();
 
-    if (obj->kind == MemOopDesc::kByte)
+    if (obj->_kind == VT_Mem_kByte)
     {
         ByteOop newObj = allocateByteObj (obj->size ());
         newObj.setIsa (obj.isa ());
@@ -138,6 +146,9 @@ void MemoryManager::setupInitialObjects ()
     CreateClassPair (Float);
     CreateClassPair (VM);
     CreateClassPair (Char);
+    CreateClassPair (NativeCode);
+    CreateClassPair (NativePointer);
+    //  CreateClassPair (Processor);
 
 #define AddGlobal(name, obj)                                                   \
     objGlobals->symbolInsert (SymbolOopDesc::fromString (name), obj)
@@ -151,6 +162,9 @@ void MemoryManager::setupInitialObjects ()
     objFalse.setIsa (clsFalse);
     objSymbolTable.setIsa (clsDictionary);
     objGlobals.setIsa (clsSystemDictionary);
+
+    symIfTrueIfFalse = SymbolOopDesc::fromString ("ifTrue:ifFalse:");
+    symValue = SymbolOopDesc::fromString ("value");
 
     clsBlock->print (5);
 }

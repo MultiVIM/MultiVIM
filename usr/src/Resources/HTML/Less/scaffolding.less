@@ -103,7 +103,7 @@ a {
 }
 
 // Buttons
-.btn {
+.obtn {
   .button();
   .transition(.1s linear all);
   &.primary {
@@ -111,6 +111,7 @@ a {
     color: #fff;
     text-shadow: 0 -1px 0 rgba(0,0,0,.25);
     &:hover {
+      #gradient > .vertical(darken(@blue, 10%), darken(@blueDark, 10%));
       color: #fff;
     }
   }
@@ -137,8 +138,8 @@ a {
 }
 
 // Help Firefox not be a jerk about adding extra padding to buttons
-button.btn,
-input[type=submit].btn {
+button.obtn,
+input[type=submit].obtn {
   &::-moz-focus-inner {
   	padding: 0;
   	border: 0;

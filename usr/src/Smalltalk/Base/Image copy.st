@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 Object
 	subclass: #Encoder
 	instanceVariableNames: 'parser name byteCodes index literals stackSize maxStack'!
@@ -12,27 +5,10 @@ Object
 	subclass: #File
 	instanceVariableNames: 'name number mode'!
 
-IndexedCollection
-	subclass: #Dictionary
-	instanceVariableNames: 'hashTable'!
-Dictionary
-	subclass: #SymbolTable
-	instanceVariableNames: ''!
-Collection
-	subclass: #Interval
-	instanceVariableNames: 'lower upper step'!
-Collection
-	subclass: #List
-	instanceVariableNames: 'links'!
-List
-	subclass: #Set
-	instanceVariableNames: ''!
 Number
 	subclass: #Float
 	instanceVariableNames: ''!
-Integer
-	subclass: #LongInteger
-	instanceVariableNames: 'negative digits'!
+
 
 Object
 	subclass: #Parser
@@ -365,87 +341,6 @@ list: l
 
 
 
-{!
-DictionaryMeta methods!
-	new
-		^ self basicNew
-			hashTable: (Array new: 39)!
-}!
-
-
-
-
-
-
-{!
-Dictionary methods!
-	at: aKey ifAbsent: exceptionBlock	| hashPosition  link |
-
-		hashPosition <- self hash: aKey.
-		((hashTable at: hashPosition + 1) = aKey)
-			ifTrue: [ ^ hashTable at: hashPosition + 2].
-		link <- hashTable at: hashPosition + 3.
-		^ (link notNil)
-			ifTrue: [ link at: aKey ifAbsent: exceptionBlock ]
-			ifFalse: exceptionBlock!
-	at: aKey put: aValue			| hashPosition link |
-
-		hashPosition <- self hash: aKey.
-		((hashTable at: hashPosition + 1) isNil)
-		   ifTrue: [ hashTable at: hashPosition + 1 put: aKey ].
-		((hashTable at: hashPosition + 1) = aKey)
-		   ifTrue: [ hashTable at: hashPosition + 2 put: aValue ]
-		   ifFalse: [ link <- hashTable at: hashPosition + 3.
-			(link notNil)
-				ifTrue: [ link at: aKey put: aValue ]
-				ifFalse: [ hashTable at: hashPosition + 3
-					put: (Link key: aKey value: aValue)]]!
-	basicRemoveKey: aKey		| hashPosition link |
-		hashPosition <- self hash: aKey.
-		((hashTable at: hashPosition + 1) = aKey)
-			ifTrue: [ link <- hashTable at: hashPosition + 3.
-				(link notNil) ifTrue: [
-					hashTable at: hashPosition + 1 put: link key.
-					hashTable at: hashPosition + 2 put: link value.
-					hashTable at: hashPosition + 3 put: link next ]
-				ifFalse: [
-					hashTable at: hashPosition + 1 put: nil.
-					hashTable at: hashPosition + 2 put: nil ] ]
-			ifFalse: [ link <- hashTable at: hashPosition + 3.
-				(link notNil) ifTrue: [
-					hashTable
-						at: hashPosition + 3
-						put: (link removeKey: aKey) ] ]!
-	binaryDo: aBlock
-		(1 to: hashTable size by: 3) do:
-			[:i | (hashTable at: i) notNil
-				ifTrue: [ aBlock value: (hashTable at: i)
-						value: (hashTable at: i+1) ].
-			      (hashTable at: i+2) notNil
-				ifTrue: [ (hashTable at: i+2) 
-						binaryDo: aBlock ] ]!
-	display
-		self binaryDo: [:x :y | (x printString , ' -> ', 
-					y printString ) print ]!
-	hash: aKey
-		^ 3 * ((aKey hash) rem: ((hashTable size) quo: 3))!
-	hashTable: hArray
-		hashTable <- hArray!
-	includesKey: aKey
-		" look up, but throw away result "
-		self at: aKey ifAbsent: [ ^ false ].
-		^ true!
-	removeKey: aKey
-		^ self removeKey: aKey
-			ifAbsent: [ smalltalk error: 'remove key not found']!
-	removeKey: aKey ifAbsent: exceptionBlock
-		^ (self includesKey: aKey)
-			ifTrue: [ self basicRemoveKey: aKey ]
-			ifFalse: exceptionBlock!
-}!
-
-
-
 
 
 
@@ -736,114 +631,6 @@ position: p
 
 
 
-
-
-
-
-{!
-IntervalMeta methods!
-	lower: lValue upper: uValue step: sValue
-		^ self new lower: lValue upper: uValue step: sValue!
-}!
-
-
-
-
-
-
-{!
-Interval methods!
-	do: aBlock		| current |
-		current <- lower.
-		(step > 0) 
-			ifTrue: [ [ current <= upper ] whileTrue:
-					[ aBlock value: current.
-			  		current <- current + step ] ]
-			ifFalse: [ [ current >= upper ] whileTrue:
-					[ aBlock value: current.
-					current <- current + step ] ]!
-	lower: aValue
-		lower <- aValue!
-	lower: lValue upper: uValue step: sValue
-		lower <- lValue.
-		upper <- uValue.
-		step <- sValue!
-	step: aValue
-		step <- aValue!
-	upper: aValue
-		upper <- aValue!
-}!
-
-
-
-
-
-
-
-{!
-Link methods!
-
-}!
-
-
-
-
-
-
-{!
-List methods!
-	add: aValue
-		^ self addLast: aValue!
-	add: aValue ordered: aBlock
-		(links isNil)
-			ifTrue: [ self addFirst: aValue]
-			ifFalse: [ links <- links add: aValue 
-					whenFalse: aBlock ]!
-	addAll: aValue
-		aValue do: [:x | self add: x ]!
-	addFirst: aValue
-		links <- Link value: aValue link: links!
-	addLast: aValue
-		(links isNil)
-			ifTrue: [ self addFirst: aValue ]
-			ifFalse: [ links add: aValue whenFalse: [ :x :y | true ] ]!
-	collect: aBlock
-		^ self inject: self class new
-		       into: [:x :y | x add: (aBlock value: y). x ]!
-	do: aBlock
-		(links notNil)
-			ifTrue: [ links binaryDo: [:x :y | aBlock value: y]]!
-	first
-		^ (links notNil)
-			ifTrue: links
-			ifFalse: [ smalltalk error: 'first on empty list']!
-	links
-		^ links  "used to walk two lists in parallel "!
-	reject: aBlock          
-		^ self select: [:x | (aBlock value: x) not ]!
-	remove: value
-		(links notNil)
-			ifTrue: [ links <- links removeValue: value ]!
-	removeFirst
-		self remove: self first!
-	reverseDo: aBlock
-		(links notNil)
-			ifTrue: [ links reverseDo: aBlock ]!
-	select: aBlock          
-		^ self inject: self class new
-		       into: [:x :y | (aBlock value: y) 
-					ifTrue: [x add: y]. x]!
-	size
-		(links isNil)
-			ifTrue: [ ^ 0 ]
-			ifFalse: [ ^ links size ]!
-}!
-
-
-
-
-
-
 {!
 LiteralNode methods!
 compile: encoder block: inBlock
@@ -858,148 +645,6 @@ compile: encoder block: inBlock
 	encoder genHigh: 4 low: (encoder genLiteral: value)!
 value: v
 	value <- v!
-}!
-
-
-
-
-
-
-{!
-LongIntegerMeta methods!
-	negative: nBool digits: dArray
-		^ self basicNew negative: nBool digits: dArray!
-	new
-		^ self basicNew
-			negative: nil
-			digits: nil!
-}!
-
-
-
-
-
-
-{!
-LongInteger methods!
-	* n		| result |
-		n isShortInteger ifTrue: [ ^ self timesShort: n ].
-		n isLongInteger  ifFalse: [ ^ super * n ].
-		result <- 0 asLongInteger.
-		digits reverseDo: 
-			[:x | result <- (result timesShort: 100) +
-				(n timesShort: x)].
-		negative ifTrue: [ result <- result negated ].
-		^ result!
-	+ n		| newDigits z carry |
-		n isLongInteger
-			ifFalse: [ ^ super + n ].
-		negative ifTrue: [ ^ n - self negated ].
-		n negative ifTrue: [ ^ self - n negated ].
-		" reduced to positive + positive case "
-		newDigits <- List new.  carry <- 0.
-		self with: n bitDo:
-			[:x :y | z <- x + y + carry.
-				(z >= 100) ifTrue: [ carry <- 1. z <- z - 100]
-					 ifFalse: [ carry <- 0 ].
-				newDigits addLast: z ].
-		carry > 0 ifTrue: [ newDigits addLast: carry ].
-		^ LongInteger negative: false digits: newDigits asArray!
-	- n		| result newDigits z borrow |
-		n isLongInteger
-			ifFalse: [ ^ super - n ].
-		negative ifTrue: [ ^ (self negated + n) negated ].
-		n negative ifTrue: [ ^ self + n negated ].
-		(self < n) ifTrue: [ ^ (n - self) negated ].
-		" reduced to positive - smaller positive "
-		newDigits <- List new. borrow <- 0.
-		self with: n bitDo:
-			[:x :y | z <- (x - borrow) - y.
-				(z >= 0) ifTrue: [ borrow <- 0]
-				ifFalse: [ z <- z + 100. borrow <- 1].
-				newDigits addLast: z ].
-		result <- 0. "now normalize result by multiplication "
-		newDigits reverseDo: [:x | result <- result * 100 + x ].
-		^ result!
-	< n		| result |
-		n isLongInteger
-			ifFalse: [ ^ super < n ].
-		(negative == n negative) ifFalse: [ ^ negative ].
-		" now either both positive or both negative "
-		result <- false.
-		self with: n bitDo: 
-			[:x :y | (x ~= y) ifTrue: [ result <- x < y]].
-		negative ifTrue: [ result <- result not ].
-		^ result!
-	= n
-		n isLongInteger
-			ifFalse: [ ^ super = n ].
-		(negative == n negative) ifFalse: [ ^ false ].
-		^ digits = n digits!
-	abs
-		negative ifTrue: [ ^ self negated] !
-	asFloat		| r |
-		r <- 0.0 .
-		digits reverseDo: [ :x | r <- r * 100.0 + x asFloat].
-		negative ifTrue: [ r <- r negated ].
-		^ r.!
-	bitShift: n
-		(n >= 0)
-			ifTrue: [ ^ self * (2 raisedTo: n) ]
-			ifFalse: [ ^ self quo: (2 raisedTo: n negated)]!
-	coerce: n
-		^ n asLongInteger!
-	digits
-		^ digits!
-	generality
-		^ 4 "generality value - used in mixed type arithmetic "!
-	isLongInteger
-		^ true!
-	isShortInteger
-		" override method in class Integer "
-		^ false!
-	negated
-		^ LongInteger negative: negative not digits: digits!
-	negative
-		^ negative!
-	negative: nBool digits: dArray
-		negative <- nBool.
-		digits <- dArray!
-	printString	| str |
-		str <- negative ifTrue: [ '-' ] ifFalse: [ '' ].
-		digits reverseDo: [:x | str <- str , 
-			(x quo: 10) printString , (x rem: 10) printString ].
-		^ str!
-	quo: value	| a b quo result |
-		result <- 0.
-		a <- self abs. b <- value abs.
-		[a > b] whileTrue:
-			[ quo <- (a asFloat quo: b). result <- result + quo.
-				a <- a - (b * quo) ].
-		^ result!
-	sign: s digits: d
-		negative <- s.
-		digits <- d.!
-	timesShort: value	| y z carry newDigits |
-		y <- value abs.
-		carry <- 0.
-		newDigits <- digits collect:
-			[:x | z <- x * y + carry.
-				carry <- z quo: 100.
-				z - (carry * 100)].
-		(carry > 0) ifTrue: [ newDigits <- newDigits grow: carry ].
-		^ LongInteger negative: (negative xor: value negative)
-					digits: newDigits!
-	with: n bitDo: aBlock	| d di dj |
-		" run down two digits lists in parallel doing block "
-		di <- digits size.
-		d <- n digits.
-		dj <- d size.
-		(1 to: (di max: dj)) do: [:i |
-			aBlock value: 
-			   ((i <= di) ifTrue: [ digits at: i] ifFalse: [0])
-				value:
-			   ((i <= dj) ifTrue: [ d at: i] ifFalse: [0]) ]!
 }!
 
 
@@ -1607,17 +1252,6 @@ expression: e
 }!
 
 
-
-{!
-Set methods!
-	add: value
-		(self includes: value)
-			ifFalse: [ self addFirst: value ]!
-}!
-
-
-
-
 {!
 Switch methods!
 	else: block
@@ -1629,30 +1263,6 @@ Switch methods!
 		const <- value.
 		notdone <- true.!
 }!
-
-
-
-
-
-
-{!
-Symbol methods!
-
-}!
-
-
-
-
-
-
-{!
-SymbolTable methods!
-	hash: aKey
-		^ 3 * ((aKey stringHash) rem: ((hashTable size) quo: 3))!
-	printString
-		^ self class printString , ' (...)'!
-}!
-
 
 
 

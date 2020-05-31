@@ -4,6 +4,7 @@
 #include "LiteralExpr.hxx"
 #include "Scope.hxx"
 #include "VM/Bytecode.hxx"
+#include "tcc/libtcc_ext.h"
 
 #pragma mark literals
 
@@ -121,32 +122,22 @@ void IntExprNode::generateOn (CodeGen & gen)
 
 void CharExprNode::generateOn (CodeGen & gen)
 {
-    printf ("CHAR: %c\n", khar[0]);
     gen.genPushLiteralObject (CharOopDesc::newWith (khar[0]));
-    /*int litNum = gen.genLiteral ((objRef)newChar (khar[0]));
-    if (!gen.inLiteralArray ())
-        gen.genInstruction (PushLiteral, litNum);*/
 }
 
 void SymbolExprNode::generateOn (CodeGen & gen)
 {
     gen.genPushLiteralObject (SymbolOopDesc::fromString (sym));
-    /*int litNum = gen.genLiteral ((objRef)newSymbol (sym.c_str ()));
-    if (!gen.inLiteralArray ())
-        gen.genInstruction (PushLiteral, litNum);*/
 }
 
 void StringExprNode::generateOn (CodeGen & gen)
 {
     gen.genPushLiteralObject (StringOopDesc::fromString (str));
-    /*int litNum = gen.genLiteral ((objRef)newString (str.c_str ()));
-    if (!gen.inLiteralArray ())
-        gen.genInstruction (PushLiteral, litNum);*/
 }
 
 void FloatExprNode::generateOn (CodeGen & gen)
 {
-    gen.genPushLiteralObject (Oop::nil ());
+    gen.genPushLiteralObject (Oop::nilObj ());
     /*int litNum = gen.genLiteral ((objRef)newFloat (num));
     if (!gen.inLiteralArray ())
         gen.genInstruction (PushLiteral, litNum);*/
@@ -154,7 +145,7 @@ void FloatExprNode::generateOn (CodeGen & gen)
 
 void ArrayExprNode::generateOn (CodeGen & gen)
 {
-    gen.genPushLiteralObject (Oop::nil ());
+    gen.genPushLiteralObject (Oop::nilObj ());
     /*int litNum;
 
     gen.beginLiteralArray ();
@@ -168,11 +159,57 @@ void ArrayExprNode::generateOn (CodeGen & gen)
 
 #pragma mark expressions
 
+static void tccErr (void * opaqueError, const char * msg)
+{
+    fprintf (stderr, "%s\n", msg);
+    fflush (NULL);
+};
+
+static const char jitPrelude[] = {
+#include "JITPrelude.rh"
+    0};
+
 void PrimitiveExprNode::generateOn (CodeGen & gen)
 {
-    for (auto arg : args)
-        arg->generateOn (gen);
-    gen.genPrimitive (num, args.size ());
+    std::string name;
+
+    if (num != 0)
+    {
+        for (auto arg : args)
+            arg->generateOn (gen);
+        gen.genPrimitive (num, args.size ());
+        return;
+    }
+
+    name = dynamic_cast<IdentExprNode *> (args[0])->id;
+
+    if (name == "C")
+    {
+        std::string code = std::string (jitPrelude) +
+                           dynamic_cast<StringExprNode *> (args[1])->str;
+        TCCState * tcc = atcc_new ();
+        size_t codeSize;
+        NativeCodeOop nativeCode;
+        NativeCodeOopDesc::Fun fun;
+
+        tcc_set_error_func (tcc, NULL, tccErr);
+        tcc_set_output_type (tcc, TCC_OUTPUT_MEMORY);
+        tcc_define_symbol (tcc, "__MultiVIM_JIT", "true");
+        if (tcc_compile_string (tcc, code.c_str ()) == -1)
+            abort ();
+        codeSize = tcc_relocate (tcc, NULL);
+        printf ("Code size: %d\n", codeSize);
+        assert (codeSize != -1);
+
+        nativeCode = NativeCodeOopDesc::newWithSize (codeSize);
+        tcc_relocate (tcc, nativeCode->funCode ());
+        fun = (NativeCodeOopDesc::Fun)tcc_get_symbol (tcc, "main");
+        nativeCode->setFun (fun);
+
+        tcc_delete (tcc);
+
+        gen.genPushLiteralObject (nativeCode);
+    }
 }
 
 void IdentExprNode::generateOn (CodeGen & gen)
@@ -209,7 +246,16 @@ void MessageExprNode::generateOn (CodeGen & gen, bool cascade)
     for (auto a : args)
         a->generateOn (gen);
 
-    gen.genMessage (receiver->isSuper (), args.size (), selector);
+    if (selector == std::string ("ifTrue:ifFalse:"))
+    {
+        printf ("GEnerate optimised\n");
+        gen.genIfTrueIfFalse ();
+    }
+    else
+    {
+        printf ("generate unoptimised %s\n", selector.c_str ());
+        gen.genMessage (receiver->isSuper (), args.size (), selector);
+    }
 }
 
 void CascadeExprNode::generateOn (CodeGen & gen)
@@ -279,7 +325,9 @@ void BlockExprNode::generateOn (CodeGen & gen)
     block->setStackSize (SmiOop (blockGen.maxStackSize ()));
 
     // gen.popCurrentScope ();
-
+    // if (!blockGen._blockHasBlockReturn)
+    //    gen.genPushLiteralObject (block);
+    // else
     gen.genPushBlockCopy (block);
 }
 
@@ -357,270 +405,15 @@ void ClassNode::generate ()
         cls->addMethod (m->generate ());
 }
 
-void ProgramNode::generate ()
+void NamespaceNode::generate ()
 {
-    for (auto cls : classes)
+    printf ("NAMESPACE %s\n", name.c_str ());
+    for (auto cls : decls)
         cls->generate ();
 }
 
-#pragma mark OLD
-
-/*int ExprNode::generateOptimized (CodeGen & gen, int
-instruction, bool doPop)
+void ProgramNode::generate ()
 {
-int location;
-
-gen.genInstruction (DoSpecial, instruction);
-location = gen.codeTop ();
-
-gen.genCode (0);
-if (doPop)
-gen.genInstruction (DoSpecial, PopTop);
-
-this->generateOn (gen);
-gen.genMessage (false, 0, "value");
-
-gen.setCodeTo (location, gen.codeTop () + 1);
-// codeArray[location] = codeTop + 1;
-return (location);
+    for (auto cls : decls)
+        cls->generate ();
 }
-
-
-Other expressions
-void PrimitiveExprNode::generateOn (CodeGen & gen)
-{
-printf ("generate prim %d<--\n", num);
-for (auto a : args)
-a->generateOn (gen);
-gen.genInstruction (DoPrimitive, args.size ());
-gen.genCode (num);
-printf ("-->generated prim %d\n", num);
-}
-
-void IdentExprNode::generateOn (CodeGen & gen)
-{
-VarNode * var = gen.lookup (id);
-
-if ((id == "self") || (id == "super"))
-{
-gen.genInstruction (PushArgument, 0);
-return;
-}
-
-if (!var)
-printf ("DID NOT RESOLVE %s!!\n", id.c_str ());
-
-if (var)
-switch (var->kind)
-{
-case VarNode::kLocal:
-printf ("Local %s is a LOCAL TEMPORARY\n", id.c_str ());
-gen.genInstruction (PushTemporary, var->getIndex () - 1);
-return;
-
-case VarNode::kArgument:
-gen.genInstruction (PushArgument, var->getIndex ());
-return;
-
-case VarNode::kInstance:
-gen.genInstruction (PushInstance, var->getIndex ());
-return;
-
-case VarNode::kGlobalConstant:
-case VarNode::kGlobal:
-break;
-
-default:
-printf ("Unknown variable type %d\n\n!", var->kind);
-exit (0);
-}
-
-for (int i = 0; glbsyms[i]; i++)
-if (id == glbsyms[i])
-{
-gen.genInstruction (PushConstant, i + 4);
-return;
-}
-
-// not anything else, it must be a global
-// must look it up at run time
-gen.genInstruction (
-PushLiteral, gen.genLiteral ((objRef)newSymbol (id.c_str ())));
-gen.genMessage (false, 0, "value");
-}
-
-void IdentExprNode::generateAssignInContext (CodeGen & gen,
-                                 ExprNode * rValue)
-{
-VarNode * var = gen.lookup (id);
-
-if (var)
-{
-switch (var->kind)
-{
-case VarNode::kLocal:
-rValue->generateOn (gen);
-gen.genInstruction (AssignTemporary, var->getIndex () - 1);
-return;
-
-case VarNode::kInstance:
-rValue->generateOn (gen);
-gen.genInstruction (AssignInstance, var->getIndex ());
-return;
-}
-}
-
-gen.genInstruction (PushArgument, 0);
-gen.genInstruction (
-PushLiteral, gen.genLiteral ((objRef)newSymbol (id.c_str ())));
-rValue->generateOn (gen);
-gen.genMessage (false, 2, "assign:value:");
-}
-
-
-
-
-void ReturnStmtNode::generateOn (CodeGen & gen)
-{
-expr->generateOn (gen);
-if (gen.inBlock ())
-{
-// change return point before returning
-gen.genInstruction (PushConstant, contextConst);
-gen.genMessage (false, 0, "blockReturn");
-gen.genInstruction (DoSpecial, PopTop);
-}
-gen.genInstruction (DoSpecial, StackReturn);
-}
-
-encPtr MethodNode::generateOn (bool isClassMethod,
-                          CodeGen & gen)
-{
-int index = 1;
-encPtr bytecodes, theLiterals;
-encPtr method = newMethod ();
-byte * bp;
-std::pair<std::vector<byte>, std::vector<objRef>> result;
-gen.pushScope (new MethodScope);
-gen.beginMethod ();
-
-printf ("METHOD GENERATING IN CONTEXT...\n\n");
-
-for (auto i : args)
-gen.addArg (index++, i);
-
-index = 1;
-for (auto i : locals)
-gen.addLocal (index++, i);
-
-for (auto & s : stmts)
-{
-s->generateOn (gen);
-if (&s != &stmts.back ())
- gen.genInstruction (DoSpecial, PopTop);
-}
-
-gen.genInstruction (DoSpecial, PopTop);
-gen.genInstruction (DoSpecial, SelfReturn);
-
-result = gen.endMethod ();
-
-bytecodes = newByteArray (result.first.size ());
-bp = (byte *)vonNeumannSpaceOf (bytecodes);
-for (int i = 0; i < result.first.size (); i++)
-{
-bp[i] = result.first[i];
-}
-orefOfPut (method, messageInMethod, (objRef)newSymbol (sel.c_str ()));
-orefOfPut (method, bytecodesInMethod, (objRef)bytecodes);
-if (result.second.size () > 0)
-{
-theLiterals = newArray (result.second.size ());
-for (int i = 1; i <= result.second.size (); i++)
-{
- orefOfPut (theLiterals, i, result.second[i - 1]);
-}
-orefOfPut (method, literalsInMethod, (objRef)theLiterals);
-}
-else
-{
-orefOfPut (method, literalsInMethod, (objRef)nilObj);
-}
-orefOfPut (method, stackSizeInMethod, (objRef)encValueOf (6));
-orefOfPut (method,
-    temporarySizeInMethod,
-    (objRef)encValueOf (1 + gen.localTop ()));
-if (1) // saveText)
-{
-orefOfPut (method, textInMethod, (objRef)newString ("codum"));
-}
-
-gen.popScope ();
-
-return method;
-}
-
-int ClassNode::addIVarsToContextStartingFrom (CodeGen & gen,
-                                  int index)
-{
-assert (superClass || (superName == "nil"));
-
-if (superClass)
-index = superClass->getClass ()->addIVarsToContextStartingFrom (
-gen, index);
-
-for (auto i : iVars)
-{
-gen.addIvar (index++, i);
-}
-
-return index;
-}
-
-void ClassNode::generateOn (GlobalVarNode * myClassVar,
-                       CodeGen & gen)
-{
-int size;
-std::pair<encPtr, encPtr> classObjs;
-encPtr thisClass;
-
-gen.pushScope (new ClassScope (myClassVar));
-
-printf ("Generate %s\n", name.c_str ());
-
-assert (superName != name);
-if (superName != "nil")
-{
-superClass = gen.lookupClass (superName);
-assert (superClass && "Failed to find superclass!");
-}
-
-size = addIVarsToContextStartingFrom (gen, 0);
-
-thisClass = gen.defClass (myClassVar, name, iVars, size);
-
-for (auto m : iMethods)
-{
-encPtr newMeth = m->generateOn (m->isClassMethod, gen);
-if (m->isClassMethod)
- gen.addMethodToMetaclassOf (thisClass, newMeth);
-else
- gen.addMethodToClass (thisClass, newMeth);
-}
-
-gen.popScope ();
-}
-
-void ProgramNode::generateOn (CodeGen & gen)
-{
-gen.pushScope (new NameScope);
-
-for (auto & c : classes)
-gen.addClass (c);
-
-for (auto & c : classes)
-c->generateOn (gen.lookupClass (c->name), gen);
-
-//    gen.generateClasses ();
-}
-*/

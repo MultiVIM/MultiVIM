@@ -114,6 +114,7 @@ class container_linux : public litehtml::document_container
     cairo_clip_box::vector m_clips;
     std::string m_base_url, m_url;
     litehtml::document::ptr doc;
+    double scaleFactor = 1.5;
 
     Selection selection;
     void drawSelection (cairo_t * cr, litehtml::position border_box);

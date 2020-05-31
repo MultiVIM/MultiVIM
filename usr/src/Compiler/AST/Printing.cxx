@@ -102,7 +102,7 @@ void ClassNode::print (int in)
 void ProgramNode::print (int in)
 {
     std::cout << blanks (in) << "<program>\n";
-    for (auto c : classes)
+    for (auto c : decls)
         c->print (in);
     std::cout << blanks (in) << "</program>\n";
 }
