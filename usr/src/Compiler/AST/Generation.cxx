@@ -248,12 +248,10 @@ void MessageExprNode::generateOn (CodeGen & gen, bool cascade)
 
     if (selector == std::string ("ifTrue:ifFalse:"))
     {
-        printf ("GEnerate optimised\n");
         gen.genIfTrueIfFalse ();
     }
     else
     {
-        printf ("generate unoptimised %s\n", selector.c_str ());
         gen.genMessage (receiver->isSuper (), args.size (), selector);
     }
 }

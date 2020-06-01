@@ -225,14 +225,21 @@ void ClassOopDesc::addClassMethod (MethodOop method)
 
 void ClassOopDesc::setupClass (ClassOop superClass, std::string name)
 {
+    /* allocate metaclass if necessary */
     if (isa ().isNil ())
         setIsa (ClassOopDesc::allocateRawClass ());
 
+    /* set metaclass isa to object metaclass */
     isa ().setIsa (MemoryManager::clsObjectMeta);
 
     isa ()->setName (SymbolOopDesc::fromString (name + "Meta"));
     setName (SymbolOopDesc::fromString (name));
 
+    setupSuperclass (superClass);
+}
+
+void ClassOopDesc::setupSuperclass (ClassOop superClass)
+{
     if (!superClass.isNil ())
     {
         isa ()->setSuperClass (superClass.isa ());

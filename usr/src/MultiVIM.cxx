@@ -41,6 +41,7 @@ int main (int argc, char ** argv)
         case 's':
         {
             ProgramNode * node = MVST_Parser::parseFile (optarg);
+            node->registerNames ();
             node->synth ();
             node->generate ();
             break;

@@ -61,6 +61,7 @@ struct ReturnStmtNode : StmtNode
 
 struct DeclNode : Node
 {
+    virtual void registerNamesIn (DictionaryOop ns) = 0;
     virtual void synthInNamespace (DictionaryOop ns) = 0;
     virtual void generate () = 0;
 };
@@ -109,6 +110,7 @@ struct ClassNode : public DeclNode
 
     void addMethods (std::vector<MethodNode *> meths);
 
+    void registerNamesIn (DictionaryOop ns);
     void synthInNamespace (DictionaryOop ns);
     void generate ();
 
@@ -126,6 +128,7 @@ struct NamespaceNode : public DeclNode
     {
     }
 
+    void registerNamesIn (DictionaryOop ns);
     void synthInNamespace (DictionaryOop ns);
     void generate ();
 };
@@ -136,6 +139,12 @@ struct ProgramNode : public DeclNode
 
     ProgramNode (std::vector<DeclNode *> decls) : decls (decls)
     {
+    }
+
+    void registerNamesIn (DictionaryOop ns);
+    void registerNames ()
+    {
+        registerNamesIn (memMgr.objGlobals);
     }
 
     void synthInNamespace (DictionaryOop ns);

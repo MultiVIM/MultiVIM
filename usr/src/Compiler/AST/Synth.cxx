@@ -207,6 +207,14 @@ std::string & SSS (const char * s)
 
 extern "C" int sleep (int);
 
+void ClassNode::registerNamesIn (DictionaryOop ns)
+{
+    cls = ns->findOrCreateClass (Oop::nilObj ()->asClassOop (), name);
+    cls->setNstVars (ArrayOopDesc::symbolArrayFromStringVector (iVars));
+    cls->setDictionary (ns);
+    ns->symbolInsert (cls->name (), cls);
+}
+
 void ClassNode::synthInNamespace (DictionaryOop ns)
 {
     int index = 0;
@@ -223,12 +231,10 @@ void ClassNode::synthInNamespace (DictionaryOop ns)
         assert (!superCls.isNil ());
     }
 
-    cls = ns->findOrCreateClass (superCls, name);
-    cls->setNstVars (ArrayOopDesc::symbolArrayFromStringVector (iVars));
+    cls->setupSuperclass (superCls);
+
     classOopAddIvarsToScopeStartingFrom (cls, scope);
     cls->setNstSize (SmiOop (scope->iVars.size ()));
-    cls->setDictionary (ns);
-    ns->symbolInsert (cls->name (), cls);
 
     for (auto meth : cMethods)
         meth->synthInClassScope (scope);
@@ -239,11 +245,24 @@ void ClassNode::synthInNamespace (DictionaryOop ns)
     }
 }
 
+void NamespaceNode::registerNamesIn (DictionaryOop ns)
+{
+    DictionaryOop newNs = ns->subNamespaceNamed (name);
+    for (auto d : decls)
+        d->registerNamesIn (newNs);
+}
+
 void NamespaceNode::synthInNamespace (DictionaryOop ns)
 {
     DictionaryOop newNs = ns->subNamespaceNamed (name);
     for (auto d : decls)
         d->synthInNamespace (newNs);
+}
+
+void ProgramNode::registerNamesIn (DictionaryOop ns)
+{
+    for (auto d : decls)
+        d->registerNamesIn (ns);
 }
 
 void ProgramNode::synthInNamespace (DictionaryOop ns)

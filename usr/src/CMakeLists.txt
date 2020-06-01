@@ -115,8 +115,6 @@ add_executable(MultiVIM
 
     NeoVIMClient.mm)
 
-target_compile_options(MultiVIM PUBLIC -march=native -Ofast -funroll-loops -ggdb -pg)
-target_link_options(MultiVIM PUBLIC  -march=native -Ofast -funroll-loops -ggdb -pg)
 
 target_include_directories(MultiVIM PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR}
     ${CMAKE_SOURCE_DIR}/../closed)

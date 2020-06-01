@@ -8,10 +8,10 @@
 #include "Oops/Oops.hxx"
 
 //#define dprintf(...) printf (__VA_ARGS__)
-//#define dprintf printf
+#define dprintf printf
 
-#define __DEBUG 0
-#define dprintf(...)
+#define __DEBUG 1
+//#define dprintf(...)
 
 static const char * bytecodeNames[] = {
     "None",
@@ -722,7 +722,7 @@ extern "C" void tcc_print_stats (TCCState * s, unsigned total_time);
 
 void ProcessorOopDesc::coldBootMainProcessor ()
 {
-    MethodOop start = MVST_Parser::parseText ("^ 38 fib")
+    MethodOop start = MVST_Parser::parseText ("^ 20 fib")
                           ->synthInClassScope (nullptr)
                           ->generate ();
     ProcessOop firstProcess = ProcessOopDesc::allocate ();

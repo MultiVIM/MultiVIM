@@ -1,6 +1,13 @@
-@include 'Kernel/kernel.st'
-@include 'Collection/collection.st'
-@include 'Numbers/numbers.st'
+@include 'Collection/pkg.st'
+@include 'Collections-Support/pkg.st'
+@include 'Collections-Text/pkg.st'
+@include 'Kernel-Exceptions/pkg.st'
+@include 'Kernel-Methods/pkg.st'
+@include 'Kernel-Native/pkg.st'
+@include 'Kernel-Objects/pkg.st'
+@include 'Kernel-Processes/pkg.st'
+@include 'Numeric-Magnitudes/pkg.st'
+@include 'Numeric-Numbers/pkg.st'
 
 Namespace current: testSpace [
     Object subclass: tester [

@@ -47,6 +47,11 @@ class ClassOopDesc : public OopOopDesc
     void setupClass (ClassOop superClass, std::string name);
 
     /**
+     * Sets the superclass and metaclass' superclass for a given superclass.
+     */
+    void setupSuperclass (ClassOop superClass);
+
+    /**
      * Allocates a raw single class. Does NOT set up its name, superclass,
      * methods dictionary, size, or instance variables fields.
      */
