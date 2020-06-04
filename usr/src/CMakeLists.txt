@@ -56,10 +56,10 @@ add_custom_target(format
 
 add_compile_definitions(FLTK_HAVE_CAIRO)
 
-SET(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -funroll-loops")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -funroll-loops")
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Ofast -funroll-loops")
-SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Ofast -funroll-loops")
+SET(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -O0")
+SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -O0")
 
 set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS}  -fexceptions -fobjc-exceptions \
     -funwind-tables -fconstant-string-class=OFConstantString -Xclang \

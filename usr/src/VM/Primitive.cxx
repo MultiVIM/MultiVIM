@@ -53,6 +53,26 @@ Oop primFlipWatching (ProcessOop proc, ArrayOop args)
 }
 
 /*
+Changes the current context to argsAt: 1, pushing argsAt: 2 to the top of the
+stack.
+*/
+Oop primReturnInto (ProcessOop proc, ArrayOop args)
+{
+    /* FIXME: this is ugly */
+    ContextOop ctx = args->basicAt (1)->asContextOop ();
+    Oop rVal = args->basicAt (2);
+    proc->setContext (ctx);
+    printf ("Activating return continuation:\n");
+    printf (
+        "-----------INTO %s>>%s-------------\n",
+        ctx->receiver ().isa ()->name ()->asCStr (),
+        ctx->isBlockContext ()
+            ? "<block>"
+            : ctx->methodOrBlock ()->asMethodOop ()->selector ()->asCStr ());
+    return rVal;
+}
+
+/*
 Terminates the interpreter.
 Never returns.
 Not called from the image.
@@ -1137,9 +1157,10 @@ Oop primDumpVariable (ProcessOop proc, ArrayOop args)
 {
     ContextOop ctx = proc->context ();
 
+    printf ("Dump variable:\n");
+
     args->basicAt (1)->print (20);
     args->basicAt (1).isa ()->print (20);
-    printf ("Dump variable:\n");
     printf (
         "          --> %s>>%s\n",
         ctx->receiver ().isa ()->name ()->asCStr (),
@@ -1159,7 +1180,8 @@ Oop primDumpVariable (ProcessOop proc, ArrayOop args)
 
 Oop primMsg (ProcessOop proc, ArrayOop args)
 {
-    printf ("Message: %s", args->basicAt (1)->asStringOop ()->asCStr ());
+    printf ("Debug message:\n\t%s\n",
+            args->basicAt (1)->asStringOop ()->asCStr ());
     return Oop ();
 }
 
@@ -1181,7 +1203,7 @@ PrimitiveMethod * primVec[255] = {
     /*001*/ &unsupportedPrim,
     /*002*/ &primAvailCount,
     /*003*/ &primRandom,
-    /*004*/ &unsupportedPrim,
+    /*004*/ &primReturnInto,
     /*005*/ &primFlipWatching,
     /*006*/ &unsupportedPrim,
     /*007*/ &unsupportedPrim,

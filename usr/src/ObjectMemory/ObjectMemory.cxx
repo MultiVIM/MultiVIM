@@ -46,6 +46,7 @@ ClassOop MemoryManager::clsChar;
 ClassOop MemoryManager::clsProcessor;
 ClassOop MemoryManager::clsNativeCode;
 ClassOop MemoryManager::clsNativePointer;
+SymbolOop symNonLocalReturn;
 SymbolOop symIfTrueIfFalse;
 SymbolOop symValue;
 
@@ -163,6 +164,7 @@ void MemoryManager::setupInitialObjects ()
     objSymbolTable.setIsa (clsDictionary);
     objGlobals.setIsa (clsSystemDictionary);
 
+    symNonLocalReturn = SymbolOopDesc::fromString ("nonLocalReturn:");
     symIfTrueIfFalse = SymbolOopDesc::fromString ("ifTrue:ifFalse:");
     symValue = SymbolOopDesc::fromString ("value");
 

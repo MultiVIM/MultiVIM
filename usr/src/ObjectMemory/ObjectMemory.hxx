@@ -141,6 +141,7 @@ class MemoryManager
 #include "Lowlevel/MVEndPackStruct.h"
 
 extern MemoryManager memMgr;
+extern SymbolOop symNonLocalReturn;
 extern SymbolOop symIfTrueIfFalse;
 extern SymbolOop symValue;
 

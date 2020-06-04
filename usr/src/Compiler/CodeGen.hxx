@@ -85,6 +85,7 @@ class CodeGen
     void genPushTrue ();
     void genPushFalse ();
     void genPushSmalltalk ();
+    void genPushThisContext ();
     void genPushLiteral (uint8_t num);
     void genPushLiteralObject (Oop anObj);
     void genPushInteger (int val);

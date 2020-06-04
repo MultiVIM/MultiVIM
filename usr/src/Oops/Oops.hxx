@@ -170,7 +170,7 @@ class MethodOopDesc : public OopOopDesc
 
 class BlockOopDesc : public OopOopDesc
 {
-    static const int clsNstLength = 10;
+    static const int clsNstLength = 12;
 
   public:
     DeclareAccessorPair (ByteArrayOop, bytecode, setBytecode);
@@ -183,6 +183,15 @@ class BlockOopDesc : public OopOopDesc
     DeclareAccessorPair (Oop, receiver, setReceiver);
     DeclareAccessorPair (ArrayOop, parentHeapVars, setParentHeapVars);
     DeclareAccessorPair (ContextOop, homeMethodContext, setHomeMethodContext);
+    /* This is either:
+     * A) an Association<Class, Block>;
+     * B) a HandlerCollection;
+     * C) an ensure: block handler; or
+     * D) an ifCurtailed: block handler.
+     * We differentiate between A/B v.s. C or D by the selector; we
+     * differentiate A and B by their isKindOf: response.
+     */
+    DeclareAccessorPair (OopOop, handler, setHandler);
 
     /**
      * Allocates a new empty block.

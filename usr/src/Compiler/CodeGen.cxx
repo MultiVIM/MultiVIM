@@ -148,6 +148,12 @@ void CodeGen::genPushSmalltalk ()
     genInstruction (Opcode::kPushSmalltalk);
 }
 
+void CodeGen::genPushThisContext ()
+{
+    willPush ();
+    genInstruction (Opcode::kPushContext);
+}
+
 void CodeGen::genPop ()
 {
     genInstruction (Opcode::kPop);

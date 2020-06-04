@@ -587,7 +587,7 @@ void ProcessorOopDesc::interpret ()
                     dprintf ("STACK AT %d\n", i);
                     // proc->context()->stack ()->basicAt (i)->print (15);
                 }
-                printf ("VALUTRON PROCESS ID 1 EXITED.");
+                printf ("VALUTRON PROCESS ID 1 EXITED.\n");
                 goto end;
             }
 
@@ -596,35 +596,7 @@ void ProcessorOopDesc::interpret ()
 
         case kBlockReturn:
         {
-            Oop result = proc->context ()->pop ();
-            ContextOop prevContext = proc->context ();
-            ContextOop homeContext = proc->context ()
-                                         ->methodOrBlock ()
-                                         ->asBlockOop ()
-                                         ->homeMethodContext ();
-            int i = 1;
-            while ((prevContext = prevContext->previousContext ()) !=
-                       homeContext &&
-                   !prevContext.isNil ())
-                i++;
-            dprintf ("Home context: %p\n, %p\n", homeContext, prevContext);
-
-            /* FIXME: Is this legit? It seems hacky to me. Better that we
-             * somehow make all blocks defined in a given method (even if
-             * nested) share the correct homecontext somehow. */
-            while (prevContext->isBlockContext ())
-            {
-                homeContext = prevContext->methodOrBlock ()
-                                  ->asBlockOop ()
-                                  ->homeMethodContext ();
-                while ((prevContext = prevContext->previousContext ()) !=
-                           homeContext &&
-                       !prevContext.isNil ())
-                    i++;
-            }
-
-            /* Finally, escape the containing method. */
-            prevContext = prevContext->previousContext ();
+            /*prevContext = prevContext->previousContext ();
 
             if (prevContext.isNil ())
             {
@@ -654,7 +626,16 @@ void ProcessorOopDesc::interpret ()
                                    .c_str (),
                          prevContext.index (),
                          homeContext.index ());
-            }
+            }*/
+
+            SymbolOop selector = symNonLocalReturn;
+            ArrayOop arguments = ArrayOopDesc::newWithSize (1);
+            arguments->basicatPut (1, proc->context ()->pop ());
+            doSend (proc,
+                    proc->context ()->methodOrBlock (),
+                    selector,
+                    arguments,
+                    false);
             break;
         }
 
@@ -689,13 +670,15 @@ void ProcessorOopDesc::interpret ()
         case kPrimitive:
         {
             ArrayOop arguments = ArrayOopDesc::newWithSize (arg2);
+            Oop result;
 
             for (int i = arg2; i > 0; i--)
             {
                 arguments->basicatPut (i, proc->context ()->pop ());
             }
 
-            proc->context ()->push (primVec[arg](proc, arguments));
+            result = primVec[arg](proc, arguments);
+            proc->context ()->push (result);
             break;
         }
 
@@ -722,7 +705,7 @@ extern "C" void tcc_print_stats (TCCState * s, unsigned total_time);
 
 void ProcessorOopDesc::coldBootMainProcessor ()
 {
-    MethodOop start = MVST_Parser::parseText ("^ 20 fib")
+    MethodOop start = MVST_Parser::parseText ("^ 255 radix: 16 ")
                           ->synthInClassScope (nullptr)
                           ->generate ();
     ProcessOop firstProcess = ProcessOopDesc::allocate ();

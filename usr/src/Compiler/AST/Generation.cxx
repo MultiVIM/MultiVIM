@@ -224,6 +224,8 @@ void IdentExprNode::generateOn (CodeGen & gen)
         gen.genPushFalse ();
     else if (id == "Smalltalk")
         gen.genPushSmalltalk ();
+    else if (id == "thisContext")
+        gen.genPushThisContext ();
     else
         var->generateOn (gen);
 }
